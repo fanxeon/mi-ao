@@ -17,6 +17,7 @@ git archive --format=tar.gz --prefix="$SOURCE_SLUG-$PROJECT_VERSION/" HEAD -o "$
 (
   cd "$OUTPUT_DIR"
   shasum -a 256 "$ARCHIVE_NAME" > "$ARCHIVE_NAME.sha256"
+  shasum -a 256 -c "$ARCHIVE_NAME.sha256"
 )
 
 echo "源码包：$ARCHIVE"

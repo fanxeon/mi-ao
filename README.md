@@ -1,4 +1,4 @@
-# Xiaomi Voice Bridge
+# 项目名称待定：蓝牙语音遥控器 → AI Agent
 
 [English](README_EN.md) · 中文
 
@@ -46,14 +46,14 @@ chmod +x scripts/*.sh
 1. 安装 Homebrew `whisper-cpp`；
 2. 下载多语言 `ggml-base.bin`；
 3. 构建 release 二进制；
-4. 生成固定 Bundle ID 的 `Xiaomi Voice Bridge.app`，安装到 `~/Applications`。使用固定 App 身份，避免裸二进制重编译后辅助功能授权失效。
+4. 生成固定 Bundle ID 的 App，安装到 `~/Applications`。当前仍保留原型身份，定名后只迁移一次，避免反复触发辅助功能授权。
 
 ## 第一次真机联调
 
 先给遥控器充电并让它进入配对模式，在 macOS“系统设置 → 蓝牙”里完成配对。小米旧款电视遥控器通常同时长按 Home + 菜单键进入配对，但 2 Pro 的准确组合键应以包装内说明书为准。然后运行：
 
 ```bash
-.build/release/xiaomi-voice-bridge scan --scan-seconds 30 --debug
+./scripts/bridge.sh scan --scan-seconds 30 --debug
 ```
 
 记下遥控器的 `id=<UUID>`，随后启动：
@@ -73,12 +73,12 @@ chmod +x scripts/*.sh
 - 系统设置 → 隐私与安全性 → 蓝牙
 - 系统设置 → 隐私与安全性 → 辅助功能
 
-辅助功能列表里应选择 `~/Applications/Xiaomi Voice Bridge.app`，不要选择 `.build` 目录里的临时二进制。
+辅助功能列表里应选择安装脚本输出的 App，不要选择 `.build` 目录里的临时二进制。
 
 可以主动触发授权提示：
 
 ```bash
-"$HOME/Applications/Xiaomi Voice Bridge.app/Contents/MacOS/xiaomi-voice-bridge" authorize
+./scripts/authorize.sh
 ```
 
 本机没有可用的 Apple Developer 签名证书，因此 App 当前采用本机 ad-hoc 签名。平时不要反复执行 `install-app.sh`；如果重新构建并覆盖 App，macOS 可能要求再次确认辅助功能权限。
@@ -105,7 +105,7 @@ chmod +x scripts/*.sh
 ## 诊断
 
 ```bash
-.build/release/xiaomi-voice-bridge doctor
+./scripts/bridge.sh doctor
 ```
 
 如果设备没有暴露 `AB5E0001-5A21-4F05-BC7D-AF01F617B664`，程序会输出全部 services 和 characteristics。此时需要针对小米协议增加新的 transport，而不是伪造成功。
@@ -125,6 +125,8 @@ make check
 - [ATVV 协议说明](docs/PROTOCOL.md)
 - [路线图](docs/ROADMAP.md)
 - [开源发布检查表](docs/OPEN_SOURCE_CHECKLIST.md)
+- [名称候选与初步检索](docs/NAMING.md)
+- [无正式签名的源码分发方案](docs/DISTRIBUTION.md)
 
 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 

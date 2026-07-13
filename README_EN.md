@@ -1,4 +1,4 @@
-# Xiaomi Voice Bridge
+# Project name pending — BLE Push-to-Agent for macOS
 
 English · [中文](README.md)
 
@@ -46,7 +46,7 @@ chmod +x scripts/*.sh
 Scan for the remote and run the bridge:
 
 ```bash
-.build/release/xiaomi-voice-bridge scan --scan-seconds 30 --debug
+./scripts/bridge.sh scan --scan-seconds 30 --debug
 ./scripts/run.sh --identifier <PERIPHERAL-UUID> --debug
 ```
 

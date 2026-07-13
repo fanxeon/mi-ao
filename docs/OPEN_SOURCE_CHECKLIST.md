@@ -12,7 +12,8 @@
 
 ## 创建 GitHub 仓库时
 
-- [ ] 仓库名使用 `xiaomi-voice-bridge`
+- [ ] 从 [NAMING.md](NAMING.md) 确认最终项目名并完成一次性迁移
+- [ ] 仓库名、App 名、Bundle ID、可执行文件和数据目录保持一致
 - [ ] 添加简短描述、topics 和 MIT license 标记
 - [ ] 启用 Issues、Discussions 和 Private vulnerability reporting
 - [ ] 保护 `main`：要求 CI 通过、禁止强推、至少一次 review
@@ -24,5 +25,5 @@
 
 - [ ] 完成小米 2 Pro 真机证据
 - [ ] 更新兼容矩阵
-- [ ] 决定 Apple Developer ID 签名方案
+- [ ] 决定是否需要可选的 Apple Developer ID 二进制发行通道
 - [ ] 建立 `0.1.0` tag 和 GitHub Release

@@ -93,14 +93,19 @@ struct Configuration {
         return value
     }
 
-    static let help = """
-        Xiaomi Voice Bridge
+    private static var executableName: String {
+        URL(fileURLWithPath: CommandLine.arguments.first ?? "voice-bridge").lastPathComponent
+    }
+
+    static var help: String {
+        """
+        蓝牙语音遥控器桥接
 
         用法：
-          xiaomi-voice-bridge scan [--scan-seconds 20] [--debug]
-          xiaomi-voice-bridge run [选项]
-          xiaomi-voice-bridge doctor
-          xiaomi-voice-bridge authorize
+          \(executableName) scan [--scan-seconds 20] [--debug]
+          \(executableName) run [选项]
+          \(executableName) doctor
+          \(executableName) authorize
 
         run 选项：
           --name <文本>              只连接名称包含该文本的遥控器
@@ -113,9 +118,10 @@ struct Configuration {
           --gain-db <分贝>           写入 WAV 前增益，默认 20
           --output-dir <目录>        WAV 和 transcript 保存目录
           --no-submit                只转写，不发送给 Codex
-          --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
-          --debug                    打印原始 GATT 数据
+        --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
+        --debug                    打印原始 GATT 数据
         """
+    }
 }
 
 enum BridgeError: LocalizedError {

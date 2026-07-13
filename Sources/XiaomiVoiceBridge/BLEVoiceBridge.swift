@@ -434,7 +434,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         if AXIsProcessTrustedWithOptions(options) {
             print("辅助功能权限已授权")
         } else {
-            print("已请求辅助功能权限。请在系统设置中启用 Xiaomi Voice Bridge，然后重新运行 doctor 检查。")
+            let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "语音桥接 App"
+            print("已请求辅助功能权限。请在系统设置中启用 \(appName)，然后重新运行 doctor 检查。")
         }
     }
 

@@ -1,4 +1,4 @@
-.PHONY: build release test format lint app install setup doctor scan check clean
+.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan check clean
 
 build:
 	swift build
@@ -24,11 +24,26 @@ install:
 setup:
 	./scripts/setup.sh
 
+preflight:
+	./scripts/preflight.sh
+
+verify:
+	./scripts/verify-install.sh
+
+authorize:
+	./scripts/authorize.sh
+
+uninstall:
+	./scripts/uninstall.sh
+
+source-release:
+	./scripts/source-release.sh
+
 doctor: release
-	.build/release/xiaomi-voice-bridge doctor
+	./scripts/bridge.sh doctor
 
 scan: release
-	.build/release/xiaomi-voice-bridge scan --scan-seconds 15
+	./scripts/bridge.sh scan --scan-seconds 15
 
 check:
 	xcrun swift-format lint --strict --recursive Sources Tests Package.swift

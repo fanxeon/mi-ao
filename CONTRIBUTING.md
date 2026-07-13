@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢参与 Xiaomi Voice Bridge。项目优先接受可复现、保留真实硬件证据的改动。
+感谢参与本项目。项目优先接受可复现、保留真实硬件证据的改动。
 
 ## 开发环境
 
@@ -11,7 +11,7 @@
 
 ```bash
 git clone <repository-url>
-cd xiaomi-voice-bridge
+cd <repository-directory>
 make check
 ```
 

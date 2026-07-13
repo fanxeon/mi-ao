@@ -8,4 +8,4 @@ if [[ ! -x "$INSTALLED_BIN" ]]; then
   "$ROOT/scripts/install-app.sh"
 fi
 
-exec "$INSTALLED_BIN" run "$@"
+exec "$INSTALLED_BIN" authorize

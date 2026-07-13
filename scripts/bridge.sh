@@ -4,8 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
 
-if [[ ! -x "$INSTALLED_BIN" ]]; then
-  "$ROOT/scripts/install-app.sh"
+if [[ ! -x "$BUILD_BIN" ]]; then
+  cd "$ROOT"
+  swift build -c release
 fi
 
-exec "$INSTALLED_BIN" run "$@"
+exec "$BUILD_BIN" "$@"

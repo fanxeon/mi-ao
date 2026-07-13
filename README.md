@@ -28,7 +28,7 @@
 - 本地 `whisper.cpp` 中文转写
 - 通过 macOS Accessibility 向 Codex 当前输入框粘贴并发送
 
-小米蓝牙遥控器 2 Pro 是否使用 ATVV，需要真机枚举后确认。如果它使用另一套 UUID，`scan --debug` 会保留完整 GATT 证据，后续在现有协议层增加适配器，不会推倒重来。
+小米蓝牙遥控器 2 Pro 是否使用 ATVV，需要真机枚举后确认。如果它使用另一套 UUID，`capture` 会保存结构化 GATT 报告和原始通知帧，后续在现有协议层增加适配器，不会推倒重来。
 
 这款 2 Pro 是 2026 年发布的新硬件，公开资料确认它具备蓝牙 5.4、独立 AI 语音键和近场麦克风，但目前没有找到公开的 2 Pro GATT 抓包或配对组合键文档。因此本项目采用已有 Google/Android TV 语音遥控器的 ATVV 合同，并把真机 service 枚举保留为兼容性门。
 
@@ -51,23 +51,27 @@ chmod +x scripts/*.sh
 
 ## 第一次真机联调
 
-先给遥控器充电并让它进入配对模式，在 macOS“系统设置 → 蓝牙”里完成配对。小米旧款电视遥控器通常同时长按 Home + 菜单键进入配对，但 2 Pro 的准确组合键应以包装内说明书为准。然后运行：
+先给遥控器充电并让它进入配对模式，在 macOS“系统设置 → 蓝牙”里完成配对。小米旧款电视遥控器通常同时长按 Home + 菜单键进入配对，但 2 Pro 的准确组合键应以包装内说明书为准。
+
+第一步生成附近设备的脱敏扫描报告：
 
 ```bash
-./scripts/bridge.sh scan --scan-seconds 30 --debug
+./scripts/capture.sh --scan-seconds 30
 ```
 
-记下遥控器的 `id=<UUID>`，随后启动：
+终端仍会显示本机 UUID，报告中默认使用哈希 ID 并隐藏设备名。记下遥控器的 `id=<UUID>`，第二步连接目标并采集 60 秒：
+
+```bash
+./scripts/capture.sh --identifier <UUID> --capture-seconds 60 --debug
+```
+
+采集期间依次测试短按语音键、按住说话后松开、再次按键和静音。报告保存在 `~/Library/Application Support/mi-ao/captures`。确认设备协议后，再启动日常桥接：
 
 ```bash
 ./scripts/run.sh --identifier <UUID> --debug
 ```
 
-也可以按名称过滤：
-
-```bash
-./scripts/run.sh --name "Xiaomi" --debug
-```
+完整步骤和证据判定见 [真机 Bring-up 指南](docs/HARDWARE_BRINGUP.md)。
 
 第一次使用需要允许：
 
@@ -86,13 +90,14 @@ chmod +x scripts/*.sh
 
 保持 Codex 当前任务的输入框获得焦点。按遥控器语音键说话，录音结束后会转写并发送。
 
-## 本机验证记录（2026-07-13）
+## 本机验证记录（2026-07-14）
 
 - macOS 26.5.2 / Apple Silicon release 构建通过；
 - `whisper-cpp` 1.9.1 与多语言 `ggml-base.bin` 已安装；
 - ATVV v0.4/v1.0 capabilities、ADPCM 解码和 8→16 kHz 重采样测试通过；
 - 使用 macOS 中文合成语音验证，识别结果为“请检查当前项目，然后继续工作”；
 - CoreBluetooth 扫描和正常退出已通过，扫描到 20 个附近设备；
+- `capture` 的脱敏报告、JSONL 原始事件、权限保护和无目标超时收口已通过；
 - 当前扫描时遥控器没有进入广播/配对状态，因此尚未取得 2 Pro 的真实 UUID、GATT service 和音频帧。这是剩余的唯一硬件兼容性验收门，不能伪装成已经打通。
 
 ## 安全边界
@@ -102,6 +107,7 @@ chmod +x scripts/*.sh
 - 无辅助功能权限时不发送，只复制到剪贴板。
 - 无法验证当前焦点为文本输入框时不发送；只有明确传入 `--force-submit` 才跳过焦点检查。
 - 每次原始 WAV 和 transcript 都保存在 `~/Library/Application Support/mi-ao/recordings`，便于复核。
+- `capture` 默认哈希化设备 UUID、隐藏设备名，但会在本机保存原始 GATT payload；分享采集目录前必须人工复核。
 
 ## 诊断
 
@@ -124,6 +130,7 @@ make check
 
 - [架构说明](docs/ARCHITECTURE.md)
 - [ATVV 协议说明](docs/PROTOCOL.md)
+- [真机 Bring-up 指南](docs/HARDWARE_BRINGUP.md)
 - [路线图](docs/ROADMAP.md)
 - [开源发布检查表](docs/OPEN_SOURCE_CHECKLIST.md)
 - [名称与产品身份](docs/NAMING.md)

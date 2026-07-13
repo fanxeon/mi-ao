@@ -21,6 +21,7 @@ Early hardware enablement. The macOS bridge and the ATVV v0.4/v1.0 implementatio
 ## Features
 
 - CoreBluetooth discovery and GATT enumeration
+- Structured hardware capture reports with redacted device identity and raw local GATT events
 - Google ATV Voice over BLE v0.4 and v1.0
 - IMA/DVI ADPCM at 8 kHz and 16 kHz
 - Remote release, second-press, and silence fallbacks
@@ -43,12 +44,15 @@ chmod +x scripts/*.sh
 ./scripts/setup.sh
 ```
 
-Scan for the remote and run the bridge:
+Create a redacted scan report, then capture the selected device:
 
 ```bash
-./scripts/bridge.sh scan --scan-seconds 30 --debug
+./scripts/capture.sh --scan-seconds 30
+./scripts/capture.sh --identifier <PERIPHERAL-UUID> --capture-seconds 60 --debug
 ./scripts/run.sh --identifier <PERIPHERAL-UUID> --debug
 ```
+
+See the [hardware bring-up guide](docs/HARDWARE_BRINGUP.md) before sharing capture artifacts. Raw GATT payloads remain local but may still contain private data.
 
 ## Development
 

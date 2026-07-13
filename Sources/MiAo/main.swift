@@ -4,7 +4,7 @@ do {
     let configuration = try Configuration.parse(CommandLine.arguments)
     let bridge = BLEVoiceBridge(configuration: configuration)
     try bridge.start()
-    if configuration.mode == .scan || configuration.mode == .run {
+    if configuration.mode == .scan || configuration.mode == .capture || configuration.mode == .run {
         while !bridge.isFinished {
             _ = RunLoop.main.run(mode: .default, before: .distantFuture)
         }

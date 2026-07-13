@@ -23,3 +23,5 @@
 - 默认要求焦点角色是文本输入控件；
 - `--force-submit` 会放宽焦点验证，只应在受控环境使用；
 - 原始 WAV 和 transcript 可能含隐私，默认保存在本机，不应提交到 Git。
+- `capture` 默认哈希化 peripheral UUID 并隐藏设备名；只有显式传入 `--include-identifiers` / `--include-device-names` 才保留原值。
+- `events.jsonl` 包含未知 GATT payload，这些字节可能承载按键、音频或设备数据；即使身份已脱敏，也必须人工复核后才能公开分享。

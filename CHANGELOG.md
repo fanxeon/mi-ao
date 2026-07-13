@@ -13,6 +13,8 @@
 - Codex Accessibility 安全提交与剪贴板回退。
 - macOS App 打包、诊断和授权命令。
 - 开源项目治理、CI 和贡献模板。
+- `capture` 真机采集模式：脱敏扫描报告、GATT service/characteristic/descriptor 枚举、可读特征读取和 notify/indicate 原始事件。
+- 小米蓝牙遥控器 2 Pro 的分阶段真机 Bring-up 与证据判定指南。
 
 ### Changed
 

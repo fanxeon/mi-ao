@@ -9,6 +9,8 @@ DerivedData/
 .env
 *.log
 recordings/
+captures/
+capture-*/
 *.wav
 *.whisper.txt
 *.bin

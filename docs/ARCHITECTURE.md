@@ -15,6 +15,7 @@ BLE 遥控器
 ## 模块边界
 
 - `BLEVoiceBridge.swift`：设备发现、连接、GATT 枚举、通知和语音会话状态机。
+- `CaptureRecorder.swift`：结构化真机证据、设备身份脱敏、原始事件和采集摘要。
 - `ATVVProtocol.swift`：协议常量、capabilities、控制消息和帧解析。
 - `ADPCMDecoder.swift`：无平台依赖的 IMA/DVI ADPCM 解码。
 - `AudioPipeline.swift`：RMS、增益、重采样和 WAV 编码。
@@ -29,6 +30,8 @@ disconnected -> discovering -> ready -> opening -> streaming -> transcribing -> 
 ```
 
 失败不会伪造成功：协议错误会终止当前进程；单次转写或提交失败会保留录音并回到 `ready`。
+
+`capture` 与 `run` 使用同一套 CoreBluetooth 回调，但行为边界不同：`capture` 可以连接未知协议、读取可读特征并订阅全部 notify/indicate，却不会向未知 characteristic 写入数据；只有识别到标准 ATVV UUID 后才复用已知能力协商。
 
 ## 扩展新协议
 

@@ -3,6 +3,7 @@ import Foundation
 struct Configuration {
     enum Mode: String {
         case scan
+        case capture
         case run
         case doctor
         case authorize
@@ -12,10 +13,13 @@ struct Configuration {
     var nameFilter: String?
     var peripheralIdentifier: UUID?
     var scanSeconds: TimeInterval = 20
+    var captureSeconds: TimeInterval = 60
     var modelPath: String = NSString(string: "~/.cache/mi-ao/ggml-base.bin").expandingTildeInPath
     var whisperPath: String?
     var language = "zh"
     var outputDirectory = NSString(string: "~/Library/Application Support/mi-ao/recordings")
+        .expandingTildeInPath
+    var captureDirectory = NSString(string: "~/Library/Application Support/mi-ao/captures")
         .expandingTildeInPath
     var silenceTimeout: TimeInterval = 1.5
     var silenceThreshold: Double = 35
@@ -23,6 +27,8 @@ struct Configuration {
     var submitToCodex = true
     var forceSubmit = false
     var debug = false
+    var includeIdentifiers = false
+    var includeDeviceNames = false
 
     static func parse(_ arguments: [String]) throws -> Configuration {
         var config = Configuration()
@@ -54,6 +60,8 @@ struct Configuration {
                 config.peripheralIdentifier = uuid
             case "--scan-seconds":
                 config.scanSeconds = try parseDouble(try requireValue(for: flag), flag: flag)
+            case "--capture-seconds":
+                config.captureSeconds = try parseDouble(try requireValue(for: flag), flag: flag)
             case "--model":
                 config.modelPath = NSString(string: try requireValue(for: flag)).expandingTildeInPath
             case "--whisper":
@@ -62,6 +70,8 @@ struct Configuration {
                 config.language = try requireValue(for: flag)
             case "--output-dir":
                 config.outputDirectory = NSString(string: try requireValue(for: flag)).expandingTildeInPath
+            case "--capture-dir":
+                config.captureDirectory = NSString(string: try requireValue(for: flag)).expandingTildeInPath
             case "--silence-ms":
                 config.silenceTimeout = try parseDouble(try requireValue(for: flag), flag: flag) / 1_000
             case "--silence-threshold":
@@ -74,6 +84,10 @@ struct Configuration {
                 config.forceSubmit = true
             case "--debug":
                 config.debug = true
+            case "--include-identifiers":
+                config.includeIdentifiers = true
+            case "--include-device-names":
+                config.includeDeviceNames = true
             case "--help", "-h":
                 print(Self.help)
                 exit(0)
@@ -103,9 +117,20 @@ struct Configuration {
 
         用法：
           \(executableName) scan [--scan-seconds 20] [--debug]
+          \(executableName) capture [--identifier <UUID> | --name <文本>] [选项]
           \(executableName) run [选项]
           \(executableName) doctor
           \(executableName) authorize
+
+        capture 选项：
+          --identifier <UUID>        连接 scan 输出的 macOS peripheral UUID
+          --name <文本>              连接名称包含该文本的设备
+          --scan-seconds <秒>        等待目标或纯扫描时长，默认 20
+          --capture-seconds <秒>     连接后的采集时长，默认 60
+          --capture-dir <目录>       报告与原始事件保存目录
+          --include-identifiers      在报告中保留设备 UUID，默认哈希脱敏
+          --include-device-names     在报告中保留广播名称，默认隐藏
+          --debug                    同时在终端打印原始 GATT 数据
 
         run 选项：
           --name <文本>              只连接名称包含该文本的遥控器
@@ -118,8 +143,8 @@ struct Configuration {
           --gain-db <分贝>           写入 WAV 前增益，默认 20
           --output-dir <目录>        WAV 和 transcript 保存目录
           --no-submit                只转写，不发送给 Codex
-        --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
-        --debug                    打印原始 GATT 数据
+          --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
+          --debug                    打印原始 GATT 数据
         """
     }
 }

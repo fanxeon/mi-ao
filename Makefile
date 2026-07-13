@@ -1,4 +1,4 @@
-.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan check clean
+.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture check clean
 
 build:
 	swift build
@@ -44,6 +44,9 @@ doctor: release
 
 scan: release
 	./scripts/bridge.sh scan --scan-seconds 15
+
+capture:
+	./scripts/capture.sh --scan-seconds 30
 
 check:
 	xcrun swift-format lint --strict --recursive Sources Tests Package.swift

@@ -26,8 +26,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private var silenceTimer: Timer?
     private var keepAliveTimer: Timer?
     private var scanStopTimer: Timer?
+    private var captureStopTimer: Timer?
     private var discoveredIdentifiers = Set<UUID>()
     private var transcriber: WhisperTranscriber?
+    private var captureRecorder: CaptureRecorder?
     private(set) var isFinished = false
     private(set) var exitStatus: Int32 = 0
 
@@ -53,6 +55,17 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 withIntermediateDirectories: true
             )
         }
+        if configuration.mode == .capture {
+            captureRecorder = try CaptureRecorder(
+                directory: configuration.captureDirectory,
+                includeIdentifiers: configuration.includeIdentifiers,
+                includeDeviceNames: configuration.includeDeviceNames
+            )
+            if let captureRecorder {
+                log("采集目录：\(captureRecorder.sessionDirectory.path)")
+                log("设备 UUID 与名称默认脱敏；原始 GATT payload 仅保存在本机，分享前必须复核")
+            }
+        }
 
         central = CBCentralManager(delegate: self, queue: .main)
     }
@@ -61,7 +74,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         switch central.state {
         case .poweredOn:
             log("蓝牙已就绪")
-            if configuration.mode == .run,
+            if (configuration.mode == .run || configuration.mode == .capture),
                 let identifier = configuration.peripheralIdentifier,
                 let known = central.retrievePeripherals(withIdentifiers: [identifier]).first
             {
@@ -73,7 +86,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 let connected = central.retrieveConnectedPeripherals(
                     withServices: [CBUUID(string: ATVVProtocol.serviceUUID)]
                 )
-                if let match = connected.first(where: isCandidate) {
+                if let match = connected.first(where: { isCandidate($0) }) {
                     connect(match, reason: "已连接 ATVV 设备")
                     return
                 }
@@ -93,17 +106,30 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private func startScan() {
         state = .discovering
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
-        log(configuration.mode == .scan ? "正在扫描附近 BLE 设备…" : "正在寻找带 ATVV 服务的兼容遥控器…")
+        let scanMessage =
+            configuration.mode == .run
+            ? "正在寻找带 ATVV 服务的兼容遥控器…"
+            : "正在扫描附近 BLE 设备…"
+        log(scanMessage)
+        captureRecorder?.recordEvent(type: "scan_started", detail: "seconds=\(configuration.scanSeconds)")
         scanStopTimer?.invalidate()
         scanStopTimer = Timer.scheduledTimer(withTimeInterval: configuration.scanSeconds, repeats: false) {
             [weak self] _ in
             guard let self else { return }
-            if self.configuration.mode == .scan {
+            switch self.configuration.mode {
+            case .scan:
                 self.log("扫描结束，共发现 \(self.discoveredIdentifiers.count) 个 BLE 设备")
                 self.isFinished = true
                 CFRunLoopStop(CFRunLoopGetMain())
-            } else if self.peripheral == nil {
-                self.fatal("没有发现匹配的遥控器。先运行 scan，或用 --name/--identifier 指定设备。")
+            case .capture:
+                let reason = self.peripheral == nil ? "scan-timeout" : "capture-timeout"
+                self.finishCapture(reason: reason)
+            case .run:
+                if self.peripheral == nil {
+                    self.fatal("没有发现匹配的遥控器。先运行 scan，或用 --name/--identifier 指定设备。")
+                }
+            case .doctor, .authorize:
+                break
             }
         }
     }
@@ -117,6 +143,12 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         let advertisedServices = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID]) ?? []
         let name = peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? "(unknown)"
         let hasATVV = advertisedServices.contains(CBUUID(string: ATVVProtocol.serviceUUID))
+        captureRecorder?.recordDiscovery(
+            identifier: peripheral.identifier,
+            name: name,
+            rssi: RSSI.intValue,
+            advertisedServices: advertisedServices.map(\.uuidString)
+        )
 
         if discoveredIdentifiers.insert(peripheral.identifier).inserted || configuration.debug {
             let serviceList = advertisedServices.map(\.uuidString).joined(separator: ",")
@@ -125,18 +157,23 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             )
         }
 
-        guard configuration.mode == .run, self.peripheral == nil else { return }
-        if isCandidate(peripheral) || hasATVV {
+        guard self.peripheral == nil else { return }
+        if configuration.mode == .run, isCandidate(peripheral, discoveredName: name) || hasATVV {
             connect(peripheral, reason: hasATVV ? "广播 ATVV 服务" : "名称匹配")
+        } else if configuration.mode == .capture,
+            (configuration.peripheralIdentifier != nil || configuration.nameFilter != nil),
+            isCandidate(peripheral, discoveredName: name)
+        {
+            connect(peripheral, reason: "采集目标匹配")
         }
     }
 
-    private func isCandidate(_ peripheral: CBPeripheral) -> Bool {
+    private func isCandidate(_ peripheral: CBPeripheral, discoveredName: String? = nil) -> Bool {
         if let identifier = configuration.peripheralIdentifier {
             return peripheral.identifier == identifier
         }
         guard let filter = configuration.nameFilter?.lowercased() else { return false }
-        return peripheral.name?.lowercased().contains(filter) == true
+        return (discoveredName ?? peripheral.name)?.lowercased().contains(filter) == true
     }
 
     private func connect(_ peripheral: CBPeripheral, reason: String) {
@@ -144,21 +181,53 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         scanStopTimer?.invalidate()
         self.peripheral = peripheral
         peripheral.delegate = self
+        captureRecorder?.setTarget(
+            identifier: peripheral.identifier,
+            name: peripheral.name ?? "(unknown)"
+        )
+        captureRecorder?.recordEvent(
+            type: "connect_requested",
+            detail: reason,
+            deviceIdentifier: peripheral.identifier
+        )
         log("连接 \(peripheral.name ?? peripheral.identifier.uuidString)（\(reason)）")
         central.connect(peripheral)
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         log("已连接，枚举全部 GATT services")
+        captureRecorder?.recordConnection(identifier: peripheral.identifier, connected: true)
+        if configuration.mode == .capture {
+            captureStopTimer?.invalidate()
+            captureStopTimer = Timer.scheduledTimer(
+                withTimeInterval: configuration.captureSeconds,
+                repeats: false
+            ) { [weak self] _ in
+                self?.finishCapture(reason: "capture-timeout")
+            }
+        }
         peripheral.discoverServices(nil)
     }
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        captureRecorder?.recordConnection(
+            identifier: peripheral.identifier,
+            connected: false,
+            detail: error?.localizedDescription ?? "unknown"
+        )
         fatal("连接失败：\(error?.localizedDescription ?? "unknown")")
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         log("遥控器断开：\(error?.localizedDescription ?? "normal")")
+        captureRecorder?.recordConnection(
+            identifier: peripheral.identifier,
+            connected: false,
+            detail: error?.localizedDescription ?? "normal"
+        )
+        if configuration.mode == .capture, state == .streaming || state == .opening {
+            finalizeRecording(reason: "device-disconnected")
+        }
         state = .disconnected
         self.peripheral = nil
         txCharacteristic = nil
@@ -167,6 +236,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         notificationReady.removeAll()
         didSendCapabilitiesRequest = false
         stopTimers()
+        if configuration.mode == .capture {
+            finishCapture(reason: "device-disconnected")
+            return
+        }
         startScan()
     }
 
@@ -175,42 +248,132 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         guard let services = peripheral.services else { return fatal("设备没有暴露 GATT services") }
         for service in services {
             log("service \(service.uuid.uuidString)")
+            captureRecorder?.recordService(service.uuid.uuidString, isPrimary: service.isPrimary)
             peripheral.discoverCharacteristics(nil, for: service)
         }
         guard services.contains(where: { $0.uuid == CBUUID(string: ATVVProtocol.serviceUUID) }) else {
+            if configuration.mode == .capture {
+                log("目标未暴露标准 ATVV 服务；继续采集全部 GATT，等待按键与通知事件")
+                captureRecorder?.recordEvent(
+                    type: "protocol_observation",
+                    detail: "standard ATVV service not found"
+                )
+                return
+            }
             fatal("该设备未暴露 Google ATVV 服务 \(ATVVProtocol.serviceUUID)。已输出所有 service 供继续逆向。")
             return
         }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if let error { return fatal("枚举 characteristic 失败：\(error.localizedDescription)") }
+        if let error {
+            if configuration.mode == .capture {
+                log("枚举 characteristic 失败 \(service.uuid)：\(error.localizedDescription)")
+                captureRecorder?.recordEvent(
+                    type: "error",
+                    detail: "characteristic discovery \(service.uuid): \(error.localizedDescription)"
+                )
+                return
+            }
+            return fatal("枚举 characteristic 失败：\(error.localizedDescription)")
+        }
         for characteristic in service.characteristics ?? [] {
-            log("characteristic \(characteristic.uuid.uuidString) properties=\(characteristic.properties.rawValue)")
+            let propertyNames = characteristicPropertyNames(characteristic.properties)
+            log(
+                "characteristic \(characteristic.uuid.uuidString) properties=\(propertyNames.joined(separator: ",")) raw=\(characteristic.properties.rawValue)"
+            )
+            captureRecorder?.recordCharacteristic(
+                serviceUUID: service.uuid.uuidString,
+                uuid: characteristic.uuid.uuidString,
+                properties: propertyNames,
+                rawProperties: characteristic.properties.rawValue
+            )
+            if configuration.mode == .capture {
+                peripheral.discoverDescriptors(for: characteristic)
+            }
             switch characteristic.uuid.uuidString.uppercased() {
             case ATVVProtocol.txUUID:
                 txCharacteristic = characteristic
             case ATVVProtocol.rxUUID:
                 rxCharacteristic = characteristic
-                peripheral.setNotifyValue(true, for: characteristic)
             case ATVVProtocol.controlUUID:
                 controlCharacteristic = characteristic
-                peripheral.setNotifyValue(true, for: characteristic)
             default:
                 break
+            }
+
+            if configuration.mode == .capture {
+                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.properties.contains(.read) {
+                    peripheral.readValue(for: characteristic)
+                }
+            } else if characteristic.uuid.uuidString.uppercased() == ATVVProtocol.rxUUID
+                || characteristic.uuid.uuidString.uppercased() == ATVVProtocol.controlUUID
+            {
+                peripheral.setNotifyValue(true, for: characteristic)
             }
         }
         negotiateIfReady()
     }
 
     func peripheral(
+        _ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?
+    ) {
+        if let error {
+            if configuration.mode == .capture {
+                log("枚举 descriptor 失败 \(characteristic.uuid)：\(error.localizedDescription)")
+                captureRecorder?.recordEvent(
+                    type: "error",
+                    detail: "descriptor discovery \(characteristic.uuid): \(error.localizedDescription)"
+                )
+                return
+            }
+            return
+        }
+        guard configuration.mode == .capture else { return }
+        guard let service = characteristic.service else {
+            captureRecorder?.recordEvent(
+                type: "error",
+                detail: "descriptor discovery missing parent service for \(characteristic.uuid)"
+            )
+            return
+        }
+        for descriptor in characteristic.descriptors ?? [] {
+            log("descriptor \(descriptor.uuid.uuidString) for \(characteristic.uuid.uuidString)")
+            captureRecorder?.recordDescriptor(
+                serviceUUID: service.uuid.uuidString,
+                characteristicUUID: characteristic.uuid.uuidString,
+                uuid: descriptor.uuid.uuidString
+            )
+        }
+    }
+
+    func peripheral(
         _ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?
     ) {
-        if let error { return fatal("订阅通知失败 \(characteristic.uuid)：\(error.localizedDescription)") }
+        if let error {
+            if configuration.mode == .capture {
+                log("订阅通知失败 \(characteristic.uuid)：\(error.localizedDescription)")
+                captureRecorder?.recordEvent(
+                    type: "notification_state",
+                    detail: "error: \(error.localizedDescription)",
+                    characteristicUUID: characteristic.uuid.uuidString
+                )
+                return
+            }
+            return fatal("订阅通知失败 \(characteristic.uuid)：\(error.localizedDescription)")
+        }
         if characteristic.isNotifying {
             notificationReady.insert(characteristic.uuid.uuidString.uppercased())
             log("已订阅 \(characteristic.uuid.uuidString)")
         }
+        captureRecorder?.recordEvent(
+            type: "notification_state",
+            detail: characteristic.isNotifying ? "subscribed" : "not-subscribed",
+            characteristicUUID: characteristic.uuid.uuidString
+        )
         negotiateIfReady()
     }
 
@@ -226,8 +389,24 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error { return fatal("读取通知失败 \(characteristic.uuid)：\(error.localizedDescription)") }
+        if let error {
+            if configuration.mode == .capture {
+                log("读取特征值失败 \(characteristic.uuid)：\(error.localizedDescription)")
+                captureRecorder?.recordEvent(
+                    type: "value_error",
+                    detail: error.localizedDescription,
+                    characteristicUUID: characteristic.uuid.uuidString
+                )
+                return
+            }
+            return fatal("读取通知失败 \(characteristic.uuid)：\(error.localizedDescription)")
+        }
         guard let data = characteristic.value else { return }
+        captureRecorder?.recordValue(
+            characteristicUUID: characteristic.uuid.uuidString,
+            data: data,
+            detail: characteristic.isNotifying ? "notification" : "read"
+        )
         if configuration.debug { log("RX \(characteristic.uuid.uuidString) \(hex(data))") }
 
         switch characteristic.uuid.uuidString.uppercased() {
@@ -352,11 +531,38 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
         guard captured.count >= (protocolHandler.codec?.sampleRate ?? 8_000) / 4 else {
             log("录音过短，取消：\(captured.count) samples")
+            captureRecorder?.recordEvent(
+                type: "audio_discarded",
+                detail: "reason=\(reason) samples=\(captured.count)"
+            )
             state = .ready
             return
         }
 
         let rate = protocolHandler.codec?.sampleRate ?? 8_000
+        if configuration.mode == .capture, let captureRecorder {
+            let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+            let wavURL = captureRecorder.sessionDirectory.appendingPathComponent("audio-\(stamp).wav")
+            do {
+                try AudioPipeline.writeWAV(samples: captured, sampleRate: rate, to: wavURL)
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o600],
+                    ofItemAtPath: wavURL.path
+                )
+                captureRecorder.recordEvent(
+                    type: "audio_saved",
+                    detail: "reason=\(reason) samples=\(captured.count) rate=\(rate) file=\(wavURL.lastPathComponent)"
+                )
+                log("采集音频已保存：\(wavURL.path)")
+            } catch {
+                captureRecorder.recordEvent(type: "error", detail: "audio save: \(error.localizedDescription)")
+                log("采集音频保存失败：\(error.localizedDescription)")
+            }
+            state = .ready
+            log("采集继续：再次按语音键可记录下一段")
+            return
+        }
+
         let prepared = AudioPipeline.prepareForWhisper(captured, sampleRate: rate, gainDB: configuration.gainDB)
         let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
         let wavURL = URL(fileURLWithPath: configuration.outputDirectory).appendingPathComponent("voice-\(stamp).wav")
@@ -389,6 +595,11 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             txCharacteristic.properties.contains(.writeWithoutResponse)
             ? .withoutResponse
             : .withResponse
+        captureRecorder?.recordEvent(
+            type: "write",
+            characteristicUUID: txCharacteristic.uuid.uuidString,
+            data: data
+        )
         peripheral.writeValue(data, for: txCharacteristic, type: type)
     }
 
@@ -397,6 +608,53 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         silenceTimer = nil
         keepAliveTimer?.invalidate()
         keepAliveTimer = nil
+    }
+
+    private func finishCapture(reason: String, status: Int32 = 0) {
+        guard configuration.mode == .capture, !isFinished else { return }
+        if state == .streaming || state == .opening {
+            closeAndFinalize(reason: reason)
+        }
+        central?.stopScan()
+        scanStopTimer?.invalidate()
+        scanStopTimer = nil
+        captureStopTimer?.invalidate()
+        captureStopTimer = nil
+        stopTimers()
+
+        do {
+            guard let recorder = captureRecorder else {
+                throw BridgeError.configuration("采集记录器未初始化")
+            }
+            let report = try recorder.finish(reason: reason)
+            log(
+                "采集完成：devices=\(report.summary.discoveredDevices) services=\(report.summary.services) characteristics=\(report.summary.characteristics) descriptors=\(report.summary.descriptors) values=\(report.summary.values) atvv=\(report.summary.atvvDetected)"
+            )
+            print("采集报告：\(recorder.reportURL.path)")
+            print("原始事件：\(recorder.eventsURL.path)")
+        } catch {
+            fputs("错误：无法完成采集报告：\(error.localizedDescription)\n", stderr)
+            exitStatus = 1
+        }
+        exitStatus = max(exitStatus, status)
+        isFinished = true
+        CFRunLoopStop(CFRunLoopGetMain())
+    }
+
+    private func characteristicPropertyNames(_ properties: CBCharacteristicProperties) -> [String] {
+        let known: [(CBCharacteristicProperties, String)] = [
+            (.broadcast, "broadcast"),
+            (.read, "read"),
+            (.writeWithoutResponse, "writeWithoutResponse"),
+            (.write, "write"),
+            (.notify, "notify"),
+            (.indicate, "indicate"),
+            (.authenticatedSignedWrites, "authenticatedSignedWrites"),
+            (.extendedProperties, "extendedProperties"),
+            (.notifyEncryptionRequired, "notifyEncryptionRequired"),
+            (.indicateEncryptionRequired, "indicateEncryptionRequired"),
+        ]
+        return known.compactMap { properties.contains($0.0) ? $0.1 : nil }
     }
 
     private func runDoctor() throws {
@@ -453,6 +711,11 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private func fatal(_ message: String) {
         fputs("错误：\(message)\n", stderr)
         fflush(stderr)
+        if configuration.mode == .capture {
+            captureRecorder?.recordEvent(type: "fatal_error", detail: message)
+            finishCapture(reason: "fatal-error", status: 1)
+            return
+        }
         central?.stopScan()
         stopTimers()
         exitStatus = 1

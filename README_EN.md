@@ -1,4 +1,4 @@
-# Project name pending — BLE Push-to-Agent for macOS
+# 米遥 MI-AO
 
 English · [中文](README.md)
 
@@ -6,7 +6,7 @@ English · [中文](README.md)
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black.svg)](Package.swift)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](Package.swift)
 
-Use a Xiaomi or Google TV Bluetooth voice remote as a push-to-talk input for Codex on macOS.
+MI-AO turns a compatible Bluetooth voice remote into a push-to-talk input for Codex on macOS: hold to speak, release to put an agent to work.
 
 ```text
 Remote microphone -> BLE ATVV -> ADPCM -> local Whisper -> active Codex composer -> Return
@@ -68,3 +68,5 @@ The bridge only submits non-empty transcripts. If Codex, Accessibility permissio
 ## License
 
 MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+MI-AO is an independent open-source project. It is not an official Xiaomi product and is not endorsed by Xiaomi, Google, or OpenAI. All trademarks belong to their respective owners.

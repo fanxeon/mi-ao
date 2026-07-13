@@ -1,46 +1,27 @@
-# 名称候选
+# 名称与产品身份
 
-项目名应表达“一个实体动作把人的意图交给 AI Agent”，同时借用 **Vibe Coding** 已形成的认知，但避免绑定小米、Codex、BLE 或某一种遥控器。
+项目于 2026-07-13 正式定名为 **米遥 / MI-AO**。
 
-## 推荐顺序
+## 身份合同
 
-| 名称 | 仓库名 | 一句话 | 初步情况 |
-| --- | --- | --- | --- |
-| **VibeBaton** | `vibe-baton` | Conduct your code. | GitHub 无同名仓库；公开搜索无同名软件；`.com` 当前未注册 |
-| **VibeLatch** | `vibe-latch` | Hold the thought. Release the work. | GitHub 无同名仓库；公开搜索无同名软件；`.com` 当前未注册 |
-| **VibeFob** | `vibe-fob` | AI work at your thumb. | GitHub 无同名仓库；公开搜索无同名软件；`.com` 当前未注册，但 `fob` 对普通用户不够直观 |
+| 层级 | 固定值 |
+| --- | --- |
+| 中文产品名 | **米遥** |
+| 英文识别名 | **MI-AO** |
+| GitHub 仓库 | `mi-ao` |
+| CLI 可执行文件 | `mi-ao` |
+| Swift package / module | `MiAo` |
+| macOS Bundle ID | `com.fanx.miao` |
+| 模型缓存 | `~/.cache/mi-ao` |
+| 本地数据 | `~/Library/Application Support/mi-ao` |
+| 一句话 | **按住说话，松手让 Agent 开工。** |
 
-初步检索日期：2026-07-13。GitHub 结果来自全局仓库名称检索；`.com` 状态通过 Verisign RDAP 查询。结果会变化，也不等同于商标法律审查或域名预留。
+“米”保留首发硬件来自小米遥控器的记忆点，“遥”直接表达遥控器与远程触发；`MI-AO` 既是中文名的可读转写，也有短、清楚、适合命令行输入的技术识别度。
 
-## 当前建议
+## 使用边界
 
-首选 **VibeBaton**。
+公开传播统一使用“米遥 MI-AO”；代码、目录、包名和仓库统一使用上表中的 ASCII 标识。不要再引入早期原型名称。
 
-`Baton` 是指挥棒：遥控器成为用户指挥 AI Agent 的实体入口。这个隐喻能覆盖语音遥控器、耳机、按钮和脚踏板，也天然适合“指挥棒 + 语音波形”的视觉标识。
+项目是独立开源软件，不是小米官方产品，也不暗示小米、Google 或 OpenAI 的认可。正式公开发布前仍需进行最新的仓库重名、商标和域名检索；名称决策本身不构成法律审查。
 
-建议传播组合：
-
-- 产品名：**VibeBaton**
-- 仓库：`vibe-baton`
-- CLI：`vibe-baton`
-- 英文口号：**Conduct your code.**
-- 中文表达：**按住说话，指挥 Agent 开工。**
-
-## 已排除
-
-- `VibePTT`：已有同名专业 Push-to-Talk 产品。
-- `VibeWand`：已有 AI 活动产品和其他强势商品含义。
-- `VibeRemote`、`VibeRelay`、`VibeTrigger`、`VibePress`：GitHub 已存在多个同名仓库。
-
-## 定名后的迁移范围
-
-只执行一次统一迁移：
-
-- Swift package、target 和 executable；
-- App 显示名与 Bundle ID；
-- 模型缓存和录音目录；
-- Accessibility 授权目标；
-- README、仓库名、Release 包名和 GitHub topics；
-- 菜单栏文案与未来图标。
-
-在名称确认前保留原型 App 身份，避免反复触发 macOS 辅助功能授权。
+2026-07-13 快查显示，GitHub 公开区已有少量 `MI-AO` / `Mi-Ao` 同名叶子仓库，但用途不同。GitHub 仓库名按 owner 隔离，因此本项目公开传播时应使用完整的 `<owner>/mi-ao` 地址；这项快查不等同于商标可注册性结论。

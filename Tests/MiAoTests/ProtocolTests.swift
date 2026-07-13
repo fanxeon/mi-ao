@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import XiaomiVoiceBridge
+@testable import MiAo
 
 @Test func parsesV04Capabilities() {
     let data = Data([0x0B, 0x00, 0x04, 0x00, 0x01, 0x00, 0x86, 0x00, 0x14])

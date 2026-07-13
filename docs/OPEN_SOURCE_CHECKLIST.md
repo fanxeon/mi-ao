@@ -9,11 +9,13 @@
 - [x] GitHub Actions CI
 - [x] Issue 和 PR 模板
 - [x] `.gitignore` 排除模型、录音、构建物和本地配置
+- [x] 最终名称确认为「米遥 / MI-AO」，技术标识统一为 `mi-ao`
+- [x] App 名、Bundle ID、可执行文件和数据目录完成一次性迁移
 
 ## 创建 GitHub 仓库时
 
-- [ ] 从 [NAMING.md](NAMING.md) 确认最终项目名并完成一次性迁移
-- [ ] 仓库名、App 名、Bundle ID、可执行文件和数据目录保持一致
+- [ ] 创建 `mi-ao` 仓库并设置远端
+- [ ] 复核仓库名、App 名、Bundle ID、可执行文件和数据目录与 [NAMING.md](NAMING.md) 一致
 - [ ] 添加简短描述、topics 和 MIT license 标记
 - [ ] 启用 Issues、Discussions 和 Private vulnerability reporting
 - [ ] 保护 `main`：要求 CI 通过、禁止强推、至少一次 review

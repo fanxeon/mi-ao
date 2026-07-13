@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
 
 "$ROOT/scripts/preflight.sh"
+"$ROOT/scripts/migrate-prototype.sh"
 
 if ! command -v whisper-cli >/dev/null 2>&1; then
   brew install whisper-cpp
@@ -20,6 +21,7 @@ fi
 
 cd "$ROOT"
 "$ROOT/scripts/install-app.sh"
+"$ROOT/scripts/migrate-prototype.sh"
 
 echo ""
 echo "安装完成：$BUILD_BIN"

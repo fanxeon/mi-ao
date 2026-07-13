@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "XiaomiVoiceBridge",
+    name: "MiAo",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "xiaomi-voice-bridge", targets: ["XiaomiVoiceBridge"])
+        .executable(name: "mi-ao", targets: ["MiAo"])
     ],
     targets: [
         .executableTarget(
-            name: "XiaomiVoiceBridge",
+            name: "MiAo",
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("ApplicationServices"),
@@ -17,8 +17,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "XiaomiVoiceBridgeTests",
-            dependencies: ["XiaomiVoiceBridge"]
+            name: "MiAoTests",
+            dependencies: ["MiAo"]
         ),
     ],
     swiftLanguageModes: [.v5]

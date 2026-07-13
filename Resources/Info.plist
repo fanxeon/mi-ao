@@ -5,13 +5,13 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleExecutable</key>
-    <string>xiaomi-voice-bridge</string>
+    <string>mi-ao</string>
     <key>CFBundleIdentifier</key>
-    <string>com.fanx.XiaomiVoiceBridge</string>
+    <string>com.fanx.miao</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Xiaomi Voice Bridge</string>
+    <string>米遥</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -23,8 +23,8 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>连接小米蓝牙语音遥控器并接收按键触发的语音数据。</string>
+    <string>连接兼容的蓝牙语音遥控器并接收按键触发的语音数据。</string>
     <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>连接小米蓝牙语音遥控器并接收按键触发的语音数据。</string>
+    <string>连接兼容的蓝牙语音遥控器并接收按键触发的语音数据。</string>
 </dict>
 </plist>

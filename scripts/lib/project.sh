@@ -23,10 +23,8 @@ INSTALL_DIR="$HOME/Applications"
 INSTALL_APP="$INSTALL_DIR/$APP_BUNDLE_NAME"
 INSTALLED_BIN="$INSTALL_APP/Contents/MacOS/$EXECUTABLE_NAME"
 
-# These two paths preserve the current prototype's data until the final product
-# name is selected. Rename them once, together with the app and bundle ID.
-MODEL_DIR="${VOICE_BRIDGE_MODEL_DIR:-$HOME/.cache/xiaomi-voice-bridge}"
+MODEL_DIR="${VOICE_BRIDGE_MODEL_DIR:-$HOME/.cache/mi-ao}"
 MODEL_PATH="$MODEL_DIR/ggml-base.bin"
-APP_DATA_DIR="${VOICE_BRIDGE_DATA_DIR:-$HOME/Library/Application Support/XiaomiVoiceBridge}"
+APP_DATA_DIR="${VOICE_BRIDGE_DATA_DIR:-$HOME/Library/Application Support/mi-ao}"
 
-SOURCE_SLUG="$(printf '%s' "$APP_NAME" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+SOURCE_SLUG="$EXECUTABLE_NAME"

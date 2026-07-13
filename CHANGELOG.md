@@ -13,3 +13,8 @@
 - Codex Accessibility 安全提交与剪贴板回退。
 - macOS App 打包、诊断和授权命令。
 - 开源项目治理、CI 和贡献模板。
+
+### Changed
+
+- 项目正式定名为「米遥 / MI-AO」，仓库与 CLI 标识统一为 `mi-ao`。
+- App 身份更新为 `米遥.app` / `com.fanx.miao`，并加入旧原型模型、录音和 App 的安全迁移。

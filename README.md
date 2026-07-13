@@ -1,4 +1,4 @@
-# 项目名称待定：蓝牙语音遥控器 → AI Agent
+# 米遥 MI-AO
 
 [English](README_EN.md) · 中文
 
@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black.svg)](Package.swift)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](Package.swift)
 
-把小米/Google TV 蓝牙语音遥控器变成 macOS 上的 Codex 按住说话入口。
+把兼容的蓝牙语音遥控器变成 macOS 上的 Codex 按住说话入口：按住说话，松手让 Agent 开工。
 
 目标链路：
 
@@ -46,7 +46,8 @@ chmod +x scripts/*.sh
 1. 安装 Homebrew `whisper-cpp`；
 2. 下载多语言 `ggml-base.bin`；
 3. 构建 release 二进制；
-4. 生成固定 Bundle ID 的 App，安装到 `~/Applications`。当前仍保留原型身份，定名后只迁移一次，避免反复触发辅助功能授权。
+4. 生成固定 Bundle ID `com.fanx.miao` 的「米遥」App，安装到 `~/Applications`；
+5. 如检测到早期原型，安全迁移模型与录音目录，并在新版安装成功后移除旧 App。
 
 ## 第一次真机联调
 
@@ -100,7 +101,7 @@ chmod +x scripts/*.sh
 - Codex 未运行时不发送，只复制到剪贴板。
 - 无辅助功能权限时不发送，只复制到剪贴板。
 - 无法验证当前焦点为文本输入框时不发送；只有明确传入 `--force-submit` 才跳过焦点检查。
-- 每次原始 WAV 和 transcript 都保存在 `~/Library/Application Support/XiaomiVoiceBridge/recordings`，便于复核。
+- 每次原始 WAV 和 transcript 都保存在 `~/Library/Application Support/mi-ao/recordings`，便于复核。
 
 ## 诊断
 
@@ -125,7 +126,7 @@ make check
 - [ATVV 协议说明](docs/PROTOCOL.md)
 - [路线图](docs/ROADMAP.md)
 - [开源发布检查表](docs/OPEN_SOURCE_CHECKLIST.md)
-- [名称候选与初步检索](docs/NAMING.md)
+- [名称与产品身份](docs/NAMING.md)
 - [无正式签名的源码分发方案](docs/DISTRIBUTION.md)
 
 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
@@ -141,3 +142,5 @@ make check
 ## 许可证
 
 [MIT](LICENSE)。第三方协议研究来源与许可证说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+「米遥 / MI-AO」是独立开源项目名称。本项目并非小米官方产品，也不受小米公司、Google 或 OpenAI 背书；相关商标归各自权利人所有。

@@ -12,10 +12,10 @@ struct Configuration {
     var nameFilter: String?
     var peripheralIdentifier: UUID?
     var scanSeconds: TimeInterval = 20
-    var modelPath: String = NSString(string: "~/.cache/xiaomi-voice-bridge/ggml-base.bin").expandingTildeInPath
+    var modelPath: String = NSString(string: "~/.cache/mi-ao/ggml-base.bin").expandingTildeInPath
     var whisperPath: String?
     var language = "zh"
-    var outputDirectory = NSString(string: "~/Library/Application Support/XiaomiVoiceBridge/recordings")
+    var outputDirectory = NSString(string: "~/Library/Application Support/mi-ao/recordings")
         .expandingTildeInPath
     var silenceTimeout: TimeInterval = 1.5
     var silenceThreshold: Double = 35
@@ -99,7 +99,7 @@ struct Configuration {
 
     static var help: String {
         """
-        蓝牙语音遥控器桥接
+        米遥 MI-AO：蓝牙语音遥控器桥接
 
         用法：
           \(executableName) scan [--scan-seconds 20] [--debug]

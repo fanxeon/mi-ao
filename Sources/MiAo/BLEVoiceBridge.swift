@@ -93,7 +93,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private func startScan() {
         state = .discovering
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
-        log(configuration.mode == .scan ? "正在扫描附近 BLE 设备…" : "正在寻找带 ATVV 服务的小米遥控器…")
+        log(configuration.mode == .scan ? "正在扫描附近 BLE 设备…" : "正在寻找带 ATVV 服务的兼容遥控器…")
         scanStopTimer?.invalidate()
         scanStopTimer = Timer.scheduledTimer(withTimeInterval: configuration.scanSeconds, repeats: false) {
             [weak self] _ in

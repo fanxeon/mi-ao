@@ -1,0 +1,22 @@
+name: Feature request
+description: 提议协议、设备或使用体验改进
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 用户问题
+      description: 描述真实使用场景，而不只是期望增加的按钮。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 协议或硬件证据

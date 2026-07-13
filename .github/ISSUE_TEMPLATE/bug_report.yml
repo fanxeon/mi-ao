@@ -1,0 +1,43 @@
+name: Bug report
+description: 报告可复现的软件或硬件兼容问题
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 请勿上传私人语音、完整设备地址或安全漏洞细节。
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS、Mac 和 Codex 版本
+    validations:
+      required: true
+  - type: input
+    id: remote
+    attributes:
+      label: 遥控器型号与固件
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已脱敏日志
+      render: shell

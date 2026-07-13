@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Lint
+        run: xcrun swift-format lint --strict --recursive Sources Tests Package.swift
+      - name: Test
+        run: swift test
+      - name: Release build
+        run: swift build -c release
+      - name: Validate app metadata
+        run: plutil -lint Resources/Info.plist

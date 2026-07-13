@@ -1,0 +1,15 @@
+.build/
+dist/
+.swiftpm/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+.idea/
+.vscode/
+.env
+*.log
+recordings/
+*.wav
+*.whisper.txt
+*.bin
+.DS_Store

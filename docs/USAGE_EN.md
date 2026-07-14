@@ -208,7 +208,7 @@ After confirming all four D-pad directions, Center, and Back, restart the normal
 
 Use `--button-profile "/path/to/buttons-*.json"` to pin one complete profile, or `--no-buttons` for voice only. Missing buttons, duplicate Usage values, Accessibility failure, or event-filter failure disables physical-button actions with a diagnostic while voice remains available.
 
-Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Both keys require observed HID press and release evidence; an infrared-only Power key cannot be mapped.
+Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
 
 See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. The dual-mode execution path is implemented and covered by automated tests, but complete hardware calibration and end-to-end acceptance remain pending; it is still an implementation preview.
 

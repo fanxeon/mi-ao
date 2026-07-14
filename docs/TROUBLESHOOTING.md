@@ -77,7 +77,7 @@
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
 ```
 
-如果终端始终观察不到电源键 HID 事件，它很可能只发送红外信号，Mac 无法接收，米遥不会把它标记成可用。若终端显示“未找到 Codex App”，请先确认官方 Codex macOS App 已安装且 bundle ID 为 `com.openai.codex`。
+小米 2 Pro 固件 2671 的已验证结果是 `TV=0x07/0x35`、电源 `0x07/0x66`。如果同型号结果不同，先不要确认并检查固件；其他遥控器若始终没有电源键 HID 事件，则可能只发送红外信号。若终端显示“未找到 Codex App”，请确认官方 Codex macOS App 已安装且 bundle ID 为 `com.openai.codex`。
 
 ## 校准时前台 App 也响应了方向键
 

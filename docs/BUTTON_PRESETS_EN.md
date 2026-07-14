@@ -36,16 +36,16 @@ The hardware profile never stores `pointer.right_click`. Back remains `back` at 
 | Center | Pointer: `pointer.left_click`; directional: `keyboard.return` | Required |
 | Back | Pointer: `pointer.right_click`; directional: `keyboard.escape` | Physical `0x07/0xF1` verified; new-format confirmation still required |
 | Volume +/- | `pointer.scroll_up/down` | Optional enhancement |
-| `TV` | `mode.toggle_pointer_directional` | Toggles pointer/directional mode; requires calibration |
+| `TV` | `mode.toggle_pointer_directional` | New-format hardware confirmation: `0x07/0x35` |
 | `HOME` | `codex.focus` | Optional enhancement |
 | Menu | `preset.cycle` | Reports the current preset while only one exists |
-| Power | `codex.launch_or_focus` | Launches Codex or focuses it; requires calibration |
+| Power | `codex.launch_or_focus` | New-format Keyboard Power confirmation: `0x07/0x66` |
 
 The base pointer preset requires confirmed press and release evidence for `dpad_up`, `dpad_down`, `dpad_left`, `dpad_right`, `center`, and `back`, with no duplicate Usage. If any item is missing, voice remains available and MI-AO prints the exact calibration gap.
 
 Startup defaults to pointer mode. A calibrated `TV` press switches to directional mode; press it again to return. Directional mode emits standard arrow keys, Return from Center, and Escape from Back. Volume, `HOME`, Menu, Voice, and Power do not change with the mode.
 
-Power can launch Codex only if the physical button produces a HID event and has been calibrated. MI-AO does not claim support when Power is infrared-only. It activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch.
+On Xiaomi Remote 2 Pro firmware 2671, `TV` and Power are confirmed as Keyboard Usage `0x35` and Keyboard Power `0x66`; neither is infrared-only. Power activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch. Other remotes still require independent calibration and must not reuse these Usage values blindly.
 
 ## Calibrate
 
@@ -76,7 +76,7 @@ Use `--preset pointer` to be explicit, `--button-profile "/path/to/buttons-*.jso
 - Runtime profiles must be user-confirmed and match the remote Vendor/Product.
 - Pointer actions require Accessibility permission; missing permission or a missing event filter disables button actions.
 - A normal user process cannot seize this HID device in the current environment. MI-AO currently correlates IOHID source events with one-shot Quartz keyboard events in an attempt to stop the foreground app from receiving the remote's original key.
-- The filter covers Quartz `keyDown` / `keyUp` and `systemDefined`, and a source marker lets MI-AO's own arrow events pass. Consumer Control, Power, and firmware-specific conversion still need hardware verification. A nearly simultaneous Mac-keyboard event can also be misclassified, so this is not a completed isolation boundary.
+- The filter covers Quartz `keyDown` / `keyUp` and `systemDefined`, and a source marker lets MI-AO's own arrow events pass. `TV` and Power now have physical Usage evidence, but macOS Keyboard Power conversion and original-event suppression still require action-level hardware acceptance. A nearly simultaneous Mac-keyboard event can also be misclassified, so this is not a completed isolation boundary.
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
 - `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
 

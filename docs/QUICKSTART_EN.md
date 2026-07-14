@@ -68,7 +68,7 @@ Verify voice first, stop MI-AO, then run:
 
 Confirm at least all four D-pad directions, Center, and Back. Restart the normal command afterward; MI-AO merges confirmed reports and attempts to enable the default `pointer` preset. A missing button or duplicate Usage disables pointer actions while voice remains available.
 
-To use `TV` for pointer/directional switching or Power to launch Codex, calibrate them separately with `--button tv` and `--button power`. A Power button that emits infrared only cannot be handled by the Mac.
+To use `TV` for pointer/directional switching or Power to launch Codex, calibrate them separately with `--button tv` and `--button power`. Verified Xiaomi Remote 2 Pro firmware 2671 values are `TV=0x07/0x35` and `Power=0x07/0x66`; an infrared-only button on another remote cannot be handled by the Mac.
 
 Pointer mode is still an implementation preview. Add `--no-buttons` for an explicit voice-only run. See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the complete mapping, per-button calibration, and macOS event-filter boundary.
 

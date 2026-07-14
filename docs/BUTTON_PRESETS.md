@@ -36,16 +36,16 @@ flowchart LR
 | 中间确认键 | 鼠标：`pointer.left_click`；方向键：`keyboard.return` | 必须人工确认 |
 | 返回键 | 鼠标：`pointer.right_click`；方向键：`keyboard.escape` | 物理 Usage `0x07/0xF1` 已确认；需按新档案格式再确认 |
 | 音量加 / 减 | `pointer.scroll_up/down` | 可选增强，未确认时不影响六键基础模式 |
-| `TV` | `mode.toggle_pointer_directional` | 切换鼠标 / 方向键模式；需要单键校准 |
+| `TV` | `mode.toggle_pointer_directional` | `0x07/0x35` 已按新格式真机确认 |
 | `HOME` | `codex.focus` | 可选增强 |
 | 菜单键 | `preset.cycle` | 当前只有一个套装时只提示状态 |
-| 电源键 | `codex.launch_or_focus` | 启动 Codex，已运行则聚焦；需要单键校准 |
+| 电源键 | `codex.launch_or_focus` | Keyboard Power `0x07/0x66` 已按新格式真机确认 |
 
 基础指针模式要求 `dpad_up`、`dpad_down`、`dpad_left`、`dpad_right`、`center`、`back` 六项全部存在、均观察到按下与松手，而且 Usage 互不冲突。缺一项时，米遥只保留语音链路并明确打印缺失项。
 
 启动后默认是鼠标模式。按一下已校准的 `TV` 键切到方向键模式，再按一次切回。方向键模式适合在 Codex 或其他前台 App 中移动选择：方向四键发送标准箭头键，中间确认发送 Return，返回发送 Escape。音量、`HOME`、菜单、语音和电源动作不随控制模式改变。
 
-电源键只有在真机能产生 HID 事件并完成校准时才能启动 Codex；如果它是纯红外键，米遥不会伪造支持。Codex 已运行时只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。
+小米 2 Pro 固件 2671 的 `TV` 与电源键已经分别确认成 Keyboard Usage `0x35` 和 Keyboard Power `0x66`，不是纯红外键。Codex 已运行时电源动作只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。其他遥控器仍必须独立校准，不能沿用这组 Usage。
 
 ## 首次校准
 
@@ -112,7 +112,7 @@ flowchart LR
 - 运行时只加载同 Vendor/Product 的人工确认档案；
 - 指针动作需要辅助功能权限；权限或事件过滤器缺失时拒绝启动按键动作；
 - macOS 普通用户进程无法在当前环境直接 seize 这支 HID 设备；米遥目前用 IOHID 来源事件与 Quartz 键盘事件做短时一次性关联，尝试拦截前台 App 收到的遥控器原始键；
-- 过滤器覆盖 Quartz `keyDown` / `keyUp` 和 `systemDefined`，并用来源标记放行米遥自己生成的方向键；Consumer Control、电源键和不同固件的转换结果仍需真机验证；极端情况下，与遥控器几乎同时发生的 Mac 键盘事件也可能被误判，因此这不是已完成的安全隔离；
+- 过滤器覆盖 Quartz `keyDown` / `keyUp` 和 `systemDefined`，并用来源标记放行米遥自己生成的方向键；`TV` / 电源键的物理 Usage 已确认，但 macOS 对 Keyboard Power 的最终事件转换和原始事件抑制仍需动作级真机验收；极端情况下，与遥控器几乎同时发生的 Mac 键盘事件也可能被误判，因此这不是已完成的安全隔离；
 - 调试校准模式不会合成鼠标或键盘动作，但 macOS 仍可能处理遥控器原始 HID 键；请在无重要输入的窗口中校准；
 - `Control + C` 始终是退出入口；`--no-buttons` 是明确的安全回退。
 

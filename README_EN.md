@@ -48,7 +48,7 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Power launches Codex or focuses it when already running; Volume scrolls, `HOME` focuses Codex, Menu cycles presets, and Voice remains hold-to-talk.
 
-> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. The voice path and Back's physical Usage have hardware evidence, but the complete six-button acceptance run and individual HID verification for `TV` and Power are still pending. Physical-button actions remain an implementation preview.
+> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. Voice, Back, `TV`, and Power now have physical hardware evidence; new-format calibration confirmed `TV=0x07/0x35` and `Power=0x07/0x66`. The complete required six-button calibration and action acceptance run are still pending, so physical-button actions remain an implementation preview.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 

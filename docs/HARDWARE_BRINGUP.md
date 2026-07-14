@@ -111,7 +111,7 @@ make preflight
   --button-seconds 20
 ```
 
-报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 的返回键已通过独立复测：Keyboard Usage Page `0x07` / Usage `0xF1`，按下和松手完整。其他按钮必须分别复测后才能写入正式键码表。
+报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 已取得以下独立证据：返回键 `0x07/0xF1`（旧格式确认），`TV` 键 `0x07/0x35`、电源键 `0x07/0x66`（新格式 `confirmed_calibration`），三项均观察到按下和松手。其他按钮必须分别复测后才能写入正式键码表。
 
 建立可用于动作映射的正式档案时，必须改用人工确认调试模式：
 

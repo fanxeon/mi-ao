@@ -66,7 +66,7 @@ These keys are not part of the base six-button gate and must be calibrated separ
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
 ```
 
-If Power never produces a HID event, it is probably infrared-only and cannot be received by the Mac; MI-AO will not claim it as usable. If the terminal says Codex cannot be found, confirm the official Codex macOS app is installed with bundle ID `com.openai.codex`.
+The verified Xiaomi Remote 2 Pro firmware 2671 result is `TV=0x07/0x35` and `Power=0x07/0x66`. Do not confirm a different result on the same firmware without retesting. Power on another remote may still be infrared-only. If the terminal says Codex cannot be found, confirm the official Codex macOS app is installed with bundle ID `com.openai.codex`.
 
 ## The foreground app reacts during calibration
 

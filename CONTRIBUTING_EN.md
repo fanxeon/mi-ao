@@ -4,6 +4,8 @@
 
 MI-AO prioritizes reproducible changes backed by real hardware evidence.
 
+MI-AO is created and maintained by **FanXeon@Poemcoder with Codex**. By contributing, you agree that your contribution may be distributed under the project [MIT License](LICENSE); you retain the authorship and rights that legally arise from your contribution.
+
 ## Development setup
 
 - macOS 14+

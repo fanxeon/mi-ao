@@ -9,13 +9,16 @@
 - URL：`https://github.com/fanxeon/mi-ao`
 - Default branch：`main`
 - License：MIT
+- Author credit：`FanXeon@Poemcoder with Codex`
+
+当前本地 remote 仍为 `fanxeon/Vibe---------Mi-AO`。公开前必须先在 GitHub 将私有仓库重命名为 `mi-ao`，再更新本地 remote；不要让两个仓库名同时进入公开传播。
 
 ### GitHub About
 
 **Description**
 
 ```text
-Turn Bluetooth voice remotes into a private push-to-talk button for Codex on macOS.
+Turn a Xiaomi Bluetooth Remote Control 2 Pro into a local push-to-talk magic wand for Codex on macOS.
 ```
 
 **Topics**
@@ -33,6 +36,8 @@ accessibility
 atvv
 xiaomi
 open-source
+vibe-coding
+ai-coding
 ```
 
 Topics 只使用项目已真实涉及的技术和场景，不蹭无关热词。
@@ -57,7 +62,8 @@ Topics 只使用项目已真实涉及的技术和场景，不蹭无关热词。
 - 背景：稳定的实色或深浅都可读的弱渐变；
 - 主视觉：遥控器轮廓 + 语音波形 + Codex 光标；
 - 主文案：`MI-AO`；
-- 副文案：`A voice remote for Codex`；
+- 副文案：`A real magic wand for Vibe Coding`；
+- 署名：`FanXeon@Poemcoder with Codex`；
 - 不使用小米、Google 或 OpenAI 官方 Logo，避免造成背书错觉；
 - PNG 小于 1 MB。
 
@@ -107,6 +113,7 @@ MI-AO 0.1.0 — Remote-to-Codex hardware alpha
 4. 安全：本地 Whisper、唯一编辑器门禁、失败时只复制；
 5. 限制：尚无菜单栏、开机自启、Developer ID 与广泛硬件矩阵；
 6. 贡献召集：寻找其他 ATVV 语音遥控器的脱敏证据。
+7. 作者署名：`Created by FanXeon@Poemcoder with Codex`。
 
 发布物只包含：
 
@@ -123,6 +130,8 @@ MI-AO 0.1.0 — Remote-to-Codex hardware alpha
 3. 优先去对应的 macOS、Swift、蓝牙硬件和本地 AI 社区征集设备证据；
 4. 不购买 Star、不互赞、不在无关 Issue 中广告；
 5. 首周按真实 Issue 收紧快速开始和兼容矩阵，而不是急着堆功能。
+
+中英文首发帖、Hero、About 和 Star 行动文案统一从 [BRAND_COPY.md](BRAND_COPY.md) 复制，避免每个平台出现不同定位。
 
 ## 首发门禁
 

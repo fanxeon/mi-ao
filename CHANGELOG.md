@@ -22,6 +22,9 @@
 - 中英文 README、快速开始、故障排查、安全策略、社区准则与贡献指南。
 - 真实证据分级的硬件兼容矩阵、设备支持 Issue 表单和统一文档入口。
 - GitHub 首发方案：仓库描述、Topics、真实演示、Social Preview、Release 和社区设置门禁。
+- `FanXeon@Poemcoder with Codex` 全仓署名、NOTICE、作者说明、CODEOWNERS 和 `CITATION.cff`。
+- Vibe Coding 魔法仙女棒中英文传播文案与可复用首发帖。
+- 实体按键学习、动作映射、命令面板和方向键指针模式路线图。
 
 ### Changed
 

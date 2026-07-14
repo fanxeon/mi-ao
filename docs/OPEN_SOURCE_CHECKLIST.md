@@ -14,10 +14,15 @@
 - [x] 小米蓝牙遥控器 2 Pro 真机端到端提交
 - [x] 中英文首页、快速开始、兼容矩阵和故障排查
 - [x] 新设备兼容性 Issue 模板和脱敏门禁
+- [x] 项目版权、App 元数据、CODEOWNERS 和机器可读引用统一为 `FanXeon@Poemcoder with Codex`
+- [x] 中英文 Hero、About、发布帖和 Social Preview 文案已固定
+- [x] 方向键指针模式已进入 0.2 路线图
 
-## 创建 GitHub 仓库时
+## GitHub 仓库公开前
 
-- [ ] 创建 `fanxeon/mi-ao` 仓库并设置远端
+- [x] 已建立 GitHub origin 和 `main` 跟踪分支
+- [ ] 在 GitHub 将当前私有仓库 `fanxeon/Vibe---------Mi-AO` 重命名为 `fanxeon/mi-ao`
+- [ ] 重命名后把本地 origin 更新为 `https://github.com/fanxeon/mi-ao.git`
 - [ ] 复核仓库名、App 名、Bundle ID、可执行文件和数据目录与 [NAMING.md](NAMING.md) 一致
 - [ ] 添加简短描述、topics 和 MIT license 标记
 - [ ] 启用 Issues、Discussions 和 Private vulnerability reporting
@@ -28,6 +33,7 @@
 - [ ] 仓库创建后确认 CI badge 可正常加载
 - [ ] 录制并脱敏 8–12 秒真实遥控器→Codex 演示
 - [ ] 上传 1280 × 640 Social Preview
+- [ ] 仓库 About、Release 和 Social Preview 显示 `FanXeon@Poemcoder with Codex`
 
 ## 首个正式版本前
 

@@ -10,8 +10,10 @@
     <string>com.fanx.miao</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>米遥</string>
+	<key>CFBundleName</key>
+	<string>米遥</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 FanXeon@Poemcoder with Codex</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

@@ -4,6 +4,8 @@
 
 感谢参与米遥 MI-AO。项目优先接受可复现、保留真实硬件证据的改动。
 
+项目由 **FanXeon@Poemcoder with Codex** 创建和维护。提交贡献即表示你同意按项目 [MIT License](LICENSE) 分发该贡献；你仍保留依法产生的贡献者署名和权利。
+
 ## 开发环境
 
 - macOS 14+

@@ -1,6 +1,10 @@
 # 米遥 MI-AO
 
-**把电视语音遥控器，变成 macOS 上的 Codex 按住说话按钮。**
+**在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成一根真正握在手里的 Codex 魔法仙女棒。**
+
+按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。
+
+由 **[FanXeon@Poemcoder with Codex](AUTHORS.md)** 创建、真机验证并持续维护。
 
 [中文](README.md) · [English](README_EN.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
@@ -14,11 +18,11 @@
 按住遥控器 → 说“检查当前项目并继续工作” → 松手 → Codex 开工
 ```
 
-米遥直接读取遥控器自带麦克风的 BLE 语音数据，在 Mac 上本地解码和转写，然后安全发送到当前 Codex 任务。它不是另一个 Mac 麦克风听写工具；它让抽屉里的语音遥控器变成一个有手感、拿起就能用的 AI 编程入口。
+米遥是使用小米蓝牙遥控器 2 Pro 构建的 Codex 语音输入方案。它直接读取遥控器自带麦克风的 BLE 语音数据，在 Mac 上本地解码和转写，然后安全发送到当前 Codex 任务。它不是另一个 Mac 麦克风听写工具；它让抽屉里的语音遥控器成为一个有手感、拿起就能用的 Vibe Coding 入口。
 
 > **真机状态：** 小米蓝牙遥控器 2 Pro（固件 2671）已完成从按住说话到 Codex 真实收到消息的端到端验证。
 
-## 为什么是遥控器
+## 为什么它像一根真正的魔法仙女棒
 
 - **一个动作。** 按住就说，松手就发，不用先找麦克风按钮。
 - **硬件麦克风。** 语音来自遥控器本身，不是用 MacBook 麦克风做假入口。
@@ -111,6 +115,7 @@ BLE 遥控器
 
 - 菜单栏状态与启停反馈；
 - 设备选择、配置持久化与自动重连；
+- 实体按键学习、动作映射和方向键指针模式；
 - 更多真实遥控器的兼容矩阵；
 - 可配置输出目标，但不弱化默认安全边界。
 
@@ -138,12 +143,14 @@ BLE 遥控器
 - [真机 Bring-up](docs/HARDWARE_BRINGUP.md)
 - [路线图](docs/ROADMAP.md)
 
-## 致谢与许可证
+## 作者、致谢与许可证
+
+米遥由 **FanXeon@Poemcoder with Codex** 创建。产品方向、工程决策、真实硬件验证与维护由 FanXeon@Poemcoder 负责，Codex 作为 AI 工程协作者参与代码、测试、文档与调试。完整署名和法律边界见 [AUTHORS.md](AUTHORS.md) 与 [NOTICE](NOTICE)。
 
 米遥基于 Google ATV Voice over BLE 协议调研，使用 [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) 完成本地转写。协议参考和第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-代码采用 [MIT License](LICENSE)。“米遥 / MI-AO”是独立开源项目，并非小米、Google 或 OpenAI 官方产品，也不受其背书。
+代码采用 [MIT License](LICENSE)，统一版权署名为 `Copyright (c) 2026 FanXeon@Poemcoder with Codex`。“米遥 / MI-AO”是独立开源项目，并非小米、Google 或 OpenAI 官方产品，也不受其背书。
 
 ---
 
-如果米遥让你抽屉里的遥控器变得有用，欢迎 Star 并告诉我们你想适配的设备。
+如果你也相信 Vibe Coding 应该有一根真正握在手里的魔法仙女棒，欢迎 Star，并告诉我们下一款应该点亮哪支遥控器。

@@ -1,6 +1,10 @@
 # MI-AO 米遥
 
-**Turn a TV voice remote into a push-to-talk button for Codex on macOS.**
+**In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex.**
+
+Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
+
+Created, hardware-validated and maintained by **[FanXeon@Poemcoder with Codex](AUTHORS.md)**.
 
 [English](README_EN.md) · [中文](README.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
@@ -14,11 +18,11 @@
 Hold the remote → say "inspect this project and continue" → release → Codex gets to work
 ```
 
-MI-AO reads BLE voice data from the microphone inside the remote, decodes and transcribes it locally on your Mac, then safely submits the result to the active Codex task. It is not another Mac-microphone dictation app. It turns a voice remote sitting in a drawer into a tactile, pick-up-and-talk entry point for agentic coding.
+MI-AO is a Codex voice-input system built with the Xiaomi Bluetooth Remote Control 2 Pro. It reads BLE voice data from the microphone inside the remote, decodes and transcribes it locally on your Mac, then safely submits the result to the active Codex task. It is not another Mac-microphone dictation app. It turns a voice remote sitting in a drawer into a tactile entry point for Vibe Coding.
 
 > **Verified hardware:** Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 has completed a real hold-to-talk → local Whisper → Codex submission test.
 
-## Why a remote?
+## Why it feels like a real magic wand
 
 - **One physical action.** Hold to speak, release to submit.
 - **A real hardware microphone.** Audio comes from the remote, not a disguised MacBook microphone path.
@@ -111,6 +115,7 @@ The next milestones are:
 
 - menu bar status and recording feedback;
 - device selection, persisted configuration, and reconnect;
+- physical-button learning, action mapping, and D-pad pointer mode;
 - a broader real-hardware compatibility matrix;
 - configurable output targets without weakening the default safety contract.
 
@@ -138,12 +143,14 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 - [Hardware bring-up](docs/HARDWARE_BRINGUP.md)
 - [Roadmap](docs/ROADMAP.md)
 
-## Acknowledgments and license
+## Author, acknowledgments and license
+
+MI-AO was created by **FanXeon@Poemcoder with Codex**. Product direction, engineering decisions, real-hardware validation and maintenance are led by FanXeon@Poemcoder, with Codex used as an AI engineering collaborator for code, tests, documentation and debugging. See [AUTHORS.md](AUTHORS.md) and [NOTICE](NOTICE) for the complete credit and legal boundary.
 
 MI-AO builds on research around Google ATV Voice over BLE and uses [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) for local transcription. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for protocol references and third-party notices.
 
-The code is available under the [MIT License](LICENSE). MI-AO is an independent open-source project. It is not an official Xiaomi, Google, or OpenAI product and is not endorsed by them.
+The code is available under the [MIT License](LICENSE), with the project-level notice `Copyright (c) 2026 FanXeon@Poemcoder with Codex`. MI-AO is an independent open-source project. It is not an official Xiaomi, Google, or OpenAI product and is not endorsed by them.
 
 ---
 
-If MI-AO makes a remote in your drawer useful again, consider starring the repository and telling us which device should be supported next.
+If you believe Vibe Coding deserves a real magic wand you can hold, star MI-AO and tell us which remote should light up next.

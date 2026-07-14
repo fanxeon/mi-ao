@@ -1,0 +1,64 @@
+name: Device support request
+description: 提交脱敏真机证据，帮助适配新语音遥控器
+title: "[Device]: "
+labels: [hardware, compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢帮助扩展米遥的兼容矩阵。请勿上传私人语音、MAC、peripheral UUID、序列、用户名、密钥或未复核的原始采集包。
+  - type: input
+    id: model
+    attributes:
+      label: 设备型号 / Device model
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: 固件 / Firmware
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS 与 Mac 型号 / Environment
+    validations:
+      required: true
+  - type: dropdown
+    id: pairing
+    attributes:
+      label: macOS 配对状态 / Pairing status
+      options:
+        - 已配对且已连接 / Paired and connected
+        - 已配对但未连接 / Paired but disconnected
+        - 无法配对 / Cannot pair
+    validations:
+      required: true
+  - type: textarea
+    id: services
+    attributes:
+      label: Services 与 characteristics
+      description: 只粘贴已脱敏的 UUID、properties 和方向。
+      render: text
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 按下、按住、松手、静音与断连行为
+    validations:
+      required: true
+  - type: textarea
+    id: capture
+    attributes:
+      label: 已脱敏的 capture 摘要 / Redacted capture summary
+      description: 优先粘贴 report.json 的 summary，原始 events.jsonl 必须人工复核。
+      render: json
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私复核 / Privacy review
+      options:
+        - label: 我已删除私人语音、地址、设备 UUID、序列、用户名和密钥。
+          required: true
+        - label: 我理解项目不会在没有真机证据时宣称兼容。
+          required: true

@@ -1,5 +1,7 @@
 # 安全策略
 
+[中文](SECURITY.md) · [English](SECURITY_EN.md)
+
 ## 支持范围
 
 安全修复只保证覆盖 `main` 和最新正式版本。早期预览版可能要求先升级。

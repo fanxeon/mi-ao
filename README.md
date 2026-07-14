@@ -1,158 +1,149 @@
 # 米遥 MI-AO
 
-[English](README_EN.md) · 中文
+**把电视语音遥控器，变成 macOS 上的 Codex 按住说话按钮。**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black.svg)](Package.swift)
-[![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](Package.swift)
+[中文](README.md) · [English](README_EN.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
-把兼容的蓝牙语音遥控器变成 macOS 上的 Codex 按住说话入口：按住说话，松手让 Agent 开工。
-
-目标链路：
+[![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black.svg)](Package.swift)
+[![Swift 6](https://img.shields.io/badge/Swift-6-orange.svg)](Package.swift)
+[![Hardware verified](https://img.shields.io/badge/hardware-verified-2ea44f.svg)](docs/COMPATIBILITY.md)
 
 ```text
-遥控器麦克风 → BLE ATVV → ADPCM 解码 → 本地 Whisper → 当前 Codex 输入框 → Return 发送
+按住遥控器 → 说“检查当前项目并继续工作” → 松手 → Codex 开工
 ```
 
-它不是把 MacBook 麦克风伪装成遥控器，而是直接读取电视遥控器的 BLE 私有语音服务。
+米遥直接读取遥控器自带麦克风的 BLE 语音数据，在 Mac 上本地解码和转写，然后安全发送到当前 Codex 任务。它不是另一个 Mac 麦克风听写工具；它让抽屉里的语音遥控器变成一个有手感、拿起就能用的 AI 编程入口。
 
-## 当前支持的协议
+> **真机状态：** 小米蓝牙遥控器 2 Pro（固件 2671）已完成从按住说话到 Codex 真实收到消息的端到端验证。
 
-- Google ATV Voice over BLE v0.4
-- Google ATV Voice over BLE v1.0
-- IMA/DVI ADPCM 8 kHz 与 16 kHz
-- `START_SEARCH` 开始
-- `AUDIO_STOP`/松手结束
-- 第二次语音键结束
-- 缺少松手事件时静音自动结束
-- 本地 `whisper.cpp` 中文转写
-- 通过 macOS Accessibility 向 Codex 当前输入框粘贴并发送
+## 为什么是遥控器
 
-## 真机兼容性
+- **一个动作。** 按住就说，松手就发，不用先找麦克风按钮。
+- **硬件麦克风。** 语音来自遥控器本身，不是用 MacBook 麦克风做假入口。
+- **本地语音链路。** ADPCM 解码和 `whisper.cpp` 转写都在本机完成。
+- **默认不误发。** 只有找到唯一可用的 Codex 编辑器才发送；其他情况只复制文字。
+- **面向兼容性贡献。** 内置脱敏 GATT 采集模式，可以用真实证据接入更多遥控器。
 
-| 设备 | 固件 | 协议 | 已验证 |
-| --- | --- | --- | --- |
-| 小米蓝牙遥控器 2 Pro | 2671 | ATVV v1.0，ADPCM 16 kHz，120 B | 配对、已连接设备发现、GATT、按住/松手、WAV 解码、中文 Whisper、Codex 真实提交 |
+## 真实闭环证据
 
-> 项目状态：小米 2 Pro 到 Codex 真实提交的核心链路已打通；后续重点是菜单栏日常体验、静音/断连恢复和设备配置持久化。
+```text
+AUDIO_START ADPCM 16 kHz
+AUDIO_STOP reason=remote-release
+转写：请回复米遥真实发送成功。
+已发送到 Codex
+```
 
-## 安装
+真实硬件、协议和端到端验收记录见 [兼容性矩阵](docs/COMPATIBILITY.md) 和 [真机 Bring-up](docs/HARDWARE_BRINGUP.md)。
+
+## 3 分钟快速开始
+
+### 1. 安装
 
 ```bash
-chmod +x scripts/*.sh
+git clone https://github.com/fanxeon/mi-ao.git
+cd mi-ao
 ./scripts/setup.sh
 ```
 
-安装脚本会：
+`setup.sh` 会安装 `whisper-cpp`、下载多语言 base 模型、构建 release App，并安装到 `~/Applications/米遥.app`。
 
-1. 安装 Homebrew `whisper-cpp`；
-2. 下载多语言 `ggml-base.bin`；
-3. 构建 release 二进制；
-4. 生成固定 Bundle ID `com.fanx.miao` 的「米遥」App，安装到 `~/Applications`；
-5. 如检测到早期原型，安全迁移模型与录音目录，并在新版安装成功后移除旧 App。
+### 2. 配对与授权
 
-## 第一次真机联调
-
-先给遥控器充电并让它进入配对模式，在 macOS“系统设置 → 蓝牙”里完成配对。小米旧款电视遥控器通常同时长按 Home + 菜单键进入配对，但 2 Pro 的准确组合键应以包装内说明书为准。
-
-第一步生成附近设备的脱敏扫描报告：
-
-```bash
-./scripts/capture.sh --scan-seconds 30
-```
-
-终端仍会显示本机 UUID，报告中默认使用哈希 ID 并隐藏设备名。记下遥控器的 `id=<UUID>`，第二步连接目标并采集 60 秒：
-
-```bash
-./scripts/capture.sh --identifier <UUID> --capture-seconds 60 --debug
-```
-
-采集期间依次测试短按语音键、按住说话后松开、再次按键和静音。报告保存在 `~/Library/Application Support/mi-ao/captures`。确认设备协议后，再启动日常桥接：
-
-```bash
-./scripts/run.sh --identifier <UUID> --debug
-```
-
-完整步骤和证据判定见 [真机 Bring-up 指南](docs/HARDWARE_BRINGUP.md)。
-
-第一次使用需要允许：
-
-- 系统设置 → 隐私与安全性 → 蓝牙
-- 系统设置 → 隐私与安全性 → 辅助功能
-
-辅助功能列表里应选择安装脚本输出的 App，不要选择 `.build` 目录里的临时二进制。
-
-可以主动触发授权提示：
+先在“系统设置 → 蓝牙”中完成遥控器配对，然后运行：
 
 ```bash
 ./scripts/authorize.sh
 ```
 
-本机没有可用的 Apple Developer 签名证书，因此 App 当前采用本机 ad-hoc 签名。平时不要反复执行 `install-app.sh`；如果重新构建并覆盖 App，macOS 可能要求再次确认辅助功能权限。
+macOS 会要求蓝牙和辅助功能权限。辅助功能列表中应允许已安装的“米遥” App。
 
-保持 Codex 当前任务的输入框获得焦点。按遥控器语音键说话，录音结束后会转写并发送。
+### 3. 启动
 
-## 本机验证记录（2026-07-14）
-
-- macOS 26.5.2 / Apple Silicon release 构建通过；
-- `whisper-cpp` 1.9.1 与多语言 `ggml-base.bin` 已安装；
-- ATVV v0.4/v1.0 capabilities、ADPCM 解码和 8→16 kHz 重采样测试通过；
-- 使用 macOS 中文合成语音验证，识别结果为“请检查当前项目，然后继续工作”；
-- CoreBluetooth 扫描和正常退出已通过，扫描到 20 个附近设备；
-- `capture` 的脱敏报告、JSONL 原始事件、权限保护和无目标超时收口已通过；
-- 小米 2 Pro 固件 2671 真机确认为 ATVV v1.0 / ADPCM 16 kHz / Hold-to-Talk / 120 字节帧；
-- 真实遥控器语音已识别为“这是第二次语音测试”，按住开始与松手停止均有原始控制帧佐证。
-- 中文模式会给 Whisper 加入米遥、Codex 等简短技术词提示；可用 `--prompt <文本>` 覆盖。
-- 真实语音“请回复米遥真实发送成功。”已由米遥自动聚焦 Codex 编辑器并回车发送，当前任务实际收到。
-
-## 安全边界
-
-- transcript 为空时不发送。
-- Codex 未运行时不发送，只复制到剪贴板。
-- 无辅助功能权限时不发送，只复制到剪贴板。
-- 只有当前 Codex 窗口存在唯一可用文本输入框时才会主动聚焦并发送；找不到或存在多个时只复制。
-- 每次原始 WAV 和 transcript 都保存在 `~/Library/Application Support/mi-ao/recordings`，便于复核。
-- `capture` 默认哈希化设备 UUID、隐藏设备名，但会在本机保存原始 GATT payload；分享采集目录前必须人工复核。
-
-## 诊断
+已验证的小米 2 Pro：
 
 ```bash
-./scripts/bridge.sh doctor
+./scripts/run.sh --name "小米蓝牙语音遥控器"
 ```
 
-如果设备没有暴露 `AB5E0001-5A21-4F05-BC7D-AF01F617B664`，程序会输出全部 services 和 characteristics。此时需要针对小米协议增加新的 transport，而不是伪造成功。
+看到“桥接已就绪”后，按住遥控器语音键说话，说完松手。终端需保持运行；按 `Control + C` 停止。
 
-## 开发
+其他遥控器请先按 [快速开始](docs/QUICKSTART.md) 采集脱敏协议证据，不要盲猜 UUID。
 
-```bash
-make test
-make release
-make app
-make check
+## 兼容性
+
+| 设备 | 固件 | 协议 | 端到端 |
+| --- | --- | --- | --- |
+| 小米蓝牙遥控器 2 Pro | 2671 | ATVV v1.0 · ADPCM 16 kHz · 120 B | ✅ macOS → Whisper → Codex |
+| 其他 Google / Android TV 语音遥控器 | 待贡献 | ATVV v0.4 / v1.0 参考实现 | 🧪 需要真机证据 |
+
+完整状态、证据等级和新设备贡献方式见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+
+## 工作原理
+
+```text
+BLE 遥控器
+  → Google ATV Voice over BLE
+  → IMA/DVI ADPCM
+  → 16 kHz PCM / WAV
+  → 本地 whisper.cpp
+  → macOS Accessibility
+  → Codex 唯一编辑器
 ```
 
-架构、协议和路线图分别见：
+当前支持 ATVV v0.4 / v1.0、8 kHz / 16 kHz ADPCM、`AUDIO_STOP`、二次按键与静音超时收口。模块边界和扩展方式见 [架构说明](docs/ARCHITECTURE.md) 和 [ATVV 协议说明](docs/PROTOCOL.md)。
 
+## 隐私与安全
+
+- 语音转写默认在本机完成，不依赖语音云 API。
+- WAV 和 transcript 保存在本机 `~/Library/Application Support/mi-ao/recordings`，用于用户复核。
+- 转写为空、Codex 未运行、权限不足或编辑器不唯一时，不会自动发送。
+- 采集报告默认哈希化设备 UUID 并隐藏名称，但原始 GATT payload 仍须在分享前人工复核。
+
+完整边界见 [SECURITY.md](SECURITY.md)。
+
+## 项目状态
+
+核心真机链路已打通，当前是 **source-first alpha**：用户在自己的 Mac 上构建并使用 ad-hoc 签名 App。没有 Apple Developer ID 时，项目不会把未公证 DMG 包装成“一键安装”。
+
+下一阶段聚焦：
+
+- 菜单栏状态与启停反馈；
+- 设备选择、配置持久化与自动重连；
+- 更多真实遥控器的兼容矩阵；
+- 可配置输出目标，但不弱化默认安全边界。
+
+见 [路线图](docs/ROADMAP.md) 和 [源码优先分发](docs/DISTRIBUTION.md)。
+
+## 参与贡献
+
+最有价值的贡献是“新硬件的可复核证据”。你可以：
+
+- 提交一份脱敏 GATT 采集，帮助兼容新遥控器；
+- 改进 ADPCM / ATVV 协议适配与测试 fixture；
+- 完善 macOS 菜单栏、重连和日常体验；
+- 改进中英文文档、排错和隐私审查。
+
+请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。没有真机证据的兼容性声明不会合并。
+
+## 文档
+
+- [文档导航](docs/README.md)
+- [快速开始](docs/QUICKSTART.md)
+- [兼容性矩阵](docs/COMPATIBILITY.md)
+- [故障排查](docs/TROUBLESHOOTING.md)
 - [架构说明](docs/ARCHITECTURE.md)
 - [ATVV 协议说明](docs/PROTOCOL.md)
-- [真机 Bring-up 指南](docs/HARDWARE_BRINGUP.md)
+- [真机 Bring-up](docs/HARDWARE_BRINGUP.md)
 - [路线图](docs/ROADMAP.md)
-- [开源发布检查表](docs/OPEN_SOURCE_CHECKLIST.md)
-- [名称与产品身份](docs/NAMING.md)
-- [无正式签名的源码分发方案](docs/DISTRIBUTION.md)
 
-提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
+## 致谢与许可证
 
-## 调研来源
+米遥基于 Google ATV Voice over BLE 协议调研，使用 [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) 完成本地转写。协议参考和第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-- [小米商城：小米蓝牙遥控器 2 Pro](https://www.mi.com/shop/buy?cfrom=search&product_id=1230800738)
-- [小米官方：蓝牙遥控器配对排查](https://www.mi.com/tw/support/faq/details/KA-05732/)
-- [b0o/ATVVoice：Linux 上已工作的 Google TV 语音遥控器实现](https://github.com/b0o/ATVVoice)
-- [BlueZ #1086：Voice-over-BLE/ATVV 上游讨论](https://github.com/bluez/bluez/issues/1086)
-- [Infineon BLE HID Voice Remote 参考实现](https://github.com/Infineon/mtb-example-btsdk-hid-ble-remote)
+代码采用 [MIT License](LICENSE)。“米遥 / MI-AO”是独立开源项目，并非小米、Google 或 OpenAI 官方产品，也不受其背书。
 
-## 许可证
+---
 
-[MIT](LICENSE)。第三方协议研究来源与许可证说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-「米遥 / MI-AO」是独立开源项目名称。本项目并非小米官方产品，也不受小米公司、Google 或 OpenAI 背书；相关商标归各自权利人所有。
+如果米遥让你抽屉里的遥控器变得有用，欢迎 Star 并告诉我们你想适配的设备。

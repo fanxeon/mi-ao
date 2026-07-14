@@ -1,0 +1,33 @@
+# 米遥文档 / MI-AO Documentation
+
+[中文首页](../README.md) · [English README](../README_EN.md)
+
+## 用户文档
+
+| 文档 | 用途 |
+| --- | --- |
+| [快速开始](QUICKSTART.md) / [Quick start](QUICKSTART_EN.md) | 从安装、配对到第一次语音提交 |
+| [兼容性矩阵](COMPATIBILITY.md) | 真实验证的遥控器、固件和协议证据 |
+| [故障排查](TROUBLESHOOTING.md) / [Troubleshooting](TROUBLESHOOTING_EN.md) | 启动、蓝牙、转写、焦点与重连问题 |
+| [源码优先分发](DISTRIBUTION.md) | ad-hoc 签名、安装、验证与卸载边界 |
+| [安全策略](../SECURITY.md) / [Security policy](../SECURITY_EN.md) | 本地录音、自动发送和脱敏规则 |
+
+## 贡献者文档
+
+| 文档 | 用途 |
+| --- | --- |
+| [贡献指南](../CONTRIBUTING.md) / [Contributing](../CONTRIBUTING_EN.md) | 开发流程、PR 要求与隐私边界 |
+| [社区行为准则](../CODE_OF_CONDUCT.md) / [Code of conduct](../CODE_OF_CONDUCT_EN.md) | 友善、专业、隐私安全的社区协作边界 |
+| [架构说明](ARCHITECTURE.md) | BLE、协议、音频、Whisper 和 Codex 提交边界 |
+| [ATVV 协议说明](PROTOCOL.md) | UUID、协商、音频帧和固件差异 |
+| [真机 Bring-up](HARDWARE_BRINGUP.md) | 取得可复核硬件证据的标准流程 |
+
+## 维护者文档
+
+| 文档 | 用途 |
+| --- | --- |
+| [GitHub 首发方案](GITHUB_LAUNCH.md) | 仓库描述、topics、社交预览和 Release 节奏 |
+| [开源发布检查表](OPEN_SOURCE_CHECKLIST.md) | 从本地仓库到 public release 的门禁 |
+| [路线图](ROADMAP.md) | 当前交付状态与后续里程碑 |
+| [名称与产品身份](NAMING.md) | 中英文名、CLI、Bundle ID 和非官方声明 |
+| [Changelog](../CHANGELOG.md) | 版本改动记录 |

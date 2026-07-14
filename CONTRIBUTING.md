@@ -1,5 +1,7 @@
 # 贡献指南
 
+[中文](CONTRIBUTING.md) · [English](CONTRIBUTING_EN.md)
+
 感谢参与米遥 MI-AO。项目优先接受可复现、保留真实硬件证据的改动。
 
 ## 开发环境
@@ -10,7 +12,7 @@
 - Homebrew（仅运行时转写需要 `whisper-cpp`）
 
 ```bash
-git clone https://github.com/<owner>/mi-ao.git
+git clone https://github.com/fanxeon/mi-ao.git
 cd mi-ao
 make check
 ```

@@ -5,7 +5,7 @@
 ## 用户路径
 
 ```bash
-git clone https://github.com/<owner>/mi-ao.git
+git clone https://github.com/fanxeon/mi-ao.git
 cd mi-ao
 make preflight
 make setup

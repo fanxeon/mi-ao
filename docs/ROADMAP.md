@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 路线图
 
 ## 0.1 硬件打通

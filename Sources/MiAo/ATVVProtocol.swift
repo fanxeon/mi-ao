@@ -1,3 +1,4 @@
+// Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import Foundation
 
 enum ATVVVersion: Equatable, CustomStringConvertible {

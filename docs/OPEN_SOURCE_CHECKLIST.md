@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 开源发布检查表
 
 ## 已完成

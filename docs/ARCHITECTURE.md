@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 架构说明
 
 ## 目标链路

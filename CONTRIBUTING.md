@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 贡献指南
 
 [中文](CONTRIBUTING.md) · [English](CONTRIBUTING_EN.md)

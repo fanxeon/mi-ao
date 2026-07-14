@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 源码优先分发
 
 项目在没有 Apple Developer ID 的阶段采用本机构建，不把未经公证的 DMG 作为默认下载。

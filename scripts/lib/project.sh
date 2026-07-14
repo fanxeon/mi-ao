@@ -1,4 +1,5 @@
 #!/bin/zsh
+# Copyright (c) 2026 FanXeon@Poemcoder with Codex
 
 if [[ -z "${ROOT:-}" ]]; then
   echo "scripts/lib/project.sh 需要调用方先设置 ROOT" >&2

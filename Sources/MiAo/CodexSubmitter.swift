@@ -1,3 +1,4 @@
+// Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import AppKit
 import ApplicationServices
 import Foundation

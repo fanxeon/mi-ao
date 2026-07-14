@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 小米蓝牙遥控器 2 Pro 真机 Bring-up
 
 这份流程用于取得可复核的 BLE 证据。完成全部门槛前，只能说“发现设备”或“发现某个服务”，不能宣称“已经兼容”。

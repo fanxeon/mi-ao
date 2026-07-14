@@ -9,6 +9,10 @@ tests, scripts, configuration and documentation in this repository. Third-party
 components and references retain their original copyright and license terms; see
 THIRD_PARTY_NOTICES.md.
 
+First-party formats that support comments also carry the same copyright header.
+Machine-only files without a safe comment syntax, including VERSION and
+.swift-format, are covered by this repository-level notice.
+
 "with Codex" is a collaboration credit. It does not name Codex or OpenAI as a
 legal copyright holder and does not imply sponsorship, endorsement or affiliation
 with OpenAI, Xiaomi or Google.

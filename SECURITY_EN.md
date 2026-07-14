@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # Security Policy
 
 [中文](SECURITY.md) · [English](SECURITY_EN.md)

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 米遥文档 / MI-AO Documentation
 
 [中文首页](../README.md) · [English README](../README_EN.md)
@@ -18,7 +20,6 @@
 | --- | --- |
 | [贡献指南](../CONTRIBUTING.md) / [Contributing](../CONTRIBUTING_EN.md) | 开发流程、PR 要求与隐私边界 |
 | [社区行为准则](../CODE_OF_CONDUCT.md) / [Code of conduct](../CODE_OF_CONDUCT_EN.md) | 友善、专业、隐私安全的社区协作边界 |
-| [作者与署名](../AUTHORS.md) | `FanXeon@Poemcoder with Codex` 的角色和版权边界 |
 | [架构说明](ARCHITECTURE.md) | BLE、协议、音频、Whisper 和 Codex 提交边界 |
 | [ATVV 协议说明](PROTOCOL.md) | UUID、协商、音频帧和固件差异 |
 | [真机 Bring-up](HARDWARE_BRINGUP.md) | 取得可复核硬件证据的标准流程 |

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # Code of Conduct
 
 [中文](CODE_OF_CONDUCT.md) · [English](CODE_OF_CONDUCT_EN.md)

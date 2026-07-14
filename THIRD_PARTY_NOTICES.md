@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # Third-party notices
 
 ATVV protocol details and the IMA/DVI ADPCM implementation were informed by:

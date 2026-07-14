@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # GitHub 首发方案
 
 这份文档固定仓库公开时的产品身份、发现性和首发资产。目标不是在 README 里堆营销词，而是让真正有同类硬件的人在 10 秒内看懂并愿意试用。

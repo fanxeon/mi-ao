@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # ATVV 协议说明
 
 当前实现参考 Google ATV Voice over BLE v0.4/v1.0 和公开遥控器实现。

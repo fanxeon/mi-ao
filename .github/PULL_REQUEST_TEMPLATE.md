@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 ## 变化 / Change
 
 <!-- 说明这个 PR 解决的单一问题。 -->

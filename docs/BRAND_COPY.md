@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 品牌与发布文案 / Brand Copy
 
 这份文档是米遥公开传播的单一文案来源。README、GitHub About、Social Preview、Release 和社区发布帖优先复用这里的表达，不临时发明互相冲突的口号。

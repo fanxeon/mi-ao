@@ -1,3 +1,4 @@
+# Copyright (c) 2026 FanXeon@Poemcoder with Codex
 .PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture check clean
 
 build:

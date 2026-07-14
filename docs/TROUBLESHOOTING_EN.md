@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # Troubleshooting
 
 [中文](TROUBLESHOOTING.md) · [Quick start](QUICKSTART_EN.md)

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 兼容性矩阵 / Compatibility Matrix
 
 [返回中文首页](../README.md) · [Back to English README](../README_EN.md)

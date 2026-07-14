@@ -1,10 +1,12 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 米遥 MI-AO
 
 **在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成一根真正握在手里的 Codex 魔法仙女棒。**
 
 按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。
 
-由 **[FanXeon@Poemcoder with Codex](AUTHORS.md)** 创建、真机验证并持续维护。
+由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。
 
 [中文](README.md) · [English](README_EN.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
@@ -145,7 +147,7 @@ BLE 遥控器
 
 ## 作者、致谢与许可证
 
-米遥由 **FanXeon@Poemcoder with Codex** 创建。产品方向、工程决策、真实硬件验证与维护由 FanXeon@Poemcoder 负责，Codex 作为 AI 工程协作者参与代码、测试、文档与调试。完整署名和法律边界见 [AUTHORS.md](AUTHORS.md) 与 [NOTICE](NOTICE)。
+米遥由 **FanXeon@Poemcoder with Codex** 创建。产品方向、工程决策、真实硬件验证与维护由 FanXeon@Poemcoder 负责，Codex 作为 AI 工程协作者参与代码、测试、文档与调试。完整版权和法律边界见 [NOTICE](NOTICE)。
 
 米遥基于 Google ATV Voice over BLE 协议调研，使用 [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) 完成本地转写。协议参考和第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 名称与产品身份
 
 项目于 2026-07-13 正式定名为 **米遥 / MI-AO**。
@@ -24,7 +26,7 @@
 
 公开传播统一使用“米遥 MI-AO”；代码、目录、包名和仓库统一使用上表中的 ASCII 标识。不要再引入早期原型名称。
 
-所有第一方文件、发布物和公开页面统一使用 `Copyright (c) 2026 FanXeon@Poemcoder with Codex`。具体角色和法律边界见 [AUTHORS.md](../AUTHORS.md) 与 [NOTICE](../NOTICE)。
+所有第一方文件、发布物和公开页面统一使用 `Copyright (c) 2026 FanXeon@Poemcoder with Codex`。具体角色和法律边界见 [NOTICE](../NOTICE)。
 
 项目是独立开源软件，不是小米官方产品，也不暗示小米、Google 或 OpenAI 的认可。正式公开发布前仍需进行最新的仓库重名、商标和域名检索；名称决策本身不构成法律审查。
 

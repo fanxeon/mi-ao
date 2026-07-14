@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # 3 分钟快速开始
 
 [English](QUICKSTART_EN.md) · [返回首页](../README.md)

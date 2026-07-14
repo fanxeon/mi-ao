@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # Contributing to MI-AO
 
 [中文](CONTRIBUTING.md) · [Back to README](README_EN.md)

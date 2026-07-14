@@ -1,4 +1,5 @@
 #!/bin/zsh
+# Copyright (c) 2026 FanXeon@Poemcoder with Codex
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

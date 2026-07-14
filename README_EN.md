@@ -1,10 +1,12 @@
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+
 # MI-AO 米遥
 
 **In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex.**
 
 Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
 
-Created, hardware-validated and maintained by **[FanXeon@Poemcoder with Codex](AUTHORS.md)**.
+Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
 [English](README_EN.md) · [中文](README.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
@@ -145,7 +147,7 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 
 ## Author, acknowledgments and license
 
-MI-AO was created by **FanXeon@Poemcoder with Codex**. Product direction, engineering decisions, real-hardware validation and maintenance are led by FanXeon@Poemcoder, with Codex used as an AI engineering collaborator for code, tests, documentation and debugging. See [AUTHORS.md](AUTHORS.md) and [NOTICE](NOTICE) for the complete credit and legal boundary.
+MI-AO was created by **FanXeon@Poemcoder with Codex**. Product direction, engineering decisions, real-hardware validation and maintenance are led by FanXeon@Poemcoder, with Codex used as an AI engineering collaborator for code, tests, documentation and debugging. See [NOTICE](NOTICE) for the complete copyright and legal boundary.
 
 MI-AO builds on research around Google ATV Voice over BLE and uses [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) for local transcription. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for protocol references and third-party notices.
 

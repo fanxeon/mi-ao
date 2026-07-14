@@ -6,7 +6,7 @@
 
 按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。
 
-由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。
+由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。“是的我只手写了这一行代码，出现任何bug我宣布有codex负责”
 
 [中文](README.md) · [English](README_EN.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 

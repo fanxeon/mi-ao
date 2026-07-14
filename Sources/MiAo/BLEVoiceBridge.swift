@@ -82,6 +82,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 return
             }
 
+            if configuration.mode == .capture, discoverConnectedPeripheralsForCapture() {
+                return
+            }
+
             if configuration.mode == .run {
                 let connected = central.retrieveConnectedPeripherals(
                     withServices: [CBUUID(string: ATVVProtocol.serviceUUID)]
@@ -132,6 +136,58 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 break
             }
         }
+    }
+
+    @discardableResult
+    private func discoverConnectedPeripheralsForCapture() -> Bool {
+        let queryServices = [
+            "1800",  // Generic Access
+            "1801",  // Generic Attribute
+            "180A",  // Device Information
+            "180F",  // Battery
+            "1812",  // Human Interface Device
+            ATVVProtocol.serviceUUID,
+        ]
+        var matches: [UUID: (peripheral: CBPeripheral, services: Set<String>)] = [:]
+
+        for serviceUUID in queryServices {
+            let service = CBUUID(string: serviceUUID)
+            for peripheral in central.retrieveConnectedPeripherals(withServices: [service]) {
+                var match = matches[peripheral.identifier] ?? (peripheral, [])
+                match.services.insert(serviceUUID.uppercased())
+                matches[peripheral.identifier] = match
+            }
+        }
+
+        for match in matches.values.sorted(by: {
+            ($0.peripheral.name ?? $0.peripheral.identifier.uuidString)
+                < ($1.peripheral.name ?? $1.peripheral.identifier.uuidString)
+        }) {
+            let peripheral = match.peripheral
+            let name = peripheral.name ?? "(unknown)"
+            let services = match.services.sorted()
+            discoveredIdentifiers.insert(peripheral.identifier)
+            captureRecorder?.recordDiscovery(
+                identifier: peripheral.identifier,
+                name: name,
+                rssi: 127,
+                advertisedServices: []
+            )
+            captureRecorder?.recordEvent(
+                type: "connected_peripheral_retrieved",
+                detail: "services=\(services.joined(separator: ","))",
+                deviceIdentifier: peripheral.identifier
+            )
+            print(
+                "已连接 name=\(name) id=\(peripheral.identifier.uuidString) via_services=[\(services.joined(separator: ","))]"
+            )
+
+            if configuration.nameFilter != nil, isCandidate(peripheral, discoveredName: name) {
+                connect(peripheral, reason: "已连接 BLE 设备名称匹配")
+                return true
+            }
+        }
+        return false
     }
 
     func centralManager(

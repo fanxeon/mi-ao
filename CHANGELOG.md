@@ -15,6 +15,8 @@
 - 开源项目治理、CI 和贡献模板。
 - `capture` 真机采集模式：脱敏扫描报告、GATT service/characteristic/descriptor 枚举、可读特征读取和 notify/indicate 原始事件。
 - 小米蓝牙遥控器 2 Pro 的分阶段真机 Bring-up 与证据判定指南。
+- 从常见 BLE 服务检索已连接但停止广播的 HID 遥控器。
+- 兼容小米固件 2671 偶发的 ATVV v1.0 codecs 与 interaction model 字节对调 `CAPS_RESP`。
 
 ### Changed
 

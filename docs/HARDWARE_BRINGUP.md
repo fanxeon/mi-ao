@@ -26,6 +26,8 @@ make preflight
 - 不保存 manufacturer data；
 - 文件权限为仅当前用户可读写。
 
+已经连接并停止广播的遥控器，会通过 HID、Battery、Device Information 或 ATVV 服务被单独列为 `已连接` 设备。
+
 如果为了本机排查确实需要原始身份，可显式增加：
 
 ```bash

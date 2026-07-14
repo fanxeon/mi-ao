@@ -16,7 +16,7 @@ This project reads voice data from the remote itself. It does not substitute the
 
 ## Status
 
-Early hardware enablement. The macOS bridge and the ATVV v0.4/v1.0 implementation are operational, but Xiaomi Bluetooth Remote Control 2 Pro still requires real-device GATT and audio-frame verification. Compatibility is never reported without hardware evidence.
+Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 is verified on real hardware with ATVV v1.0, 16 kHz ADPCM, 120-byte frames, hold/release control, WAV decoding, and Chinese Whisper transcription. Codex submission and reconnect edge cases remain under validation.
 
 ## Features
 

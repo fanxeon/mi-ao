@@ -30,6 +30,20 @@ import Testing
     #expect(capabilities?.selectedCodec == .adpcm16k)
 }
 
+@Test func parsesXiaomiFirmware2671SwappedV10Capabilities() {
+    let data = Data([0x0B, 0x01, 0x00, 0x00, 0x03, 0x00, 0x78, 0x00, 0x00])
+    let capabilities = ATVVProtocol.parseCapabilities(data)
+    #expect(
+        capabilities
+            == ATVVCapabilities(
+                version: .v10,
+                codecs: 0x03,
+                interactionModel: 0x00,
+                frameSize: 120
+            ))
+    #expect(capabilities?.selectedCodec == .adpcm16k)
+}
+
 @Test func decodesSilentV04Frame() throws {
     let handler = ATVVProtocol()
     try handler.acceptCapabilities(

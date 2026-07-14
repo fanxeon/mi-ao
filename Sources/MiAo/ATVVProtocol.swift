@@ -143,10 +143,20 @@ final class ATVVProtocol {
             )
         case 0x0100:
             guard bytes.count >= 7 else { return nil }
+            let standardCodecs = bytes[3]
+            let standardInteractionModel = bytes[4]
+            // Xiaomi Remote firmware 2671 has occasionally been observed
+            // returning these two fields in the opposite order. Only accept
+            // that layout when the standard codec byte is unambiguously invalid.
+            let hasKnownStandardCodec = standardCodecs & 0x03 != 0
+            let hasKnownSwappedCodec = standardInteractionModel & 0x03 != 0
+            let codecs = !hasKnownStandardCodec && hasKnownSwappedCodec ? standardInteractionModel : standardCodecs
+            let interactionModel =
+                !hasKnownStandardCodec && hasKnownSwappedCodec ? standardCodecs : standardInteractionModel
             return ATVVCapabilities(
                 version: .v10,
-                codecs: bytes[3],
-                interactionModel: bytes[4],
+                codecs: codecs,
+                interactionModel: interactionModel,
                 frameSize: Int(UInt16(bytes[5]) << 8 | UInt16(bytes[6]))
             )
         default:

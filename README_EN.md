@@ -46,9 +46,9 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 ## One remote, multiple presets
 
-Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Power launches Codex or focuses it when already running; Volume scrolls, `HOME` focuses Codex, Menu cycles presets, and Voice remains hold-to-talk.
+Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Volume Up/Down selects the previous/next Codex task, Power launches or focuses Codex, `HOME` focuses it, Menu cycles presets, and Voice remains hold-to-talk.
 
-> **Status boundary:** new-format calibration confirms D-pad, Center, Back, HOME, TV, Power, and Voice on Xiaomi Remote 2 Pro firmware 2671. MI-AO takes over these ten keys and blocks their native side effects, while Menu and Volume Up/Down retain native macOS behavior. Clicks, mode switching, and Power still require per-action acceptance.
+> **Status boundary:** new-format calibration confirms D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down on Xiaomi Remote 2 Pro firmware 2671. MI-AO takes over these twelve keys and blocks their native side effects; only Menu remains native. Volume task navigation passed bidirectional hardware acceptance; clicks, mode switching, and Power still require per-action acceptance.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 
@@ -82,7 +82,7 @@ For the verified Xiaomi Remote 2 Pro:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper maps D-pad, Center, Back, HOME, TV, Power, and Voice to HID `No Event` for this exact device while MI-AO reads their original IOHID Usages. Menu and Volume Up/Down remain native. `Control + C` stops MI-AO and restores the original mapping.
+The wrapper maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down to HID `No Event` for this exact device while MI-AO reads their original IOHID Usages. Only Menu remains native. `Control + C` stops MI-AO and restores the original mapping.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 

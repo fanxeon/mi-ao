@@ -9,6 +9,18 @@ enum CodexActivationResult: Equatable {
     case unavailable
 }
 
+enum CodexTaskDirection: Equatable {
+    case previous
+    case next
+
+    var menuItemTitles: [String] {
+        switch self {
+        case .previous: return ["Previous Task", "上一个任务", "上一个会话"]
+        case .next: return ["Next Task", "下一个任务", "下一个会话"]
+        }
+    }
+}
+
 struct CodexSubmitter {
     private let bundleIdentifier = "com.openai.codex"
 
@@ -76,6 +88,21 @@ struct CodexSubmitter {
         return .launchRequested
     }
 
+    @discardableResult
+    func navigateTask(_ direction: CodexTaskDirection) -> Bool {
+        guard
+            let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+                .first
+        else { return false }
+        let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
+        guard
+            let menuBar = elementAttribute(applicationElement, kAXMenuBarAttribute),
+            let menuItem = findMenuItem(in: menuBar, titles: direction.menuItemTitles)
+        else { return false }
+        app.activate(options: [.activateAllWindows])
+        return AXUIElementPerformAction(menuItem, kAXPressAction as CFString) == .success
+    }
+
     private func focusCodexEditor(in applicationElement: AXUIElement) -> Bool {
         let searchRoot = elementAttribute(applicationElement, kAXFocusedWindowAttribute) ?? applicationElement
         let candidates = findTextInputs(in: searchRoot)
@@ -111,6 +138,27 @@ struct CodexSubmitter {
             }
         }
         return matches
+    }
+
+    private func findMenuItem(in root: AXUIElement, titles: [String]) -> AXUIElement? {
+        var queue: [(element: AXUIElement, depth: Int)] = [(root, 0)]
+        var cursor = 0
+
+        while cursor < queue.count, cursor < 1_000 {
+            let current = queue[cursor]
+            cursor += 1
+            if stringAttribute(current.element, kAXRoleAttribute) == kAXMenuItemRole as String,
+                let title = stringAttribute(current.element, kAXTitleAttribute),
+                titles.contains(title)
+            {
+                return current.element
+            }
+            guard current.depth < 5 else { continue }
+            for child in elementArrayAttribute(current.element, kAXChildrenAttribute) {
+                queue.append((child, current.depth + 1))
+            }
+        }
+        return nil
     }
 
     private func isAcceptedTextInput(_ element: AXUIElement) -> Bool {

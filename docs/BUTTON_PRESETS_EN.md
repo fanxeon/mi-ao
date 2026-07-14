@@ -6,7 +6,7 @@
 
 MI-AO separates hardware identity from user preference. A calibration profile answers “which physical button produced this HID Usage”; a preset decides “what that button does now.” Switching presets never requires recalibrating the remote.
 
-> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, and pointer executor are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 has complete new-format calibration for all six required buttons. All four directions passed direct cursor positioning and real-coordinate monitoring. Clicks, mode switching, and Power still need per-action acceptance, so the whole mode is not yet marked end-to-end verified.
+> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, and pointer executor are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 has complete new-format calibration for all twelve intercepted keys. All four directions passed direct cursor positioning and real-coordinate monitoring, and Volume Up/Down passed bidirectional Codex task navigation acceptance. Clicks, mode switching, and Power still need per-action acceptance, so the whole mode is not yet marked end-to-end verified.
 
 ## Mapping architecture
 
@@ -22,6 +22,7 @@ flowchart LR
     H --> J["Pointer executor"]
     H --> K["Arrow keys / Return / Escape"]
     E --> L["Power → launch or focus Codex"]
+    E --> M["Volume +/- → previous/next Codex task"]
     F --> I["Codex navigation executor"]
 ```
 
@@ -35,7 +36,7 @@ The hardware profile never stores `pointer.right_click`. Back remains `back` at 
 | D-pad | Pointer: `pointer.move_*`; directional: `keyboard.arrow_*` | All four directions require confirmation |
 | Center | Pointer: `pointer.left_click`; directional: `keyboard.return` | Required |
 | Back | Pointer: `pointer.right_click`; directional: `keyboard.escape` | Physical `0x07/0xF1` verified; new-format confirmation still required |
-| Volume +/- | `pointer.scroll_up/down` | Optional enhancement |
+| Volume +/- | `codex.previous_task/next_task` | `0x07/0x80`, `0x07/0x81`; bidirectional action accepted |
 | `TV` | `mode.toggle_pointer_directional` | New-format hardware confirmation: `0x07/0x35` |
 | `HOME` | `codex.focus` | Optional enhancement |
 | Menu | `preset.cycle` | Reports the current preset while only one exists |
@@ -45,7 +46,7 @@ The base pointer preset requires confirmed press and release evidence for `dpad_
 
 Startup defaults to pointer mode. A calibrated `TV` press switches to directional mode; press it again to return. Directional mode emits standard arrow keys, Return from Center, and Escape from Back. Volume, `HOME`, Menu, Voice, and Power do not change with the mode.
 
-On Xiaomi Remote 2 Pro firmware 2671, `TV` and Power are confirmed as Keyboard Usage `0x35` and Keyboard Power `0x66`; neither is infrared-only. Power activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch. Other remotes still require independent calibration and must not reuse these Usage values blindly.
+On Xiaomi Remote 2 Pro firmware 2671, `TV` and Power are confirmed as Keyboard Usage `0x35` and Keyboard Power `0x66`; neither is infrared-only. Volume Up/Down are confirmed as `0x80` / `0x81` and invoke Codex's Previous Task / Next Task menu items directly through Accessibility. MI-AO does not synthesize `Cmd+Shift+[` / `Cmd+Shift+]` or any modifier for these actions. Power activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch. Other remotes still require independent calibration and must not reuse these Usage values blindly.
 
 ## Calibrate
 
@@ -57,7 +58,7 @@ Stop MI-AO, then run:
   --preset pointer
 ```
 
-Use Return/`y` to confirm, `r` to retry, `s` to skip, or `q` to save confirmed work and stop. Single-button sessions can be merged, so the six required buttons may be calibrated separately with `--button dpad_up`, `--button center`, and so on. Calibrate `TV` and Power separately with `--button tv` and `--button power` if you want those actions.
+Use Return/`y` to confirm, `r` to retry, `s` to skip, or `q` to save confirmed work and stop. Single-button sessions can be merged, so buttons may be calibrated separately with `--button dpad_up`, `--button center`, and so on. Use `--button volume_up` and `--button volume_down` for Codex task navigation.
 
 Only reports with `captureMode=confirmed_calibration` are eligible. Automatic learning, timeouts, missing release evidence, and duplicate Usage assignments are rejected.
 
@@ -69,7 +70,7 @@ After calibration, use the safe one-command startup:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-It maps D-pad, Center, Back, HOME, TV, Power, and Voice—ten keys total—to HID `No Event` for the exact device. Menu and Volume Up/Down are excluded and remain native. The wrapper verifies writes and restores on normal exit or signals.
+It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event` for the exact device. Only Menu is excluded and remains native. The wrapper verifies writes and restores on normal exit or signals.
 
 The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
 
@@ -82,7 +83,7 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 - Apply accepts an empty mapping only and refuses to overwrite any existing `UserKeyMapping`. Ownership state gates restore so unknown user mappings are never deleted.
 - Pointer actions require Accessibility permission; missing permission disables button actions.
 - MI-AO installs no global Quartz keyboard event tap and never guesses an event source from timing. Events from the physical Mac keyboard do not enter MI-AO's button pipeline.
-- Native remote side effects are isolated only by the ten-key HID `No Event` mapping scoped to the exact device service. `TV` and Power have verified physical Usages, but their action results still require individual hardware acceptance.
+- Native remote side effects are isolated only by the twelve-key HID `No Event` mapping scoped to the exact device service. `TV`, Power, and Volume have verified physical Usages, but their action results still require individual hardware acceptance.
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
 - `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
 

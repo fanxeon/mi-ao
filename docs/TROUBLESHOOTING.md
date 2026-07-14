@@ -93,9 +93,13 @@
 
 `debug-buttons` 不会合成米遥动作，但 macOS 仍可能处理遥控器原始 HID 键。请停止校准，聚焦到空白且不会因方向键、返回键丢失内容的窗口，再重新运行。不要在未保存的编辑器、文件列表或删除确认框中校准。
 
+## 音量键不切换 Codex 会话
+
+先确认 Codex 已运行，并在 Codex 的“View”菜单中能看到 `Previous Task` / `Next Task`。再分别运行 `debug-buttons.sh --button volume_up` 和 `--button volume_down`；小米 2 Pro 固件 2671 的确认值应为 `0x07/0x80`、`0x07/0x81`。米遥通过 Accessibility 直接执行菜单项，不会合成组合键；若键盘出现修饰键卡住，应立即停止并报告，不能视为正常行为。
+
 ## 指针动作和前台 App 同时响应
 
-立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十个接管键均映射为 `No Event`，菜单和音量不在映射内。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
+立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十二个接管键均映射为 `No Event`，仅菜单不在映射内。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
 
 米遥不建立全局 Quartz 键盘事件 tap。若 Mac 实体键盘出现按键丢失或修饰键卡住，应立即停止米遥并提交脱敏日志，这是安全缺陷而不是可接受的已知限制。
 

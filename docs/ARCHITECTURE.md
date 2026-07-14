@@ -19,7 +19,7 @@ BLE 遥控器
 ```mermaid
 flowchart LR
     REMOTE["小米遥控器 HID service"] --> HID["IOHIDManager<br/>保留原始 Usage"]
-    REMOTE --> NEUTRAL["remote-mapping.sh<br/>十键→No Event<br/>菜单/音量原生"]
+    REMOTE --> NEUTRAL["remote-mapping.sh<br/>十二键→No Event<br/>菜单原生"]
     NEUTRAL --> MACOS["macOS 前台事件<br/>无原生箭头/按键副作用"]
     HID --> CAL["confirmed_calibration<br/>Usage → RemoteButton"]
     CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
@@ -42,11 +42,11 @@ flowchart LR
 - `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
 - `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
-- `ButtonActionExecutor.swift`：鼠标移动与点击、方向键/Return/Escape、模式切换，以及 Codex 启动和聚焦。
-- `remote-mapping.sh` / `run-with-mapping.sh`：十个接管键到 HID `No Event` 的设备专属中性化；菜单和音量不进入映射。包含 v1/v2 迁移、所有权状态、回读验证和退出恢复。
+- `ButtonActionExecutor.swift`：鼠标移动与点击、方向键/Return/Escape、模式切换，以及 Codex 启动、聚焦和上/下一个会话。
+- `remote-mapping.sh` / `run-with-mapping.sh`：十二个接管键到 HID `No Event` 的设备专属中性化；仅菜单不进入映射。包含 v1/v2/v3 迁移、所有权状态、回读验证和退出恢复。
 - `Configuration.swift`：CLI 模式和安全选项。
 
-米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十键 `No Event` 映射隔离。
+米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十二键 `No Event` 映射隔离。
 
 ## 会话状态
 

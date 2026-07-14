@@ -209,9 +209,15 @@ import Testing
     #expect(preset.action(for: .dpadUp) == .pointerMoveUp)
     #expect(preset.action(for: .center) == .pointerLeftClick)
     #expect(preset.action(for: .back) == .pointerRightClick)
-    #expect(preset.action(for: .volumeDown) == .pointerScrollDown)
+    #expect(preset.action(for: .volumeUp) == .codexPreviousTask)
+    #expect(preset.action(for: .volumeDown) == .codexNextTask)
     #expect(preset.action(for: .tv) == .modeTogglePointerDirectional)
     #expect(preset.action(for: .power) == .codexLaunchOrFocus)
+}
+
+@Test func codexTaskNavigationTargetsAppMenuItems() {
+    #expect(CodexTaskDirection.previous.menuItemTitles.contains("Previous Task"))
+    #expect(CodexTaskDirection.next.menuItemTitles.contains("Next Task"))
 }
 
 @Test func parsesButtonDebugModeAndCalibrationDecisions() throws {

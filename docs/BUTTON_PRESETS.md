@@ -6,7 +6,7 @@
 
 米遥把硬件识别和用户偏好分成两层：校准档案只回答“这个 HID Usage 是哪个实体按钮”，预设套装再决定“这个按钮现在做什么”。更换套装不需要重新校准遥控器。
 
-> 当前状态：`pointer` 默认套装、校准合并、冲突拒绝和鼠标执行器已经实现并通过自动测试；小米 2 Pro 固件 2671 的六个必需按钮已完成新格式真机校准，四个方向已验证直接光标定位与真实坐标变化。点击、模式切换和电源动作仍需逐项验收，因此暂不把整套指针模式标记为端到端验证。
+> 当前状态：`pointer` 默认套装、校准合并、冲突拒绝和鼠标执行器已经实现并通过自动测试；小米 2 Pro 固件 2671 的十二个接管键已完成新格式真机校准，四个方向已验证直接光标定位与真实坐标变化，音量加减已完成 Codex 会话双向切换验收。点击、模式切换和电源动作仍需逐项验收，因此暂不把整套指针模式标记为端到端验证。
 
 ## 映射架构
 
@@ -22,6 +22,7 @@ flowchart LR
     H --> J["鼠标执行器"]
     H --> K["方向键 / Return / Escape"]
     E --> L["电源键 → 启动或聚焦 Codex"]
+    E --> M["音量 +/- → Codex 上/下一个会话"]
     F --> I["Codex 导航执行器"]
 ```
 
@@ -35,7 +36,7 @@ flowchart LR
 | 方向上 / 下 / 左 / 右 | 鼠标：`pointer.move_*`；方向键：`keyboard.arrow_*` | 四项都必须人工确认 |
 | 中间确认键 | 鼠标：`pointer.left_click`；方向键：`keyboard.return` | 必须人工确认 |
 | 返回键 | 鼠标：`pointer.right_click`；方向键：`keyboard.escape` | 物理 Usage `0x07/0xF1` 已确认；需按新档案格式再确认 |
-| 音量加 / 减 | `pointer.scroll_up/down` | 可选增强，未确认时不影响六键基础模式 |
+| 音量加 / 减 | `codex.previous_task/next_task` | `0x07/0x80`、`0x07/0x81` 已确认并完成双向动作验收 |
 | `TV` | `mode.toggle_pointer_directional` | `0x07/0x35` 已按新格式真机确认 |
 | `HOME` | `codex.focus` | 可选增强 |
 | 菜单键 | `preset.cycle` | 当前只有一个套装时只提示状态 |
@@ -45,7 +46,7 @@ flowchart LR
 
 启动后默认是鼠标模式。按一下已校准的 `TV` 键切到方向键模式，再按一次切回。方向键模式适合在 Codex 或其他前台 App 中移动选择：方向四键发送标准箭头键，中间确认发送 Return，返回发送 Escape。音量、`HOME`、菜单、语音和电源动作不随控制模式改变。
 
-小米 2 Pro 固件 2671 的 `TV` 与电源键已经分别确认成 Keyboard Usage `0x35` 和 Keyboard Power `0x66`，不是纯红外键。Codex 已运行时电源动作只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。其他遥控器仍必须独立校准，不能沿用这组 Usage。
+小米 2 Pro 固件 2671 的 `TV` 与电源键已经分别确认成 Keyboard Usage `0x35` 和 Keyboard Power `0x66`，不是纯红外键。音量加减确认成 `0x80` / `0x81`，分别通过 Accessibility 直接执行 Codex 的“Previous Task / Next Task”菜单项，不合成 `⌘⇧[` / `⌘⇧]` 或任何修饰键。Codex 已运行时电源动作只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。其他遥控器仍必须独立校准，不能沿用这组 Usage。
 
 ## 首次校准
 
@@ -75,6 +76,8 @@ flowchart LR
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button back
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button tv
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button volume_up
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button volume_down
 ```
 
 只有 `captureMode=confirmed_calibration` 的报告会进入运行时。自动学习报告、超时项、未观察到松手的项和两个按钮共用同一 Usage 的冲突档案都会被拒绝。
@@ -87,7 +90,7 @@ flowchart LR
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-这条命令按精确设备属性把方向六键、HOME、TV、电源和语音共十键映射为 HID `No Event`；菜单与音量加减不进入映射，保持原生。写入会回读验证，退出和信号中断都会安全恢复。
+这条命令按精确设备属性把方向六键、HOME、TV、电源、语音和音量加减共十二键映射为 HID `No Event`；仅菜单不进入映射并保持原生。写入会回读验证，退出和信号中断都会安全恢复。
 
 实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 
@@ -125,7 +128,7 @@ flowchart LR
 - 应用前只接受空映射，拒绝覆盖任何既有 `UserKeyMapping`；状态文件记录所有权，恢复时同样拒绝删除未知配置；
 - 指针动作需要辅助功能权限；权限缺失时拒绝启动按键动作；
 - 米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源，Mac 实体键盘不会进入米遥的按键处理链；
-- 遥控器原生副作用只通过精确设备 service 的十键 HID `No Event` 映射隔离；`TV` / 电源键的物理 Usage 已确认，但动作结果仍需逐项真机验收；
+- 遥控器原生副作用只通过精确设备 service 的十二键 HID `No Event` 映射隔离；`TV`、电源和音量键的物理 Usage 已确认，但动作结果仍需逐项真机验收；
 - 调试校准模式不会合成鼠标或键盘动作，但 macOS 仍可能处理遥控器原始 HID 键；请在无重要输入的窗口中校准；
 - `Control + C` 始终是退出入口；`--no-buttons` 是明确的安全回退。
 

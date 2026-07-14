@@ -36,6 +36,8 @@ enum ButtonAction: String, Codable {
     case modeTogglePointerDirectional = "mode.toggle_pointer_directional"
     case codexFocus = "codex.focus"
     case codexLaunchOrFocus = "codex.launch_or_focus"
+    case codexPreviousTask = "codex.previous_task"
+    case codexNextTask = "codex.next_task"
     case presetCycle = "preset.cycle"
     case unmapped
 }
@@ -70,8 +72,8 @@ struct ButtonPreset: Equatable {
             .back: .pointerRightClick,
             .home: .codexFocus,
             .menu: .presetCycle,
-            .volumeUp: .pointerScrollUp,
-            .volumeDown: .pointerScrollDown,
+            .volumeUp: .codexPreviousTask,
+            .volumeDown: .codexNextTask,
             .tv: .modeTogglePointerDirectional,
             .power: .codexLaunchOrFocus,
         ],

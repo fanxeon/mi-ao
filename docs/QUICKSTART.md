@@ -108,7 +108,7 @@ cd mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-脚本会为目标遥控器把方向键、确认、返回、HOME、TV、电源和语音键映射为 HID `No Event`；菜单与音量加减保持原生。退出时自动恢复，且不会覆盖已有的用户级 `UserKeyMapping`。
+脚本会为目标遥控器把方向键、确认、返回、HOME、TV、电源、语音和音量加减映射为 HID `No Event`；仅菜单保持原生。音量 `+/-` 分别切换 Codex 上一个/下一个会话。退出时自动恢复，且不会覆盖已有的用户级 `UserKeyMapping`。
 
 ## 常用选项
 

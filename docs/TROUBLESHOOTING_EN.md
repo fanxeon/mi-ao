@@ -76,9 +76,13 @@ The verified Xiaomi Remote 2 Pro firmware 2671 result is `TV=0x07/0x35` and `Pow
 
 `debug-buttons` does not synthesize MI-AO actions, but macOS can still handle the original remote HID key. Stop calibration, focus an empty window where arrows or Back cannot lose work, and retry. Do not calibrate in an unsaved editor, file list, or destructive confirmation dialog.
 
+## Volume does not navigate Codex tasks
+
+Confirm Codex is running and its View menu contains `Previous Task` / `Next Task`. Then calibrate `--button volume_up` and `--button volume_down` separately; Xiaomi Remote 2 Pro firmware 2671 should report `0x07/0x80` and `0x07/0x81`. MI-AO invokes these Accessibility menu items directly and synthesizes no keyboard chord. A stuck modifier is a safety defect: stop immediately and report it.
+
 ## Pointer movement and the foreground app both react
 
-Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all ten intercepted keys mapped to `No Event` for the current device, while Menu and Volume are absent. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
+Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all twelve intercepted keys mapped to `No Event` for the current device, while only Menu is absent. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
 
 MI-AO installs no global Quartz keyboard event tap. If the physical Mac keyboard loses keystrokes or leaves a modifier stuck, stop MI-AO immediately and submit a redacted log; that is a safety defect, not an accepted limitation.
 

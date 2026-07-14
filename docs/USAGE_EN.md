@@ -32,7 +32,7 @@ cd /path/to/mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, and Voice to HID `No Event`, while Menu and Volume Up/Down remain native. It restores the original mapping on exit.
+The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down to HID `No Event`; only Menu remains native. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
 
 Wait for:
 

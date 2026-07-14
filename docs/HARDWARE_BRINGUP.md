@@ -111,9 +111,11 @@ make preflight
   --button-seconds 20
 ```
 
-报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 已取得以下独立证据：返回键 `0x07/0xF1`（旧格式确认），`TV` 键 `0x07/0x35`、电源键 `0x07/0x66`（新格式 `confirmed_calibration`），三项均观察到按下和松手。其他按钮必须分别复测后才能写入正式键码表。
+报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 已取得以下独立证据：返回键 `0x07/0xF1`、`TV` 键 `0x07/0x35`、电源键 `0x07/0x66`、音量加 `0x07/0x80`、音量减 `0x07/0x81`，均观察到按下和松手；后四项使用新格式 `confirmed_calibration`。其他按钮必须分别复测后才能写入正式键码表。
 
-设备专属 `UserKeyMapping` 的接管边界固定为十键：方向六键、HOME、TV、电源和语音；菜单与音量加减明确排除。HOME 已确认 `0x07/0x4A`，语音 HID 已确认 `0x07/0x3E`，语音音频仍走独立 ATVV 链路。
+设备专属 `UserKeyMapping` 的接管边界固定为十二键：方向六键、HOME、TV、电源、语音和音量加减；仅菜单明确排除。HOME 已确认 `0x07/0x4A`，语音 HID 已确认 `0x07/0x3E`，语音音频仍走独立 ATVV 链路。
+
+音量加减已完成动作层真机验收：`0x80` 通过 Codex Accessibility 菜单执行上一个会话，`0x81` 执行下一个会话；两项均保留完整按下/松手，不改变系统音量，也不合成或残留修饰键状态。
 
 六个必需按钮的新格式确认值为：上 `0x07/0x52`、下 `0x07/0x51`、左 `0x07/0x50`、右 `0x07/0x4F`、确认 `0x07/0x28`、返回 `0x07/0xF1`。四个方向已通过运行期 HID 日志、`warp=0` 和系统坐标监测完成鼠标移动闭环；点击等其余动作仍需分别验收。
 

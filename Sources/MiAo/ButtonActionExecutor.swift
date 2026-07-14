@@ -84,6 +84,16 @@ final class ButtonActionExecutor {
             case .launchRequested: print("正在启动 Codex")
             case .unavailable: print("未找到 Codex App，请先安装 Codex")
             }
+        case .codexPreviousTask:
+            print(
+                CodexSubmitter().navigateTask(.previous)
+                    ? "Codex：上一个会话" : "Codex 未运行或找不到会话菜单，未切换"
+            )
+        case .codexNextTask:
+            print(
+                CodexSubmitter().navigateTask(.next)
+                    ? "Codex：下一个会话" : "Codex 未运行或找不到会话菜单，未切换"
+            )
         case .presetCycle:
             print("当前只有 \(preset.name)（\(preset.id)）套装")
         case .voicePushToTalk, .modeTogglePointerDirectional, .unmapped:

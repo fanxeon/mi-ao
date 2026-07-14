@@ -150,6 +150,8 @@ import Testing
         "12984",
         "--button-seconds",
         "12",
+        "--button",
+        "back",
         "--profile-dir",
         "~/mi-ao-button-test",
     ])
@@ -158,6 +160,7 @@ import Testing
     #expect(configuration.hidVendorID == 0x2717)
     #expect(configuration.hidProductID == 0x32B8)
     #expect(configuration.buttonSeconds == 12)
+    #expect(configuration.buttonID == "back")
     #expect(configuration.buttonProfileDirectory.hasSuffix("/mi-ao-button-test"))
 }
 
@@ -166,7 +169,8 @@ import Testing
     defer { try? FileManager.default.removeItem(at: root) }
     let now = Date(timeIntervalSince1970: 1_700_000_000)
     let profile = ButtonProfile(
-        schemaVersion: 1,
+        schemaVersion: 4,
+        captureMode: "confirmed_calibration",
         generatedAt: now,
         device: .init(vendorID: 0x2717, productID: 0x32B8, productName: "Xiaomi Remote"),
         privacy: "No identifiers stored.",
@@ -178,6 +182,7 @@ import Testing
                 status: .observed,
                 usagePage: 0x07,
                 usage: 0x52,
+                elementUsage: Int(UInt32.max),
                 rawValues: [1, 0],
                 pressObserved: true,
                 releaseObserved: true,
@@ -196,4 +201,184 @@ import Testing
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
     #expect(try decoder.decode(ButtonProfile.self, from: data) == profile)
+}
+
+@Test func pointerPresetMapsPhysicalButtonsToActions() throws {
+    let preset = try ButtonPreset.named("pointer")
+    #expect(preset.id == "pointer")
+    #expect(preset.action(for: .dpadUp) == .pointerMoveUp)
+    #expect(preset.action(for: .center) == .pointerLeftClick)
+    #expect(preset.action(for: .back) == .pointerRightClick)
+    #expect(preset.action(for: .volumeDown) == .pointerScrollDown)
+    #expect(preset.action(for: .power) == .unmapped)
+}
+
+@Test func parsesButtonDebugModeAndCalibrationDecisions() throws {
+    let configuration = try Configuration.parse([
+        "mi-ao", "debug-buttons", "--button", "back",
+    ])
+    #expect(configuration.mode == .debugButtons)
+    #expect(configuration.buttonID == "back")
+    #expect(ButtonCalibrationDecision.parse("") == .confirm)
+    #expect(ButtonCalibrationDecision.parse("y") == .confirm)
+    #expect(ButtonCalibrationDecision.parse("retry") == .retry)
+    #expect(ButtonCalibrationDecision.parse("s") == .skip)
+    #expect(ButtonCalibrationDecision.parse("q") == .quit)
+    #expect(ButtonCalibrationDecision.parse("no") == .invalid)
+}
+
+@Test func parsesPointerRuntimeConfiguration() throws {
+    let configuration = try Configuration.parse([
+        "mi-ao", "run", "--preset", "pointer", "--button-profile", "~/confirmed.json",
+        "--no-buttons",
+    ])
+    #expect(configuration.buttonPresetID == "pointer")
+    #expect(configuration.buttonProfilePath?.hasSuffix("/confirmed.json") == true)
+    #expect(configuration.buttonsEnabled == false)
+}
+
+@Test func mergesConfirmedCalibrationForRequiredPointerButtons() throws {
+    let now = Date(timeIntervalSince1970: 1_700_000_000)
+    let required: [(RemoteButton, Int)] = [
+        (.dpadUp, 0x52), (.dpadDown, 0x51), (.dpadLeft, 0x50),
+        (.dpadRight, 0x4F), (.center, 0x28), (.back, 0xF1),
+    ]
+    let observations = required.map { button, usage in
+        ButtonProfile.Observation(
+            button: button.rawValue,
+            label: button.rawValue,
+            expectedTransport: "hid",
+            status: .observed,
+            usagePage: 0x07,
+            usage: usage,
+            elementUsage: Int(UInt32.max),
+            rawValues: [usage, 0],
+            pressObserved: true,
+            releaseObserved: true,
+            repeatCount: 0,
+            note: nil
+        )
+    }
+    let profile = ButtonProfile(
+        schemaVersion: 4,
+        captureMode: "confirmed_calibration",
+        generatedAt: now,
+        device: .init(vendorID: 0x2717, productID: 0x32B8, productName: "Xiaomi Remote"),
+        privacy: "redacted",
+        observations: observations
+    )
+    let url = URL(fileURLWithPath: "/tmp/confirmed.json")
+    let builtMap = try ButtonProfileStore.buildMap(from: [(profile, url)], preset: .pointer)
+    let map = try #require(builtMap)
+
+    #expect(map.buttonsByUsage[HIDUsageKey(page: 0x07, usage: 0x52)] == .dpadUp)
+    #expect(map.usagesByButton[.back] == HIDUsageKey(page: 0x07, usage: 0xF1))
+    #expect(map.sourceFiles == [url])
+    #expect(PointerActionExecutor.pointerSpeed(heldSeconds: 0) == 260)
+    #expect(PointerActionExecutor.pointerSpeed(heldSeconds: 2) == 1_000)
+}
+
+@Test func newestCalibrationResultCanInvalidateAnOlderButton() throws {
+    let first = makePointerProfile(generatedAt: Date(timeIntervalSince1970: 100))
+    let invalidated = ButtonProfile(
+        schemaVersion: 4,
+        captureMode: "confirmed_calibration",
+        generatedAt: Date(timeIntervalSince1970: 200),
+        device: first.device,
+        privacy: "redacted",
+        observations: [
+            .init(
+                button: RemoteButton.dpadUp.rawValue,
+                label: "dpad_up",
+                expectedTransport: "hid",
+                status: .notObserved,
+                usagePage: nil,
+                usage: nil,
+                elementUsage: nil,
+                rawValues: [],
+                pressObserved: false,
+                releaseObserved: false,
+                repeatCount: 0,
+                note: "retry required"
+            )
+        ]
+    )
+
+    let map = try ButtonProfileStore.buildMap(
+        from: [
+            (first, URL(fileURLWithPath: "/tmp/first.json")),
+            (invalidated, URL(fileURLWithPath: "/tmp/latest.json")),
+        ],
+        preset: .pointer
+    )
+    #expect(map == nil)
+}
+
+@Test func rejectsDuplicateUsageAcrossPhysicalButtons() {
+    let profile = makePointerProfile(
+        generatedAt: Date(timeIntervalSince1970: 100),
+        backUsage: 0x28
+    )
+    var rejected = false
+    do {
+        _ = try ButtonProfileStore.buildMap(
+            from: [(profile, URL(fileURLWithPath: "/tmp/conflict.json"))],
+            preset: .pointer
+        )
+    } catch {
+        rejected = true
+    }
+    #expect(rejected)
+}
+
+@Test func suppressesOnlyMatchingFreshRemoteEventTokens() {
+    let suppressor = RemoteEventSuppressor()
+    suppressor.record(isDown: true, at: 10)
+    #expect(suppressor.consume(isDown: false, now: 10.01) == false)
+    #expect(suppressor.consume(isDown: true, now: 10.01))
+    #expect(suppressor.consume(isDown: true, now: 10.02) == false)
+    suppressor.record(isDown: false, at: 20)
+    #expect(suppressor.consume(isDown: false, now: 20.2) == false)
+}
+
+@Test func resolvesUsageFromKeyboardArrayReport() {
+    #expect(
+        ButtonLearner.normalizedUsage(
+            elementUsage: Int(UInt32.max),
+            rawValues: [62, 4_063_232, 0]
+        ) == 62
+    )
+    #expect(ButtonLearner.normalizedUsage(elementUsage: 0x52, rawValues: [1, 0]) == 0x52)
+    #expect(ButtonLearner.isRepeat(elapsed: 0.05) == false)
+    #expect(ButtonLearner.isRepeat(elapsed: 0.35))
+}
+
+private func makePointerProfile(generatedAt: Date, backUsage: Int = 0xF1) -> ButtonProfile {
+    let usages: [(RemoteButton, Int)] = [
+        (.dpadUp, 0x52), (.dpadDown, 0x51), (.dpadLeft, 0x50),
+        (.dpadRight, 0x4F), (.center, 0x28), (.back, backUsage),
+    ]
+    return ButtonProfile(
+        schemaVersion: 4,
+        captureMode: "confirmed_calibration",
+        generatedAt: generatedAt,
+        device: .init(vendorID: 0x2717, productID: 0x32B8, productName: "Xiaomi Remote"),
+        privacy: "redacted",
+        observations: usages.map { button, usage in
+            .init(
+                button: button.rawValue,
+                label: button.rawValue,
+                expectedTransport: "hid",
+                status: .observed,
+                usagePage: 0x07,
+                usage: usage,
+                elementUsage: usage,
+                rawValues: [1, 0],
+                pressObserved: true,
+                releaseObserved: true,
+                repeatCount: 0,
+                note: nil
+            )
+        }
+    )
 }

@@ -3,7 +3,7 @@ import Foundation
 
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
-    if configuration.mode == .learnButtons {
+    if configuration.mode == .learnButtons || configuration.mode == .debugButtons {
         let learner = ButtonLearner(configuration: configuration)
         try learner.start()
         while !learner.isFinished {
@@ -14,6 +14,16 @@ do {
     }
     let bridge = BLEVoiceBridge(configuration: configuration)
     try bridge.start()
+    var buttonController: HIDButtonController?
+    if configuration.mode == .run {
+        do {
+            buttonController = try ButtonRuntimeFactory.make(configuration: configuration)
+            try buttonController?.start()
+        } catch {
+            fputs("实体按键动作已禁用：\(error.localizedDescription)\n", stderr)
+            buttonController = nil
+        }
+    }
     if configuration.mode == .scan || configuration.mode == .capture || configuration.mode == .run {
         while !bridge.isFinished {
             _ = RunLoop.main.run(mode: .default, before: .distantFuture)

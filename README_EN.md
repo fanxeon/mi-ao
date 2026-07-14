@@ -8,7 +8,7 @@
 
 Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
-[English](README_EN.md) · [中文](README.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
+[English](README_EN.md) · [中文](README.md) · [Pair and connect](docs/PAIRING_EN.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Button presets](docs/BUTTON_PRESETS_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -31,6 +31,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 - **Local speech processing.** ADPCM decoding and `whisper.cpp` transcription run on your Mac.
 - **Fail-safe submission.** MI-AO submits only when exactly one enabled Codex editor is found; otherwise it only copies the transcript.
 - **Evidence-driven compatibility.** A privacy-aware GATT capture mode makes new remote support reproducible.
+- **Confirmable button calibration.** HID events are filtered by exact Vendor/Product IDs. Debug mode shows the Usage and current preset action before saving only the physical mapping; it excludes the Mac keyboard and synthesizes no mouse or keyboard action.
 
 ## Real end-to-end evidence
 
@@ -42,6 +43,14 @@ Submitted to Codex
 ```
 
 See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up record](docs/HARDWARE_BRINGUP.md) for the underlying evidence.
+
+## One remote, multiple presets
+
+Calibration identifies physical buttons; a preset decides what they do. The default `pointer` preset maps the D-pad to pointer movement, Center to left-click, Back to right-click, Volume to scrolling, `TV` to pointer toggle, `HOME` to Codex focus, Menu to preset cycling, Voice to hold-to-talk, and leaves Power unmapped.
+
+> **Status boundary:** the preset architecture and pointer executor are implemented. The voice path and Back's physical Usage have hardware evidence, but the complete six-button calibration and end-to-end pointer acceptance run are still pending. Pointer mode is an implementation preview, not a hardware-verified claim.
+
+See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 
 ## 3-minute quick start
 
@@ -57,13 +66,13 @@ The setup script installs `whisper-cpp`, downloads the multilingual base model, 
 
 ### 2. Pair and authorize
 
-Pair the remote in macOS System Settings → Bluetooth, then run:
+Open System Settings → Bluetooth. On the Xiaomi Remote 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect, wait for the Connected status, then run:
 
 ```bash
 ./scripts/authorize.sh
 ```
 
-Grant Bluetooth and Accessibility access to the installed MI-AO app when macOS asks.
+`authorize.sh` requests Accessibility access. macOS separately requests Bluetooth access when the bridge runs for the first time. Grant both permissions to the installed MI-AO app. See the [complete pairing and first connection guide](docs/PAIRING_EN.md) for exact steps, a safe first test, reconnection and recovery.
 
 ### 3. Run
 
@@ -102,6 +111,8 @@ BLE voice remote
 
 The current implementation supports ATVV v0.4 and v1.0, 8 kHz and 16 kHz ADPCM, remote `AUDIO_STOP`, second-press termination, and silence timeout fallback. See [Architecture](docs/ARCHITECTURE.md) and [Protocol notes](docs/PROTOCOL.md).
 
+Physical buttons use a separate path: `HID Usage → confirmed physical button → selected preset → action executor`. Hardware evidence never stores pointer or Codex behavior, so presets remain replaceable.
+
 ## Privacy and safety
 
 - Speech transcription runs locally and does not require a speech cloud API.
@@ -119,7 +130,8 @@ The next milestones are:
 
 - menu bar status and recording feedback;
 - device selection, persisted configuration, and reconnect;
-- physical-button learning, action mapping, and D-pad pointer mode;
+- the six-button pointer hardware calibration, event-suppression timing, and multi-display acceptance run;
+- a second Codex-session navigation preset;
 - a broader real-hardware compatibility matrix;
 - configurable output targets without weakening the default safety contract.
 
@@ -139,8 +151,10 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 ## Documentation
 
 - [Documentation index](docs/README.md)
+- [Remote pairing and first connection](docs/PAIRING_EN.md)
 - [Quick start](docs/QUICKSTART_EN.md)
 - [Complete usage guide](docs/USAGE_EN.md)
+- [Button presets and default pointer mode](docs/BUTTON_PRESETS_EN.md)
 - [Compatibility matrix](docs/COMPATIBILITY.md)
 - [Troubleshooting](docs/TROUBLESHOOTING_EN.md)
 - [Architecture](docs/ARCHITECTURE.md)

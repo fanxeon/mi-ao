@@ -47,6 +47,14 @@ struct CodexSubmitter {
         snapshot.restore()
     }
 
+    @discardableResult
+    func activateCodex() -> Bool {
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first else {
+            return false
+        }
+        return app.activate(options: [.activateAllWindows])
+    }
+
     private func focusCodexEditor(in applicationElement: AXUIElement) -> Bool {
         let searchRoot = elementAttribute(applicationElement, kAXFocusedWindowAttribute) ?? applicationElement
         let candidates = findTextInputs(in: searchRoot)

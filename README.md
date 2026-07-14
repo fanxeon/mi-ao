@@ -8,7 +8,7 @@
 
 由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。“是的我只手写了这一行代码，出现任何bug我宣布有codex负责”
 
-[中文](README.md) · [English](README_EN.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
+[中文](README.md) · [English](README_EN.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -31,6 +31,7 @@
 - **本地语音链路。** ADPCM 解码和 `whisper.cpp` 转写都在本机完成。
 - **默认不误发。** 只有找到唯一可用的 Codex 编辑器才发送；其他情况只复制文字。
 - **面向兼容性贡献。** 内置脱敏 GATT 采集模式，可以用真实证据接入更多遥控器。
+- **可确认的按键校准。** 按设备 Vendor/Product 精确过滤 HID 事件；调试模式逐项显示 Usage 与当前预设动作，确认后才写入物理档案，不采集 Mac 键盘输入，也不合成鼠标或键盘动作。
 
 ## 真实闭环证据
 
@@ -42,6 +43,26 @@ AUDIO_STOP reason=remote-release
 ```
 
 真实硬件、协议和端到端验收记录见 [兼容性矩阵](docs/COMPATIBILITY.md) 和 [真机 Bring-up](docs/HARDWARE_BRINGUP.md)。
+
+## 一支遥控器，多套映射
+
+校准只识别实体按钮，映射套装决定按钮用途。默认 `pointer` 套装如下；未来可以加入 Codex 会话导航套装，无需重新校准硬件。
+
+| 按钮 | 默认 `pointer` 动作 |
+| --- | --- |
+| 方向键 | 移动鼠标指针 |
+| 中间确认 | 左击 |
+| 返回 | 右击 |
+| 音量加减 | 上下滚动 |
+| `TV` | 开关指针动作 |
+| `HOME` | 聚焦 Codex |
+| 菜单 | 切换映射套装 |
+| 语音 | 保持原有按住说话 |
+| 电源 | 默认不映射 |
+
+> **状态边界：** 映射架构、默认套装和执行器已经实现；语音链路与返回键物理 Usage 已有真机证据。方向四键、确认、返回六项完整校准和整套鼠标真机验收仍未完成，因此指针模式目前是 implementation preview，不标记为端到端验证。
+
+完整示意图、校准命令、安全回退和扩展合同见 [按键预设与默认指针模式](docs/BUTTON_PRESETS.md)。
 
 ## 3 分钟快速开始
 
@@ -57,13 +78,13 @@ cd mi-ao
 
 ### 2. 配对与授权
 
-先在“系统设置 → 蓝牙”中完成遥控器配对，然后运行：
+打开“系统设置 → 蓝牙”，在小米蓝牙遥控器 2 Pro 上**同时长按菜单键 + `HOME`**，直到它出现在“附近设备”。点击“连接”，等待状态变为“已连接”，然后运行：
 
 ```bash
 ./scripts/authorize.sh
 ```
 
-macOS 会要求蓝牙和辅助功能权限。辅助功能列表中应允许已安装的“米遥” App。
+`authorize.sh` 会请求辅助功能权限；第一次启动桥接时 macOS 会另外请求蓝牙权限。两处都应允许已安装的“米遥” App。完整的按键、配对、连接、首次安全测试和重连流程见 [遥控器配对与首次连接指南](docs/PAIRING.md)。
 
 ### 3. 启动
 
@@ -102,6 +123,8 @@ BLE 遥控器
 
 当前支持 ATVV v0.4 / v1.0、8 kHz / 16 kHz ADPCM、`AUDIO_STOP`、二次按键与静音超时收口。模块边界和扩展方式见 [架构说明](docs/ARCHITECTURE.md) 和 [ATVV 协议说明](docs/PROTOCOL.md)。
 
+实体按键采用另一条链路：`HID Usage → 人工确认的实体按钮 → 可切换预设 → 动作执行器`。硬件校准档案不保存鼠标或 Codex 动作，因此更换预设不会污染设备证据。
+
 ## 隐私与安全
 
 - 语音转写默认在本机完成，不依赖语音云 API。
@@ -119,7 +142,8 @@ BLE 遥控器
 
 - 菜单栏状态与启停反馈；
 - 设备选择、配置持久化与自动重连；
-- 实体按键学习、动作映射和方向键指针模式；
+- 默认 pointer 套装的六键真机校准、事件抑制时序与多显示器验收；
+- Codex 会话导航等第二套映射；
 - 更多真实遥控器的兼容矩阵；
 - 可配置输出目标，但不弱化默认安全边界。
 
@@ -139,8 +163,10 @@ BLE 遥控器
 ## 文档
 
 - [文档导航](docs/README.md)
+- [遥控器配对与首次连接](docs/PAIRING.md)
 - [快速开始](docs/QUICKSTART.md)
 - [完整使用说明](docs/USAGE.md)
+- [按键预设与默认指针模式](docs/BUTTON_PRESETS.md)
 - [兼容性矩阵](docs/COMPATIBILITY.md)
 - [故障排查](docs/TROUBLESHOOTING.md)
 - [架构说明](docs/ARCHITECTURE.md)

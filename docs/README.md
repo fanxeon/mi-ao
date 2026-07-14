@@ -8,8 +8,10 @@
 
 | 文档 | 用途 |
 | --- | --- |
+| [遥控器配对与首次连接](PAIRING.md) / [Remote pairing and first connection](PAIRING_EN.md) | 菜单键 + HOME 配对、macOS 连接、权限、首次语音测试与重连 |
 | [快速开始](QUICKSTART.md) / [Quick start](QUICKSTART_EN.md) | 从安装、配对到第一次语音提交 |
 | [完整使用说明](USAGE.md) / [Usage guide](USAGE_EN.md) | 日常启动、操作模式、成功日志、更新和数据管理 |
+| [按键预设与默认指针模式](BUTTON_PRESETS.md) / [Button presets](BUTTON_PRESETS_EN.md) | 两层映射、默认按键表、校准、启动和安全回退 |
 | [兼容性矩阵](COMPATIBILITY.md) | 真实验证的遥控器、固件和协议证据 |
 | [故障排查](TROUBLESHOOTING.md) / [Troubleshooting](TROUBLESHOOTING_EN.md) | 启动、蓝牙、转写、焦点与重连问题 |
 | [源码优先分发](DISTRIBUTION.md) | ad-hoc 签名、安装、验证与卸载边界 |
@@ -21,7 +23,7 @@
 | --- | --- |
 | [贡献指南](../CONTRIBUTING.md) / [Contributing](../CONTRIBUTING_EN.md) | 开发流程、PR 要求与隐私边界 |
 | [社区行为准则](../CODE_OF_CONDUCT.md) / [Code of conduct](../CODE_OF_CONDUCT_EN.md) | 友善、专业、隐私安全的社区协作边界 |
-| [架构说明](ARCHITECTURE.md) | BLE、协议、音频、Whisper 和 Codex 提交边界 |
+| [架构说明](ARCHITECTURE.md) | BLE 语音、HID 校准、预设映射、执行器和 Codex 提交边界 |
 | [ATVV 协议说明](PROTOCOL.md) | UUID、协商、音频帧和固件差异 |
 | [真机 Bring-up](HARDWARE_BRINGUP.md) | 取得可复核硬件证据的标准流程 |
 

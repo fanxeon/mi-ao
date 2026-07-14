@@ -14,6 +14,19 @@ BLE 遥控器
   -> verified Codex text input
 ```
 
+## 实体按键链路
+
+```mermaid
+flowchart LR
+    HID["IOHIDManager<br/>Vendor/Product 过滤"] --> CAL["confirmed_calibration<br/>Usage → RemoteButton"]
+    CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
+    PRESET --> POINTER["PointerActionExecutor"]
+    PRESET --> FUTURE["未来 Codex / 演示执行器"]
+    HID --> SUPPRESS["RemoteEventSuppressor<br/>关联原始 Quartz 键事件"]
+```
+
+硬件档案与动作预设是两个独立合同。`ButtonProfileStore` 只合并人工确认且与设备 Vendor/Product 一致的物理映射；`ButtonPreset` 决定当前动作。默认 `pointer` 缺少方向四键、确认或返回中任一必需项，或发现两个按钮共用同一 Usage 时，运行时拒绝启动实体按键动作，语音桥接不受影响。
+
 ## 模块边界
 
 - `BLEVoiceBridge.swift`：设备发现、连接、GATT 枚举、通知和语音会话状态机。
@@ -23,6 +36,12 @@ BLE 遥控器
 - `AudioPipeline.swift`：RMS、增益、重采样和 WAV 编码。
 - `WhisperTranscriber.swift`：本地 `whisper-cli` 进程合同。
 - `CodexSubmitter.swift`：Codex 进程识别、Electron 可访问性树遍历、唯一编辑器聚焦、粘贴和发送。
+- `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
+- `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
+- `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
+- `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
+- `PointerActionExecutor.swift`：方向加速、左右击、滚动、开关和 Codex 聚焦。
+- `RemoteEventSuppressor.swift`：短时关联遥控器 IOHID 与 Quartz `keyDown` / `keyUp`，尝试减少原始按键和映射动作双触发；Consumer Control 与完整真机时序仍待验收。
 - `Configuration.swift`：CLI 模式和安全选项。
 
 ## 会话状态

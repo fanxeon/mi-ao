@@ -20,6 +20,7 @@ struct ButtonProfile: Codable, Equatable {
         let status: Status
         let usagePage: Int?
         let usage: Int?
+        let elementUsage: Int?
         let rawValues: [Int]
         let pressObserved: Bool
         let releaseObserved: Bool
@@ -28,6 +29,7 @@ struct ButtonProfile: Codable, Equatable {
     }
 
     let schemaVersion: Int
+    let captureMode: String?
     let generatedAt: Date
     let device: Device
     let privacy: String

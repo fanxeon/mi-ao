@@ -2,7 +2,7 @@
 
 # 故障排查
 
-[English](TROUBLESHOOTING_EN.md) · [快速开始](QUICKSTART.md)
+[English](TROUBLESHOOTING_EN.md) · [配对与连接](PAIRING.md) · [快速开始](QUICKSTART.md)
 
 ## 先运行诊断
 
@@ -12,8 +12,17 @@
 
 它会检查 App、Bundle ID、签名、Codex 进程、蓝牙权限、辅助功能、`whisper-cli` 和模型。
 
+## macOS 蓝牙页看不到遥控器
+
+1. 打开“系统设置 → 蓝牙”；
+2. 在小米蓝牙遥控器 2 Pro 上同时长按菜单键 + `HOME`；
+3. 设备出现后点击“连接”，等待“已连接”状态。
+
+如果仍不出现，检查电池，把遥控器放到 Mac 附近，并临时关闭原电视或机顶盒的蓝牙。完整的忽略设备、重新配对和首次安全测试步骤见 [配对与首次连接指南](PAIRING.md)。
+
 ## 启动后找不到遥控器
 
+- 先区分问题所在：macOS 未显示“已连接”时，先重做系统配对；macOS 已连接但终端找不到时，再检查设备名、权限和米遥进程；
 - 确认 macOS 蓝牙页显示设备已连接；
 - 已连接设备可能停止普通广播，优先使用 `--name`；
 - 设备名称必须与 macOS 显示名称的一部分匹配；
@@ -41,6 +50,31 @@
 - `无法安全聚焦唯一的 Codex 输入框`：关闭 Codex 的重叠弹窗或多编辑器状态后重试。
 
 不要把 `--force-submit` 当作日常解决方案。它会跳过编辑器唯一性检查。
+
+## 语音可用，但鼠标模式没有启动
+
+这是安全降级，不代表语音故障。先看终端给出的具体原因：
+
+- “缺少人工确认校准”：运行 `./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器"`，至少确认方向四键、中间确认和返回；
+- “按键校准冲突”：两个实体按钮被确认成同一 Usage，分别使用 `--button <标识>` 重测；
+- “需要辅助功能权限”或“无法建立键盘事件过滤器”：运行 `./scripts/authorize.sh`，在系统设置中授权已安装的米遥 App 后重启；
+- 指定 `--button-profile` 后失败：确认它是 `captureMode=confirmed_calibration` 的新格式完整档案，而不是 `learn-buttons` 自动学习报告。
+
+只使用语音、暂不处理鼠标问题：
+
+```bash
+./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons
+```
+
+完整门禁和映射见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
+
+## 校准时前台 App 也响应了方向键
+
+`debug-buttons` 不会合成米遥动作，但 macOS 仍可能处理遥控器原始 HID 键。请停止校准，聚焦到空白且不会因方向键、返回键丢失内容的窗口，再重新运行。不要在未保存的编辑器、文件列表或删除确认框中校准。
+
+## 指针动作和前台 App 同时响应
+
+当前事件关联过滤仍是 implementation preview，Consumer Control 或系统定义事件可能没有被 Quartz `keyDown` / `keyUp` 过滤器覆盖。立即按 `Control + C` 停止，改用 `--no-buttons`，并用脱敏日志报告具体按钮、macOS 和遥控器固件；不要用全局键盘重映射作为日常绕过方案。
 
 ## 中文术语识别错误
 

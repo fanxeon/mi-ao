@@ -2,7 +2,7 @@
 
 # Usage Guide
 
-[中文](USAGE.md) · [Quick start](QUICKSTART_EN.md) · [Troubleshooting](TROUBLESHOOTING_EN.md)
+[中文](USAGE.md) · [Pair and connect](PAIRING_EN.md) · [Quick start](QUICKSTART_EN.md) · [Troubleshooting](TROUBLESHOOTING_EN.md)
 
 This guide starts after installation and covers daily startup, hold-to-talk behavior, success signals, safe modes, updates and local data cleanup. Complete the [3-minute quick start](QUICKSTART_EN.md) first.
 
@@ -21,7 +21,7 @@ Keep the terminal open while MI-AO is running. The current version has no menu b
 
 ### 1. Prepare
 
-- Confirm that `小米蓝牙语音遥控器` is connected in System Settings → Bluetooth.
+- Confirm that `小米蓝牙语音遥控器` is connected in System Settings → Bluetooth. If it has not been paired, hold Menu + `HOME` simultaneously and follow the [pairing and first connection guide](PAIRING_EN.md).
 - Open the Codex macOS app.
 - Open the Codex task that should receive the instruction and close dialogs covering its editor.
 
@@ -154,6 +154,62 @@ For local BLE / GATT inspection:
 
 Debug output can include raw device data and must be redacted before sharing. See [Troubleshooting](TROUBLESHOOTING_EN.md) for failure-specific steps.
 
+## Learn physical buttons
+
+The button learner listens only to the selected remote's HID Vendor/Product IDs and excludes the Mac's built-in keyboard. Run a full Xiaomi Remote 2 Pro scan with:
+
+```bash
+./scripts/learn-buttons.sh \
+  --name "小米蓝牙语音遥控器"
+```
+
+Press and release each button once when prompted. Use single-button mode to eliminate prompt timing errors or verify one result:
+
+```bash
+./scripts/learn-buttons.sh \
+  --name "小米蓝牙语音遥控器" \
+  --button back \
+  --button-seconds 20
+```
+
+Use confirmation-gated debug mode when producing a trusted production mapping:
+
+```bash
+./scripts/debug-buttons.sh \
+  --name "小米蓝牙语音遥控器"
+```
+
+After every release, the terminal shows “physical button → HID Usage → current preset action.” The debugger does not execute MI-AO pointer, Codex, or system actions. Because an unprivileged process cannot exclusively seize this HID device, the original key may still be handled by macOS or the frontmost app during calibration. Focus a safe window first. Enter:
+
+- `Return` or `y` to confirm and save;
+- `r` to discard and retry the current button;
+- `s` to mark the current button skipped;
+- `q` to stop and save only previously confirmed entries.
+
+For example, Back displays Usage Page `0x07` / Usage `0xF1`, previewed as `pointer.right_click` under the default `pointer` preset. Confirmation stores only that the Usage is the physical `back` button; it does not store right-click semantics.
+
+Valid IDs are `voice`, `dpad_up`, `dpad_down`, `dpad_left`, `dpad_right`, `center`, `back`, `home`, `menu`, `volume_up`, `volume_down`, `tv`, and `power`.
+
+Reports are written to:
+
+```text
+~/Library/Application Support/mi-ao/button-profiles/
+```
+
+They contain normalized HID Usage values, raw values, press, release and repeat evidence, plus the confirmation result. They do not store an action preset, MAC address, CoreBluetooth UUID, serial number, or host-keyboard events. On Xiaomi Remote 2 Pro firmware 2671, an isolated retest verified Back as Keyboard Usage Page `0x07` / Usage `0xF1`, with both press and release observed. The older report lacks the new `captureMode` trust marker, so Back must be reconfirmed before pointer mode can use it. Every other button also requires confirmed calibration.
+
+## Enable the default pointer mode
+
+After confirming all four D-pad directions, Center, and Back, restart the normal command. `pointer` is the default preset:
+
+```bash
+./scripts/run.sh --name "小米蓝牙语音遥控器"
+```
+
+Use `--button-profile "/path/to/buttons-*.json"` to pin one complete profile, or `--no-buttons` for voice only. Missing buttons, duplicate Usage values, Accessibility failure, or event-filter failure disables physical-button actions with a diagnostic while voice remains available.
+
+See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. The pointer path is implemented and covered by automated tests, but the complete six-button hardware calibration and end-to-end pointer acceptance run remain pending; it is still an implementation preview.
+
 ## Local data
 
 The default directory is:
@@ -210,7 +266,7 @@ Remove the app, Whisper model, recordings and captures:
 ## Current boundaries
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
-- The voice button is the only production input today; D-pad, action mapping and pointer mode remain on the [Roadmap](ROADMAP.md).
+- Voice remains the only input with completed hardware end-to-end acceptance. The default pointer execution path is implemented, while complete D-pad, Center, and Back calibration and hardware acceptance remain on the [Roadmap](ROADMAP.md).
 - The terminal must remain open; menu bar, background service and login start are not implemented yet.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.

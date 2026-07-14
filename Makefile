@@ -1,5 +1,5 @@
 # Copyright (c) 2026 FanXeon@Poemcoder with Codex
-.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture learn-buttons check clean
+.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture learn-buttons debug-buttons check clean
 
 build:
 	swift build
@@ -51,6 +51,9 @@ capture:
 
 learn-buttons:
 	./scripts/learn-buttons.sh --name "小米蓝牙语音遥控器"
+
+debug-buttons:
+	./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器"
 
 check:
 	xcrun swift-format lint --strict --recursive Sources Tests Package.swift

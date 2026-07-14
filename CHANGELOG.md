@@ -26,9 +26,16 @@
 - GitHub 首发方案：仓库描述、Topics、真实演示、Social Preview、Release 和社区设置门禁。
 - `FanXeon@Poemcoder with Codex` 全仓版权头、NOTICE、CODEOWNERS 和 `CITATION.cff`。
 - Vibe Coding 魔法仙女棒中英文传播文案与可复用首发帖。
-- 实体按键学习、动作映射、命令面板和方向键指针模式路线图。
+- 实体按键学习、可替换动作预设、命令面板和方向键指针模式路线图。
 - 中英文完整使用说明：日常启动、成功日志、安全模式、术语提示、更新与数据清理。
 - README 首屏、GitHub About 和品牌文案明确标注仅支持 macOS 14+。
+- 中英文遥控器配对与首次连接指南：小米 2 Pro 菜单键 + HOME 长按、macOS 连接、权限、安全转写测试、Codex 真实提交和失败恢复。
+- `learn-buttons` 真机 HID 按键学习：Vendor/Product 精确过滤、单键复测、数组式 Usage 规范化和脱敏 JSON 报告；返回键 `0x07/0xF1` 已完成独立真机验证。
+- `debug-buttons` 校准调试模式：逐项展示 HID Usage 与当前预设动作，支持确认、重测、跳过和提前结束；不合成米遥动作，确认后只写入硬件身份档案。
+- 硬件校准与动作预设分层：同一份人工确认档案可复用于不同按键方案，不把鼠标或 Codex 语义写死在设备证据中。
+- 默认 `pointer` 预设：方向键移动指针、确认左击、返回右击、音量滚动、`TV` 暂停/恢复、`HOME` 聚焦 Codex。
+- 人工确认档案合并、必需六键完整性检查、重复 Usage 冲突拒绝和 `--button-profile` / `--no-buttons` 启动控制。
+- 鼠标执行器、长按加速曲线和遥控器原始键盘事件的短时关联抑制；任何权限、档案或过滤器失败均只停用实体按键动作，语音链路继续运行。
 
 ### Changed
 

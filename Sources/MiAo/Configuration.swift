@@ -9,6 +9,7 @@ struct Configuration {
         case doctor
         case authorize
         case learnButtons = "learn-buttons"
+        case debugButtons = "debug-buttons"
     }
 
     var mode: Mode = .run
@@ -35,6 +36,10 @@ struct Configuration {
     var hidVendorID = 0x2717
     var hidProductID = 0x32B8
     var buttonSeconds: TimeInterval = 10
+    var buttonID: String?
+    var buttonPresetID = "pointer"
+    var buttonProfilePath: String?
+    var buttonsEnabled = true
     var buttonProfileDirectory = NSString(
         string: "~/Library/Application Support/mi-ao/button-profiles"
     ).expandingTildeInPath
@@ -105,6 +110,17 @@ struct Configuration {
                 config.hidProductID = try parseInteger(try requireValue(for: flag), flag: flag)
             case "--button-seconds":
                 config.buttonSeconds = try parseDouble(try requireValue(for: flag), flag: flag)
+            case "--button":
+                config.buttonID = try requireValue(for: flag)
+            case "--preset":
+                config.buttonPresetID = try requireValue(for: flag)
+            case "--button-profile":
+                config.buttonProfilePath =
+                    NSString(
+                        string: try requireValue(for: flag)
+                    ).expandingTildeInPath
+            case "--no-buttons":
+                config.buttonsEnabled = false
             case "--profile-dir":
                 config.buttonProfileDirectory =
                     NSString(
@@ -158,6 +174,7 @@ struct Configuration {
           \(executableName) doctor
           \(executableName) authorize
           \(executableName) learn-buttons [选项]
+          \(executableName) debug-buttons [选项]
 
         capture 选项：
           --identifier <UUID>        连接 scan 输出的 macOS peripheral UUID
@@ -183,13 +200,21 @@ struct Configuration {
           --no-submit                只转写，不发送给 Codex
           --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
           --debug                    打印原始 GATT 数据
+          --preset <标识>            按键映射套装，默认 pointer
+          --button-profile <路径>    只使用指定的已确认校准档案
+          --no-buttons               禁用实体按键动作，只保留语音链路
 
         learn-buttons 选项：
           --name <文本>              HID 产品名需包含该文本
           --vendor-id <数字>         HID Vendor ID，默认 0x2717（小米）
           --product-id <数字>        HID Product ID，默认 0x32B8
           --button-seconds <秒>      每个按钮的等待时间，默认 10
+          --button <标识>            只采集一个按钮，例如 back
+          --preset <标识>            校准时预览的映射套装，默认 pointer
           --profile-dir <目录>       脱敏按键报告保存目录
+
+        debug-buttons 使用相同选项，但每个结果都必须人工确认；只预览当前预设动作，不实际执行米遥动作。
+        校准期间原始 HID 键仍可能由 macOS 或前台 App 处理，请先聚焦到安全窗口。
         """
     }
 }

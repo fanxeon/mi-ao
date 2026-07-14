@@ -15,7 +15,9 @@ make preflight
 
 ## 1. 配对与扫描
 
-让遥控器进入配对模式，并先在 macOS“系统设置 → 蓝牙”中完成配对。准确按键组合以包装说明书为准。
+小米蓝牙遥控器 2 Pro 的已验证配对方式是：在 macOS“系统设置 → 蓝牙”中，同时长按遥控器的菜单键 + `HOME`，设备出现后点击“连接”，等待显示“已连接”。完整用户流程见 [配对与首次连接指南](PAIRING.md)。
+
+其他遥控器的准确按键组合以设备说明书为准。
 
 ```bash
 ./scripts/capture.sh --scan-seconds 30
@@ -92,7 +94,34 @@ make preflight
 
 在证据明确后新增独立 transport/protocol adapter，并从真实采集数据制作脱敏 fixture 和自动化测试。
 
-## 4. 端到端验收
+## 4. HID 实体按键学习
+
+语音协议验证完成后，可独立采集遥控器作为 HID 键盘/Consumer Control 暴露的实体按钮：
+
+```bash
+./scripts/learn-buttons.sh --name "小米蓝牙语音遥控器"
+```
+
+学习器按 Vendor/Product 过滤目标设备，不接受主机键盘事件。若全键流程中出现漏按、延迟或标签错位，必须使用单键模式复测，不能手工猜测 Usage：
+
+```bash
+./scripts/learn-buttons.sh \
+  --name "小米蓝牙语音遥控器" \
+  --button back \
+  --button-seconds 20
+```
+
+报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 的返回键已通过独立复测：Keyboard Usage Page `0x07` / Usage `0xF1`，按下和松手完整。其他按钮必须分别复测后才能写入正式键码表。
+
+建立可用于动作映射的正式档案时，必须改用人工确认调试模式：
+
+```bash
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器"
+```
+
+该模式逐项显示 HID Usage 和当前预设动作，要求用户确认、重测、跳过或结束。调试器不合成米遥动作，但原始 HID 键仍可能被 macOS 或前台 App 处理，因此必须在安全窗口中校准。返回键 `0x07/0xF1` 的物理身份已通过旧格式报告真机确认；新动作运行时只接受带 `confirmed_calibration` 标记的新格式档案。硬件档案只保存 `back`，默认 `pointer` 预设再把它解释为 `pointer.right_click`。完整流程见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
+
+## 5. 端到端验收
 
 确认协议后运行：
 

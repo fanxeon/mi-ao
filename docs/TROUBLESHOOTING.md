@@ -12,6 +12,14 @@
 
 它会检查 App、Bundle ID、签名、Codex 进程、蓝牙权限、辅助功能、`whisper-cli` 和模型。
 
+同时检查遥控器映射状态：
+
+```bash
+./scripts/remote-mapping.sh status
+```
+
+如果异常退出后仍显示“米遥中性映射”，保持遥控器连接并运行 `./scripts/remote-mapping.sh restore`。脚本检测到其他用户映射时会拒绝删除。
+
 ## macOS 蓝牙页看不到遥控器
 
 1. 打开“系统设置 → 蓝牙”；

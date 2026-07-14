@@ -5,6 +5,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
 
+MAPPING_STATE_FILE="$APP_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+if [[ -x "$ROOT/scripts/remote-mapping.sh" && -f "$MAPPING_STATE_FILE" ]]; then
+  "$ROOT/scripts/remote-mapping.sh" restore
+fi
+
 remove_data=false
 if [[ "${1:-}" == "--all-data" ]]; then
   remove_data=true

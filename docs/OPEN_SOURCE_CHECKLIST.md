@@ -19,6 +19,7 @@
 - [x] 项目版权、App 元数据、CODEOWNERS 和机器可读引用统一为 `FanXeon@Poemcoder with Codex`
 - [x] 中英文 Hero、About、发布帖和 Social Preview 文案已固定
 - [x] 鼠标 / 方向键双控制模式和电源键启动 Codex 已实现，并明确标注待真机校准验收
+- [x] 设备专属中性映射提供一键启动、状态检查、退出恢复、异常恢复和中英文安全说明
 - [x] 中英文完整使用说明覆盖安装后日常操作、更新、隐私和卸载
 
 ## GitHub 仓库状态

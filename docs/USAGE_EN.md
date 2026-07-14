@@ -12,7 +12,7 @@ MI-AO is currently a **source-first alpha**. Start it from the cloned repository
 
 ```bash
 cd /path/to/mi-ao
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
 Keep the terminal open while MI-AO is running. The current version has no menu bar, login item or visible recording overlay. Do not rely on double-clicking `米遥.app` for daily use because connection, transcript and failure messages would be hidden.
@@ -29,8 +29,10 @@ Keep the terminal open while MI-AO is running. The current version has no menu b
 
 ```bash
 cd /path/to/mi-ao
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
+
+The wrapper matches only Vendor `0x2717` / Product `0x32B8`, temporarily neutralizes `TV` and Power as F20/F21, and restores on exit. For voice only, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`; it never changes `UserKeyMapping`.
 
 Wait for:
 
@@ -95,7 +97,7 @@ Keep one primary task per utterance. Speak filenames, function names and acronym
 ### Default: submit on release
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
 ### Safe test: transcribe without submitting
@@ -208,6 +210,15 @@ After confirming all four D-pad directions, Center, and Back, restart the normal
 
 Use `--button-profile "/path/to/buttons-*.json"` to pin one complete profile, or `--no-buttons` for voice only. Missing buttons, duplicate Usage values, Accessibility failure, or event-filter failure disables physical-button actions with a diagnostic while voice remains available.
 
+Inspect or recover the mapping with:
+
+```bash
+./scripts/remote-mapping.sh status
+./scripts/remote-mapping.sh restore
+```
+
+Use `restore --force` only when the ownership state file was lost and `status` shows the exact MI-AO mapping. Any other existing user mapping is left untouched.
+
 Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
 
 See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. The dual-mode execution path is implemented and covered by automated tests, but complete hardware calibration and end-to-end acceptance remain pending; it is still an implementation preview.
@@ -264,6 +275,8 @@ Remove the app, Whisper model, recordings and captures:
 ```
 
 `--all-data` is irreversible. Back up any transcript that must be retained.
+
+Uninstall restores any neutral mapping owned by MI-AO before removing the app or local data.
 
 ## Current boundaries
 

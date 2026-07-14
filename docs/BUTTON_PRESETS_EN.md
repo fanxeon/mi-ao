@@ -63,17 +63,23 @@ Only reports with `captureMode=confirmed_calibration` are eligible. Automatic le
 
 ## Run and recover
 
-`pointer` is the default after a complete calibration:
+After calibration, use the safe one-command startup:
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-Use `--preset pointer` to be explicit, `--button-profile "/path/to/buttons-*.json"` to pin one complete report, or `--no-buttons` to keep only the voice path.
+It applies device-specific `TV 0x35→F20` and `Power 0x66→F21`, verifies the write, then starts MI-AO. Normal exit and INT/TERM/HUP restore the original mapping. Hardware testing confirmed IOHID still receives the original `0x35/0x66` while neutralization is active.
+
+The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
+
+Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.json"` to pin one complete report. Use the original `run.sh --no-buttons` command for voice without any mapping change. Inspect or recover with `remote-mapping.sh status` and `remote-mapping.sh restore`.
 
 ## macOS safety boundary
 
 - Runtime profiles must be user-confirmed and match the remote Vendor/Product.
+- The wrapper matches Vendor `0x2717`, Product `0x32B8`, the verified product name, and BLE transport. A second identical remote may also match.
+- Apply accepts an empty mapping only and refuses to overwrite any existing `UserKeyMapping`. Ownership state gates restore so unknown user mappings are never deleted.
 - Pointer actions require Accessibility permission; missing permission or a missing event filter disables button actions.
 - A normal user process cannot seize this HID device in the current environment. MI-AO currently correlates IOHID source events with one-shot Quartz keyboard events in an attempt to stop the foreground app from receiving the remote's original key.
 - The filter covers Quartz `keyDown` / `keyUp` and `systemDefined`, and a source marker lets MI-AO's own arrow events pass. `TV` and Power now have physical Usage evidence, but macOS Keyboard Power conversion and original-event suppression still require action-level hardware acceptance. A nearly simultaneous Mac-keyboard event can also be misclassified, so this is not a completed isolation boundary.

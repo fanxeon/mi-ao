@@ -14,4 +14,5 @@ installed_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$
   || { echo "Bundle ID 不一致：$installed_bundle_id" >&2; exit 1; }
 
 "$INSTALLED_BIN" doctor
+"$ROOT/scripts/remote-mapping.sh" status
 echo "安装验证通过：$INSTALL_APP"

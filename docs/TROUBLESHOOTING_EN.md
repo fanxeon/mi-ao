@@ -12,6 +12,8 @@
 
 This checks the app, Bundle ID, signature, Codex process, Bluetooth and Accessibility permissions, `whisper-cli`, and the model.
 
+It also reports remote mapping state. After an abnormal exit, run `./scripts/remote-mapping.sh status`; if MI-AO neutralization remains active, keep the remote connected and run `./scripts/remote-mapping.sh restore`. Unknown user mappings are never deleted.
+
 ## The remote does not appear in Bluetooth settings
 
 Open System Settings → Bluetooth, then press and hold Menu + `HOME` simultaneously on the Xiaomi Bluetooth Remote Control 2 Pro. Click Connect when the remote appears and wait for the Connected status.

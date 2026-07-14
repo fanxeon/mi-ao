@@ -91,10 +91,16 @@ cd mi-ao
 已验证的小米 2 Pro：
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-看到“桥接已就绪”后，按住遥控器语音键说话，说完松手。终端需保持运行；按 `Control + C` 停止。
+该脚本只为这款遥控器临时应用 `TV→F20`、`Power→F21`，阻止 macOS 执行原生反引号/电源行为；米遥仍读取原始 Usage。看到“桥接已就绪”后按住语音键说话，说完松手。终端需保持运行；按 `Control + C` 停止并自动恢复原映射。
+
+只使用语音、完全不修改系统映射：
+
+```bash
+./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons
+```
 
 其他遥控器请先按 [快速开始](docs/QUICKSTART.md) 采集脱敏协议证据，不要盲猜 UUID。
 

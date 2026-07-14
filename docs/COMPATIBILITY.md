@@ -40,6 +40,7 @@ MI-AO marks a device compatible only when reproducible evidence exists from real
 - 返回键物理 Usage 已通过旧格式 `debug-buttons` 人工确认；硬件档案只记录 `back`，默认 `pointer` 预设将其映射为右击；正式运行前仍需生成带 `confirmed_calibration` 标记的新格式档案；
 - `TV` 键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x35`，按下与松手完整；
 - 电源键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x66`（Keyboard Power），按下与松手完整；
+- 设备专属中性映射真机通过：`TV→F20`、`Power→F21` 生效时，IOHID 仍分别收到原始 `0x35/0x66`；两次测试结束后 `UserKeyMapping` 均成功恢复为空；
 - 全键首轮扫描曾观察到 12/13 项事件，但存在操作提示错位，因此除返回键外暂不把首轮标签写入正式键码表；
 - 方向键、确认、主页、菜单、音量和语音键的 HID 标签仍需分别完成单键复测后再进入动作映射层。
 

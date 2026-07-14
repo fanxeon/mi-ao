@@ -40,7 +40,7 @@ Grant Accessibility access to the installed MI-AO app, not a temporary binary in
 ## 3A. Run the verified Xiaomi Remote 2 Pro
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons
 ```
 
 When the bridge reports that it is ready, hold the remote's voice button, speak, and release. MI-AO activates Codex and submits only when exactly one editor is available.
@@ -71,6 +71,14 @@ Confirm at least all four D-pad directions, Center, and Back. Restart the normal
 To use `TV` for pointer/directional switching or Power to launch Codex, calibrate them separately with `--button tv` and `--button power`. Verified Xiaomi Remote 2 Pro firmware 2671 values are `TV=0x07/0x35` and `Power=0x07/0x66`; an infrared-only button on another remote cannot be handled by the Mac.
 
 Pointer mode is still an implementation preview. Add `--no-buttons` for an explicit voice-only run. See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the complete mapping, per-button calibration, and macOS event-filter boundary.
+
+After calibration, use the recommended one-command startup:
+
+```bash
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+```
+
+It temporarily applies device-specific `TV→F20` and `Power→F21`, restores on exit, and refuses to overwrite an existing user `UserKeyMapping`.
 
 ## Useful options
 

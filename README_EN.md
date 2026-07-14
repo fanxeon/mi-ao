@@ -79,10 +79,10 @@ Open System Settings → Bluetooth. On the Xiaomi Remote 2 Pro, **press and hold
 For the verified Xiaomi Remote 2 Pro:
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-When the bridge reports that it is ready, hold the voice button, speak, and release. Keep the terminal open; press `Control + C` to stop.
+The wrapper temporarily applies device-specific `TV→F20` and `Power→F21`, while MI-AO continues reading the original IOHID Usage. When the bridge is ready, hold the voice button, speak, and release. `Control + C` stops MI-AO and restores the original mapping. For voice with no system mapping change, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 

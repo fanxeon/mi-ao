@@ -30,4 +30,6 @@
 - `capture` 默认哈希化 peripheral UUID 并隐藏设备名；只有显式传入 `--include-identifiers` / `--include-device-names` 才保留原值。
 - `events.jsonl` 包含未知 GATT payload，这些字节可能承载按键、音频或设备数据；即使身份已脱敏，也必须人工复核后才能公开分享。
 - 默认指针模式只加载人工确认且 Vendor/Product 匹配的档案；档案不完整、Usage 冲突、辅助功能或事件过滤器失败时，不启动实体按键动作，语音链路继续运行。
+- `run-with-mapping.sh` 只修改精确匹配的小米遥控器 HID service；写入前要求映射为空，写入后回读验证，并用本地所有权状态控制恢复。未知或用户自定义映射既不会被覆盖，也不会被清除。
+- `--no-buttons`、`--help` 和普通 `run.sh` 不会应用中性映射；卸载会先尝试恢复米遥拥有的映射。
 - 实体按键模式会合成鼠标、方向键、Return 和 Escape，并尝试通过短时关联过滤遥控器原始键；当前过滤尚未完成全键、电源/Consumer Control、多显示器和同时键盘输入真机验收。敏感编辑工作中请使用 `--no-buttons`，校准时请聚焦到安全窗口。

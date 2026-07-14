@@ -81,16 +81,20 @@ flowchart LR
 
 ## 启动与回退
 
-`pointer` 是默认套装，完成六项校准后仍使用日常命令：
+`pointer` 是默认套装。完成校准后推荐使用一键安全启动：
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
+
+这条命令按精确设备属性应用 `TV 0x35→F20`、`Power 0x66→F21`，写入后回读验证，再启动米遥；`Control+C`、正常退出、INT/TERM/HUP 都会触发恢复。真机已经确认中性映射生效时 IOHID 仍收到原始 `0x35/0x66`。
+
+实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 
 显式写法：
 
 ```bash
-./scripts/run.sh \
+./scripts/run-with-mapping.sh \
   --name "小米蓝牙语音遥控器" \
   --preset pointer
 ```
@@ -98,7 +102,7 @@ flowchart LR
 只使用某一份完整确认档案：
 
 ```bash
-./scripts/run.sh --button-profile "/path/to/buttons-*.json"
+./scripts/run-with-mapping.sh --button-profile "/path/to/buttons-*.json"
 ```
 
 遇到风险或只想使用语音时：
@@ -107,9 +111,18 @@ flowchart LR
 ./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons
 ```
 
+只读检查或恢复：
+
+```bash
+./scripts/remote-mapping.sh status
+./scripts/remote-mapping.sh restore
+```
+
 ## macOS 安全边界
 
 - 运行时只加载同 Vendor/Product 的人工确认档案；
+- 一键脚本只匹配 Vendor `0x2717` / Product `0x32B8` / 已验证产品名与 BLE transport；相同型号的第二支遥控器也可能被匹配；
+- 应用前只接受空映射，拒绝覆盖任何既有 `UserKeyMapping`；状态文件记录所有权，恢复时同样拒绝删除未知配置；
 - 指针动作需要辅助功能权限；权限或事件过滤器缺失时拒绝启动按键动作；
 - macOS 普通用户进程无法在当前环境直接 seize 这支 HID 设备；米遥目前用 IOHID 来源事件与 Quartz 键盘事件做短时一次性关联，尝试拦截前台 App 收到的遥控器原始键；
 - 过滤器覆盖 Quartz `keyDown` / `keyUp` 和 `systemDefined`，并用来源标记放行米遥自己生成的方向键；`TV` / 电源键的物理 Usage 已确认，但 macOS 对 Keyboard Power 的最终事件转换和原始事件抑制仍需动作级真机验收；极端情况下，与遥控器几乎同时发生的 Mac 键盘事件也可能被误判，因此这不是已完成的安全隔离；

@@ -30,4 +30,6 @@ Include:
 - `capture` hashes peripheral UUIDs and hides device names by default. Original values are retained only with `--include-identifiers` or `--include-device-names`.
 - `events.jsonl` can contain unknown GATT payloads. Those bytes may include button, audio or device data, so every capture requires manual review before public sharing even when identities are redacted.
 - Default pointer mode loads only user-confirmed profiles matching the remote Vendor/Product. Incomplete profiles, duplicate Usage assignments, missing Accessibility, or event-filter failure disables physical-button actions while voice continues.
+- `run-with-mapping.sh` modifies only the exactly matched Xiaomi remote HID service, requires an empty mapping, verifies every write, and uses local ownership state for restore. Unknown or user-defined mappings are never overwritten or deleted.
+- `--no-buttons`, `--help`, and the original `run.sh` do not apply neutralization. Uninstall attempts to restore MI-AO-owned mappings first.
 - Physical-button mode synthesizes mouse events, arrows, Return, and Escape, and attempts to suppress original remote keys with short-lived event correlation. Full-button, Power/Consumer Control, multi-display, and simultaneous-keyboard acceptance is not complete. Use `--no-buttons` during sensitive editing and calibrate in a safe window.

@@ -6,7 +6,7 @@
 
 MI-AO separates hardware identity from user preference. A calibration profile answers “which physical button produced this HID Usage”; a preset decides “what that button does now.” Switching presets never requires recalibrating the remote.
 
-> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, pointer executor, and correlated event suppression are implemented and covered by automated tests. A complete six-button hardware calibration and end-to-end pointer run are still pending, so pointer mode is not yet marked hardware verified.
+> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, pointer executor, and correlated event suppression are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 now has complete new-format calibration for all six required buttons, and D-pad Up has moved the real system cursor in a coordinate-monitored run. Remaining actions still need per-action acceptance, so the whole pointer mode is not yet marked end-to-end verified.
 
 ## Mapping architecture
 
@@ -86,4 +86,4 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
 - `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
 
-Until the full hardware acceptance run is complete, pointer mode is an **implementation preview**. Voice remains the production end-to-end path.
+Until the remaining directions, clicks, mode switch, and Power action complete hardware acceptance, pointer mode remains an **implementation preview**.

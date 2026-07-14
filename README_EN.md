@@ -48,7 +48,7 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Power launches Codex or focuses it when already running; Volume scrolls, `HOME` focuses Codex, Menu cycles presets, and Voice remains hold-to-talk.
 
-> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. Voice, Back, `TV`, and Power now have physical hardware evidence; new-format calibration confirmed `TV=0x07/0x35` and `Power=0x07/0x66`. The complete required six-button calibration and action acceptance run are still pending, so physical-button actions remain an implementation preview.
+> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. New-format calibration now confirms D-pad, Center, Back, `TV`, and Power on Xiaomi Remote 2 Pro firmware 2671. D-pad Up has completed a real cursor-coordinate acceptance run; remaining directions, clicks, mode switching, and Power actions still require per-action acceptance, so physical-button actions remain an implementation preview.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 
@@ -130,7 +130,7 @@ The next milestones are:
 
 - menu bar status and recording feedback;
 - device selection, persisted configuration, and reconnect;
-- the six-button pointer hardware calibration, event-suppression timing, and multi-display acceptance run;
+- remaining pointer actions, mode switching, Power, event-suppression timing, and multi-display acceptance runs;
 - a second Codex-session navigation preset;
 - a broader real-hardware compatibility matrix;
 - configurable output targets without weakening the default safety contract.

@@ -100,7 +100,7 @@ cd mi-ao
 
 需要用 `TV` 切换“鼠标 / 方向键”或用电源键启动 Codex 时，再分别执行 `--button tv` 和 `--button power` 单键校准。小米 2 Pro 固件 2671 的已验证值是 `TV=0x07/0x35`、电源 `0x07/0x66`；其他遥控器若没有 HID 事件、只发红外信号，则无法由 Mac 映射。
 
-当前指针模式仍是 implementation preview；需要完全禁用实体按键动作时增加 `--no-buttons`。完整映射表、逐键校准和 macOS 事件过滤边界见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
+小米 2 Pro 固件 2671 的六键校准已经完成，方向上已验证真实鼠标坐标移动；其余动作逐项验收完成前，指针模式仍是 implementation preview。需要完全禁用实体按键动作时增加 `--no-buttons`。完整映射表和 macOS 事件过滤边界见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
 
 完成校准后的推荐一键启动：
 

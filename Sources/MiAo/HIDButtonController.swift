@@ -26,6 +26,11 @@ private func miAoRuntimeValueReceived(
 }
 
 final class HIDButtonController {
+    private struct ElementSignature: Equatable {
+        let page: Int
+        let usage: Int
+    }
+
     private let configuration: Configuration
     private let map: CalibratedButtonMap
     private let preset: ButtonPreset
@@ -34,6 +39,7 @@ final class HIDButtonController {
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
     private var activeKey: HIDUsageKey?
+    private var activeElement: ElementSignature?
     private var activeButton: RemoteButton?
     private let openOptions = IOOptionBits(kIOHIDOptionsTypeNone)
 
@@ -111,19 +117,25 @@ final class HIDButtonController {
         let element = IOHIDValueGetElement(value)
         guard IOHIDElementGetDevice(element) == matchedDevice else { return }
         let rawValue = IOHIDValueGetIntegerValue(value)
+        let page = Int(IOHIDElementGetUsagePage(element))
+        let elementUsage = Int(IOHIDElementGetUsage(element))
+        let elementSignature = ElementSignature(page: page, usage: elementUsage)
 
         if rawValue == 0 {
+            guard elementSignature == activeElement else { return }
             if let activeButton {
+                if configuration.debug {
+                    print("HID 松手：\(activeButton.rawValue)")
+                }
                 suppressor.record(isDown: false)
                 executor.buttonUp(activeButton)
             }
             activeKey = nil
+            activeElement = nil
             activeButton = nil
             return
         }
 
-        let page = Int(IOHIDElementGetUsagePage(element))
-        let elementUsage = Int(IOHIDElementGetUsage(element))
         guard
             let usage = ButtonLearner.normalizedUsage(
                 elementUsage: elementUsage,
@@ -135,12 +147,23 @@ final class HIDButtonController {
 
         if let activeButton { executor.buttonUp(activeButton) }
         activeKey = key
+        activeElement = elementSignature
         if let button = map.buttonsByUsage[key], preset.action(for: button) != .unmapped {
             activeButton = button
         } else {
             activeButton = nil
         }
         if let activeButton {
+            if configuration.debug {
+                print(
+                    String(
+                        format: "HID 按下：page 0x%02X usage 0x%02X → %@",
+                        page,
+                        usage,
+                        activeButton.rawValue
+                    )
+                )
+            }
             suppressor.record(isDown: true)
             executor.buttonDown(activeButton)
         }

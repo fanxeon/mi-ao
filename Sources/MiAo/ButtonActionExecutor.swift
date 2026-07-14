@@ -57,6 +57,8 @@ final class ButtonActionExecutor {
         activeAction = action
         pressedAt = Date()
         switch action {
+        case .pointerMoveUp, .pointerMoveDown, .pointerMoveLeft, .pointerMoveRight:
+            movePointer(action: action, distance: 16)
         case .pointerLeftClick:
             postClick(button: .left)
         case .pointerRightClick:
@@ -81,8 +83,7 @@ final class ButtonActionExecutor {
             }
         case .presetCycle:
             print("当前只有 \(preset.name)（\(preset.id)）套装")
-        case .pointerMoveUp, .pointerMoveDown, .pointerMoveLeft, .pointerMoveRight,
-            .voicePushToTalk, .modeTogglePointerDirectional, .unmapped:
+        case .voicePushToTalk, .modeTogglePointerDirectional, .unmapped:
             break
         }
     }

@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MAPPING_SCRIPT="$ROOT/scripts/remote-mapping.sh"
 RUN_SCRIPT="${MI_AO_RUN_SCRIPT:-$ROOT/scripts/run.sh}"
 mapping_active=false
+child_pid=""
 
 for argument in "$@"; do
   case "$argument" in
@@ -15,7 +16,25 @@ for argument in "$@"; do
   esac
 done
 
-cleanup_mapping() {
+stop_child() {
+  [[ -n "$child_pid" ]] || return 0
+  if kill -0 "$child_pid" 2>/dev/null; then
+    kill -CONT "$child_pid" 2>/dev/null || true
+    kill -TERM "$child_pid" 2>/dev/null || true
+    for _ in {1..20}; do
+      kill -0 "$child_pid" 2>/dev/null || break
+      sleep 0.05
+    done
+    if kill -0 "$child_pid" 2>/dev/null; then
+      kill -KILL "$child_pid" 2>/dev/null || true
+    fi
+  fi
+  wait "$child_pid" 2>/dev/null || true
+  child_pid=""
+}
+
+cleanup_session() {
+  stop_child
   if $mapping_active; then
     mapping_active=false
     "$MAPPING_SCRIPT" restore || {
@@ -25,10 +44,21 @@ cleanup_mapping() {
   fi
 }
 
-trap cleanup_mapping EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-trap 'exit 129' HUP
+handle_signal() {
+  local exit_code="$1"
+  local signal_name="$2"
+  if [[ "$signal_name" == "TSTP" ]]; then
+    echo "检测到 Control+Z：米遥不进入挂起状态，正在安全退出并恢复映射。" >&2
+  fi
+  stop_child
+  exit "$exit_code"
+}
+
+trap cleanup_session EXIT
+trap 'handle_signal 130 INT' INT
+trap 'handle_signal 143 TERM' TERM
+trap 'handle_signal 129 HUP' HUP
+trap 'handle_signal 148 TSTP' TSTP
 
 mapping_active=true
 if ! "$MAPPING_SCRIPT" apply; then
@@ -37,7 +67,10 @@ if ! "$MAPPING_SCRIPT" apply; then
 fi
 
 set +e
-"$RUN_SCRIPT" "$@"
+"$RUN_SCRIPT" "$@" &
+child_pid=$!
+wait "$child_pid"
 result_code=$?
+child_pid=""
 set -e
 exit "$result_code"

@@ -41,8 +41,10 @@ MI-AO marks a device compatible only when reproducible evidence exists from real
 - `TV` 键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x35`，按下与松手完整；
 - 电源键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x66`（Keyboard Power），按下与松手完整；
 - 设备专属中性映射真机通过：`TV→F20`、`Power→F21` 生效时，IOHID 仍分别收到原始 `0x35/0x66`；两次测试结束后 `UserKeyMapping` 均成功恢复为空；
+- 六个必需按钮已完成新格式确认：上 `0x52`、下 `0x51`、左 `0x50`、右 `0x4F`、确认 `0x28`、返回 `0xF1`，均含按下和松手；
+- 方向上动作已完成真机坐标监测：运行期识别为 `dpad_up`，系统鼠标 X 不变、Y 连续减小；未发现全局快捷键或第三方重映射冲突；
 - 全键首轮扫描曾观察到 12/13 项事件，但存在操作提示错位，因此除返回键外暂不把首轮标签写入正式键码表；
-- 方向键、确认、主页、菜单、音量和语音键的 HID 标签仍需分别完成单键复测后再进入动作映射层。
+- 主页、菜单、音量和语音键仍需按产品计划分别完成动作层验收。
 
 不公开真机 MAC、CoreBluetooth peripheral UUID 或设备序列信息。
 

@@ -154,6 +154,8 @@ For local BLE / GATT inspection:
   --debug
 ```
 
+In run mode, `--debug` also prints `HID down/up → physical button`, separating hardware recognition, preset mapping, and action execution failures.
+
 Debug output can include raw device data and must be redacted before sharing. See [Troubleshooting](TROUBLESHOOTING_EN.md) for failure-specific steps.
 
 ## Learn physical buttons
@@ -221,7 +223,7 @@ Use `restore --force` only when the ownership state file was lost and `status` s
 
 Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
 
-See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. The dual-mode execution path is implemented and covered by automated tests, but complete hardware calibration and end-to-end acceptance remain pending; it is still an implementation preview.
+See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. All six required buttons are hardware-calibrated and D-pad Up has completed a real cursor-coordinate run; the remaining actions are still an implementation preview.
 
 ## Local data
 
@@ -281,7 +283,7 @@ Uninstall restores any neutral mapping owned by MI-AO before removing the app or
 ## Current boundaries
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
-- Voice remains the only input with completed hardware end-to-end acceptance. The default pointer execution path is implemented, while complete D-pad, Center, and Back calibration and hardware acceptance remain on the [Roadmap](ROADMAP.md).
+- Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and D-pad Up has completed its mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
 - The terminal must remain open; menu bar, background service and login start are not implemented yet.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.

@@ -199,7 +199,7 @@ struct Configuration {
           --output-dir <目录>        WAV 和 transcript 保存目录
           --no-submit                只转写，不发送给 Codex
           --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
-          --debug                    打印原始 GATT 数据
+          --debug                    打印原始 GATT 数据和运行时 HID 按键映射
           --preset <标识>            按键映射套装，默认 pointer
           --button-profile <路径>    只使用指定的已确认校准档案
           --no-buttons               禁用实体按键动作，只保留语音链路

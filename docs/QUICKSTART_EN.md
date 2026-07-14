@@ -70,7 +70,7 @@ Confirm at least all four D-pad directions, Center, and Back. Restart the normal
 
 To use `TV` for pointer/directional switching or Power to launch Codex, calibrate them separately with `--button tv` and `--button power`. Verified Xiaomi Remote 2 Pro firmware 2671 values are `TV=0x07/0x35` and `Power=0x07/0x66`; an infrared-only button on another remote cannot be handled by the Mac.
 
-Pointer mode is still an implementation preview. Add `--no-buttons` for an explicit voice-only run. See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the complete mapping, per-button calibration, and macOS event-filter boundary.
+All six required buttons are now calibrated on Xiaomi Remote 2 Pro firmware 2671, and D-pad Up has moved the real system cursor. Pointer mode remains an implementation preview until every other action completes acceptance. Add `--no-buttons` for an explicit voice-only run. See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the mapping and macOS event-filter boundary.
 
 After calibration, use the recommended one-command startup:
 

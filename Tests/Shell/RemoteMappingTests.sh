@@ -127,4 +127,28 @@ MI_AO_RUN_SCRIPT="$TEMP_ROOT/runner" \
   "$ROOT/scripts/run-with-mapping.sh" --no-buttons >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
 
+cat > "$TEMP_ROOT/waiting-runner" <<'EOF'
+#!/bin/zsh
+trap 'exit 0' TERM INT HUP
+while true; do sleep 1; done
+EOF
+chmod +x "$TEMP_ROOT/waiting-runner"
+
+echo empty > "$FAKE_HID_STATE"
+set +e
+MI_AO_RUN_SCRIPT="$TEMP_ROOT/waiting-runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --name test >/dev/null 2>&1 &
+wrapper_pid=$!
+for _ in {1..50}; do
+  [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]] && break
+  sleep 0.02
+done
+kill -TSTP "$wrapper_pid"
+wait "$wrapper_pid"
+wrapper_status=$?
+set -e
+[[ "$wrapper_status" == "148" ]]
+[[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
+[[ ! -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
+
 echo "Remote mapping shell tests: OK"

@@ -69,7 +69,7 @@ After calibration, use the safe one-command startup:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-It maps the six core buttons, TV, and Power to HID `No Event` for the exact device, verifies the write, then starts MI-AO. Normal exit, `Control+C`, `Control+Z`, and INT/TERM/HUP perform safe cleanup. Hardware testing confirmed D-pad and Center retain their original IOHID Usages under the complete mapping; the earlier TV/Power probe also retained their original Usages.
+It maps D-pad, Center, Back, HOME, TV, Power, and Voice—ten keys total—to HID `No Event` for the exact device. Menu and Volume Up/Down are excluded and remain native. The wrapper verifies writes and restores on normal exit or signals.
 
 The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
 

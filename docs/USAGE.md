@@ -32,7 +32,7 @@ cd /path/to/mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-一键脚本只匹配 Vendor `0x2717` / Product `0x32B8` 的目标遥控器，启动前把方向键、确认、返回、TV 和电源临时中性化为 HID `No Event`，避免前台 App 同时收到原生箭头/Return，退出时恢复。只使用语音时改用 `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`，它不会修改 `UserKeyMapping`。
+一键脚本只匹配 Vendor `0x2717` / Product `0x32B8` 的目标遥控器，启动前把方向键、确认、返回、HOME、TV、电源和语音键中性化为 HID `No Event`；菜单与音量加减保持 macOS 原生行为。退出时恢复。只使用语音时可改用普通 `run.sh --no-buttons`，它不会修改 `UserKeyMapping`。
 
 等待终端显示：
 

@@ -55,6 +55,52 @@ case "${1:-}" in
   },
   {
     HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771146;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771125;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771174;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771134;
+  }
+)
+MAPPING
+          ;;
+        v2)
+          cat <<'MAPPING'
+10001df64   UserKeyMapping   (
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771154;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771153;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771152;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771151;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771112;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771313;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
     HIDKeyboardModifierMappingSrc = 30064771125;
   },
   {
@@ -149,7 +195,30 @@ power=0x700000066->0x700000070
 EOF
 "$ROOT/scripts/remote-mapping.sh" apply >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
-grep -q '^profile=core-no-event-v2$' \
+grep -q '^profile=custom-no-event-v3$' \
+  "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+"$ROOT/scripts/remote-mapping.sh" restore >/dev/null
+
+echo v2 > "$FAKE_HID_STATE"
+mkdir -p "$VOICE_BRIDGE_DATA_DIR/system-mapping"
+cat > "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" <<'EOF'
+owner=mi-ao
+baseline=empty
+vendor_id=0x2717
+product_id=0x32b8
+profile=core-no-event-v2
+up=0x700000052->0x700000000
+down=0x700000051->0x700000000
+left=0x700000050->0x700000000
+right=0x70000004f->0x700000000
+center=0x700000028->0x700000000
+back=0x7000000f1->0x700000000
+tv=0x700000035->0x700000000
+power=0x700000066->0x700000000
+EOF
+"$ROOT/scripts/remote-mapping.sh" apply >/dev/null
+[[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
+grep -q '^profile=custom-no-event-v3$' \
   "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
 "$ROOT/scripts/remote-mapping.sh" restore >/dev/null
 

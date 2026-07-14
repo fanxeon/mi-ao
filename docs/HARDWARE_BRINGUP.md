@@ -113,7 +113,7 @@ make preflight
 
 报告默认保存到 `~/Library/Application Support/mi-ao/button-profiles/`。小米 2 Pro 固件 2671 已取得以下独立证据：返回键 `0x07/0xF1`（旧格式确认），`TV` 键 `0x07/0x35`、电源键 `0x07/0x66`（新格式 `confirmed_calibration`），三项均观察到按下和松手。其他按钮必须分别复测后才能写入正式键码表。
 
-设备专属 `UserKeyMapping` 已完成可逆真机探针：八键 `No Event` 已通过写入回读和恢复，方向键与确认键仍保留原始 IOHID Usage。日常方案由此避免 macOS 前台 App 同时处理原生键盘事件。
+设备专属 `UserKeyMapping` 的接管边界固定为十键：方向六键、HOME、TV、电源和语音；菜单与音量加减明确排除。HOME 已确认 `0x07/0x4A`，语音 HID 已确认 `0x07/0x3E`，语音音频仍走独立 ATVV 链路。
 
 六个必需按钮的新格式确认值为：上 `0x07/0x52`、下 `0x07/0x51`、左 `0x07/0x50`、右 `0x07/0x4F`、确认 `0x07/0x28`、返回 `0x07/0xF1`。四个方向已通过运行期 HID 日志、`warp=0` 和系统坐标监测完成鼠标移动闭环；点击等其余动作仍需分别验收。
 

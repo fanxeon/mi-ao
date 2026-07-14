@@ -87,7 +87,7 @@ flowchart LR
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-这条命令按精确设备属性把六个核心键、TV 和电源映射为 HID `No Event`，写入后回读验证，再启动米遥；`Control+C`、`Control+Z`、正常退出、INT/TERM/HUP 都会触发安全清理。真机已确认全量映射下方向键和确认键仍保留原始 IOHID Usage；旧版 TV/Power 中性映射也已验证原始 Usage 保留。
+这条命令按精确设备属性把方向六键、HOME、TV、电源和语音共十键映射为 HID `No Event`；菜单与音量加减不进入映射，保持原生。写入会回读验证，退出和信号中断都会安全恢复。
 
 实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 

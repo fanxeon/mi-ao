@@ -78,7 +78,7 @@ After calibration, use the recommended one-command startup:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-It temporarily maps D-pad, Center, Back, TV, and Power to HID `No Event` for the target remote, restores on exit, and refuses to overwrite an existing user `UserKeyMapping`.
+It maps D-pad, Center, Back, HOME, TV, Power, and Voice to HID `No Event`; Menu and Volume Up/Down remain native. It restores on exit and refuses to overwrite an existing user `UserKeyMapping`.
 
 ## Useful options
 

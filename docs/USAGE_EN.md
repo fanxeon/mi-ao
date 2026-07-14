@@ -32,7 +32,7 @@ cd /path/to/mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper matches only Vendor `0x2717` / Product `0x32B8`, temporarily maps D-pad, Center, Back, TV, and Power to HID `No Event`, and restores on exit. This prevents native arrows and Return from also reaching the frontmost app. For voice only, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`; it never changes `UserKeyMapping`.
+The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, and Voice to HID `No Event`, while Menu and Volume Up/Down remain native. It restores the original mapping on exit.
 
 Wait for:
 

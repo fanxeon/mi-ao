@@ -8,7 +8,7 @@ Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safel
 
 Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
-[English](README_EN.md) · [中文](README.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
+[English](README_EN.md) · [中文](README.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -77,6 +77,8 @@ When the bridge reports that it is ready, hold the voice button, speak, and rele
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 
+See the [complete usage guide](docs/USAGE_EN.md) for daily startup, success logs, transcription-only mode, project vocabulary, updates and local data cleanup. Keep the terminal open in the current release; double-clicking the app is not the recommended entry point.
+
 ## Compatibility
 
 | Device | Firmware | Protocol | End to end |
@@ -138,6 +140,7 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 
 - [Documentation index](docs/README.md)
 - [Quick start](docs/QUICKSTART_EN.md)
+- [Complete usage guide](docs/USAGE_EN.md)
 - [Compatibility matrix](docs/COMPATIBILITY.md)
 - [Troubleshooting](docs/TROUBLESHOOTING_EN.md)
 - [Architecture](docs/ARCHITECTURE.md)

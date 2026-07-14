@@ -107,4 +107,4 @@ cd mi-ao
 - 卸载 App 但保留模型和录音：`./scripts/uninstall.sh`
 - 删除所有本地数据：`./scripts/uninstall.sh --all-data`
 
-遇到问题请查看 [故障排查](TROUBLESHOOTING.md)。
+安装完成后请继续阅读 [完整使用说明](USAGE.md)；遇到问题查看 [故障排查](TROUBLESHOOTING.md)。

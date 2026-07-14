@@ -5,6 +5,7 @@
 使用问题请先查看：
 
 - [快速开始](docs/QUICKSTART.md) / [Quick start](docs/QUICKSTART_EN.md)
+- [完整使用说明](docs/USAGE.md) / [Usage guide](docs/USAGE_EN.md)
 - [故障排查](docs/TROUBLESHOOTING.md) / [Troubleshooting](docs/TROUBLESHOOTING_EN.md)
 - [兼容性矩阵 / Compatibility](docs/COMPATIBILITY.md)
 

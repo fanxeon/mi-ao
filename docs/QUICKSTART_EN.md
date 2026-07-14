@@ -77,4 +77,4 @@ Device identity is redacted by default, but raw `events.jsonl` payloads still re
 - Remove the app while retaining models and recordings with `./scripts/uninstall.sh`.
 - Remove all local MI-AO data with `./scripts/uninstall.sh --all-data`.
 
-See [Troubleshooting](TROUBLESHOOTING_EN.md) if the first run does not complete.
+Continue with the [complete usage guide](USAGE_EN.md) after installation. See [Troubleshooting](TROUBLESHOOTING_EN.md) if the first run does not complete.

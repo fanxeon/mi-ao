@@ -19,20 +19,22 @@
 - [x] 项目版权、App 元数据、CODEOWNERS 和机器可读引用统一为 `FanXeon@Poemcoder with Codex`
 - [x] 中英文 Hero、About、发布帖和 Social Preview 文案已固定
 - [x] 方向键指针模式已进入 0.2 路线图
+- [x] 中英文完整使用说明覆盖安装后日常操作、更新、隐私和卸载
 
-## GitHub 仓库公开前
+## GitHub 仓库状态
 
 - [x] 已建立 GitHub origin 和 `main` 跟踪分支
-- [ ] 在 GitHub 将当前私有仓库 `fanxeon/Vibe---------Mi-AO` 重命名为 `fanxeon/mi-ao`
-- [ ] 重命名后把本地 origin 更新为 `https://github.com/fanxeon/mi-ao.git`
-- [ ] 复核仓库名、App 名、Bundle ID、可执行文件和数据目录与 [NAMING.md](NAMING.md) 一致
-- [ ] 添加简短描述、topics 和 MIT license 标记
-- [ ] 启用 Issues、Discussions 和 Private vulnerability reporting
+- [x] 正式仓库已命名并公开为 `fanxeon/mi-ao`
+- [x] 本地 origin 已更新为 `https://github.com/fanxeon/mi-ao.git`
+- [x] 复核仓库名、App 名、Bundle ID、可执行文件和数据目录与 [NAMING.md](NAMING.md) 一致
+- [x] 已添加简短描述、topics 和 MIT license 标记
+- [x] 已启用 Issues 和 Discussions
+- [ ] 启用 Private vulnerability reporting
 - [ ] 保护 `main`：要求 CI 通过、禁止强推、至少一次 review
-- [ ] 启用 Dependabot for GitHub Actions
-- [ ] 确认仓库中不存在语音、设备标识、绝对用户名路径或密钥
+- [x] 已启用 Dependabot for GitHub Actions
+- [x] 确认仓库中不存在语音、设备标识、绝对用户名路径或密钥
 - [x] README CI badge 已指向 `fanxeon/mi-ao`
-- [ ] 仓库创建后确认 CI badge 可正常加载
+- [x] 公开仓库 CI badge 可正常加载
 - [ ] 录制并脱敏 8–12 秒真实遥控器→Codex 演示
 - [ ] 上传 1280 × 640 Social Preview
 - [ ] 仓库 About、Release 和 Social Preview 显示 `FanXeon@Poemcoder with Codex`

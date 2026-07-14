@@ -13,33 +13,32 @@
 - License：MIT
 - Author credit：`FanXeon@Poemcoder with Codex`
 
-当前本地 remote 仍为 `fanxeon/Vibe---------Mi-AO`。公开前必须先在 GitHub 将私有仓库重命名为 `mi-ao`，再更新本地 remote；不要让两个仓库名同时进入公开传播。
+仓库已于 2026-07-14 以 `fanxeon/mi-ao` 正式公开，本地 `origin` 已同步到正式地址，`main` CI 已通过。
 
 ### GitHub About
 
 **Description**
 
 ```text
-Turn a Xiaomi Bluetooth Remote Control 2 Pro into a local push-to-talk magic wand for Codex on macOS.
+小米蓝牙遥控器 2 Pro × Codex：在 Vibe Coding 时代，把 Remote 变成真正握在手里的语音魔法仙女棒。
 ```
 
 **Topics**
 
 ```text
-macos
-swift
-bluetooth-le
-speech-to-text
-whisper-cpp
-codex
-push-to-talk
-voice-control
 accessibility
 atvv
-xiaomi
-open-source
+codex
+macos
+push-to-talk
+remote-control
+speech-to-text
+swift
 vibe-coding
-ai-coding
+voice-control
+whisper-cpp
+xiaomi-bluetooth-remote-2-pro
+xiaomi-remote
 ```
 
 Topics 只使用项目已真实涉及的技术和场景，不蹭无关热词。
@@ -140,8 +139,9 @@ MI-AO 0.1.0 — Remote-to-Codex hardware alpha
 - [ ] README 真实演示已录制并脱敏
 - [ ] Social Preview 已上传
 - [ ] 新 Mac 或新用户完整走通 `setup.sh`
-- [ ] README 所有命令可复制执行
-- [ ] 所有相对链接通过检查
-- [ ] 仓库不含 MAC、peripheral UUID、序列、用户名、私人语音或密钥
-- [ ] CI 和 source release 校验通过
-- [ ] Issues、Discussions 和 Private vulnerability reporting 已启用
+- [x] README 所有命令可复制执行
+- [x] 所有相对链接通过检查
+- [x] 仓库不含 MAC、peripheral UUID、序列、用户名、私人语音或密钥
+- [x] CI 和 source release 校验通过
+- [x] Issues 和 Discussions 已启用
+- [ ] Private vulnerability reporting 已启用

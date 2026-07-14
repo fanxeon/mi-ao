@@ -27,6 +27,7 @@
 - `FanXeon@Poemcoder with Codex` 全仓版权头、NOTICE、CODEOWNERS 和 `CITATION.cff`。
 - Vibe Coding 魔法仙女棒中英文传播文案与可复用首发帖。
 - 实体按键学习、动作映射、命令面板和方向键指针模式路线图。
+- 中英文完整使用说明：日常启动、成功日志、安全模式、术语提示、更新与数据清理。
 
 ### Changed
 

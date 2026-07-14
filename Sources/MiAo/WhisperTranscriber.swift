@@ -1,9 +1,12 @@
 import Foundation
 
 struct WhisperTranscriber {
+    static let defaultChinesePrompt = "米遥。Codex。项目。代码。测试。发送。"
+
     let executableURL: URL
     let modelURL: URL
     let language: String
+    let prompt: String?
 
     init(configuration: Configuration) throws {
         guard FileManager.default.fileExists(atPath: configuration.modelPath) else {
@@ -13,6 +16,9 @@ struct WhisperTranscriber {
         }
         modelURL = URL(fileURLWithPath: configuration.modelPath)
         language = configuration.language
+        prompt =
+            configuration.whisperPrompt
+            ?? (configuration.language.lowercased().hasPrefix("zh") ? Self.defaultChinesePrompt : nil)
 
         if let explicit = configuration.whisperPath {
             guard FileManager.default.isExecutableFile(atPath: explicit) else {
@@ -39,7 +45,7 @@ struct WhisperTranscriber {
 
         let process = Process()
         process.executableURL = executableURL
-        process.arguments = [
+        var arguments = [
             "-m", modelURL.path,
             "-f", wavURL.path,
             "-l", language,
@@ -47,6 +53,10 @@ struct WhisperTranscriber {
             "-of", outputBase.path,
             "-np",
         ]
+        if let prompt, !prompt.isEmpty {
+            arguments.append(contentsOf: ["--prompt", prompt])
+        }
+        process.arguments = arguments
         let errorPipe = Pipe()
         process.standardOutput = Pipe()
         process.standardError = errorPipe

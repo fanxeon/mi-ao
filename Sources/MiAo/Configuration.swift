@@ -17,6 +17,7 @@ struct Configuration {
     var modelPath: String = NSString(string: "~/.cache/mi-ao/ggml-base.bin").expandingTildeInPath
     var whisperPath: String?
     var language = "zh"
+    var whisperPrompt: String?
     var outputDirectory = NSString(string: "~/Library/Application Support/mi-ao/recordings")
         .expandingTildeInPath
     var captureDirectory = NSString(string: "~/Library/Application Support/mi-ao/captures")
@@ -68,6 +69,8 @@ struct Configuration {
                 config.whisperPath = NSString(string: try requireValue(for: flag)).expandingTildeInPath
             case "--language":
                 config.language = try requireValue(for: flag)
+            case "--prompt":
+                config.whisperPrompt = try requireValue(for: flag)
             case "--output-dir":
                 config.outputDirectory = NSString(string: try requireValue(for: flag)).expandingTildeInPath
             case "--capture-dir":
@@ -138,6 +141,7 @@ struct Configuration {
           --model <路径>             whisper.cpp GGML 模型
           --whisper <路径>           whisper-cli 可执行文件
           --language <代码>          转写语言，默认 zh
+          --prompt <文本>            覆盖 Whisper 上下文提示
           --silence-ms <毫秒>        无松手信号时的静音收口时间，默认 1500
           --silence-threshold <RMS>  静音判定阈值，默认 35
           --gain-db <分贝>           写入 WAV 前增益，默认 20

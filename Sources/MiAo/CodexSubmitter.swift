@@ -28,28 +28,10 @@ struct CodexSubmitter {
 
         if !force {
             let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
-            var focused: CFTypeRef?
-            let focusedResult = AXUIElementCopyAttributeValue(
-                applicationElement,
-                kAXFocusedUIElementAttribute as CFString,
-                &focused
-            )
-            guard focusedResult == .success, let focused else {
-                copyOnly(text)
-                throw BridgeError.submission("无法确认 Codex 输入框焦点；transcript 已复制到剪贴板")
-            }
-            var roleValue: CFTypeRef?
-            let roleResult = AXUIElementCopyAttributeValue(
-                focused as! AXUIElement,
-                kAXRoleAttribute as CFString,
-                &roleValue
-            )
-            let role = roleResult == .success ? roleValue as? String : nil
-            let acceptedRoles = [kAXTextAreaRole as String, kAXTextFieldRole as String]
-            guard role.map(acceptedRoles.contains) == true else {
+            guard focusCodexEditor(in: applicationElement) else {
                 copyOnly(text)
                 throw BridgeError.submission(
-                    "当前焦点不是 Codex 文本输入框（role=\(role ?? "unknown")）；transcript 已复制到剪贴板"
+                    "无法安全聚焦唯一的 Codex 输入框；transcript 已复制到剪贴板"
                 )
             }
         }
@@ -62,6 +44,85 @@ struct CodexSubmitter {
         postKey(keyCode: 36, flags: [])  // Return
         Thread.sleep(forTimeInterval: 0.35)
         snapshot.restore()
+    }
+
+    private func focusCodexEditor(in applicationElement: AXUIElement) -> Bool {
+        let searchRoot = elementAttribute(applicationElement, kAXFocusedWindowAttribute) ?? applicationElement
+        let candidates = findTextInputs(in: searchRoot)
+        guard candidates.count == 1 else { return false }
+        let result = AXUIElementSetAttributeValue(
+            candidates[0],
+            kAXFocusedAttribute as CFString,
+            kCFBooleanTrue
+        )
+        guard result == .success else { return false }
+
+        guard let focused = elementAttribute(applicationElement, kAXFocusedUIElementAttribute) else {
+            return false
+        }
+        return CFEqual(focused, candidates[0])
+    }
+
+    private func findTextInputs(in root: AXUIElement) -> [AXUIElement] {
+        var queue: [(element: AXUIElement, depth: Int)] = [(root, 0)]
+        var cursor = 0
+        var matches: [AXUIElement] = []
+
+        while cursor < queue.count, cursor < 10_000 {
+            let current = queue[cursor]
+            cursor += 1
+
+            if isAcceptedTextInput(current.element), isEnabled(current.element) {
+                matches.append(current.element)
+            }
+            guard current.depth < 50 else { continue }
+            for child in elementArrayAttribute(current.element, kAXChildrenAttribute) {
+                queue.append((child, current.depth + 1))
+            }
+        }
+        return matches
+    }
+
+    private func isAcceptedTextInput(_ element: AXUIElement) -> Bool {
+        guard let role = stringAttribute(element, kAXRoleAttribute) else { return false }
+        return [kAXTextAreaRole as String, kAXTextFieldRole as String].contains(role)
+    }
+
+    private func isEnabled(_ element: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(
+            element,
+            kAXEnabledAttribute as CFString,
+            &value
+        )
+        return result != .success || (value as? Bool) != false
+    }
+
+    private func elementAttribute(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
+        var value: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+            let value,
+            CFGetTypeID(value) == AXUIElementGetTypeID()
+        else { return nil }
+        return (value as! AXUIElement)
+    }
+
+    private func elementArrayAttribute(_ element: AXUIElement, _ attribute: String) -> [AXUIElement] {
+        var value: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+            let values = value as? [AXUIElement]
+        else { return [] }
+        return values
+    }
+
+    private func stringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else {
+            return nil
+        }
+        return value as? String
     }
 
     private func copyOnly(_ text: String) {

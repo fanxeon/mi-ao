@@ -20,7 +20,7 @@
 
 - 默认只向 `com.openai.codex` 发送文本；
 - transcript 为空、Codex 未运行、辅助功能未授权时不发送；
-- 默认要求焦点角色是文本输入控件；
+- 默认仅当 Codex 可访问性树中存在唯一可用文本输入控件时，才会主动聚焦并发送；
 - `--force-submit` 会放宽焦点验证，只应在受控环境使用；
 - 原始 WAV 和 transcript 可能含隐私，默认保存在本机，不应提交到 Git。
 - `capture` 默认哈希化 peripheral UUID 并隐藏设备名；只有显式传入 `--include-identifiers` / `--include-device-names` 才保留原值。

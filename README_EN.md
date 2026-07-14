@@ -16,7 +16,7 @@ This project reads voice data from the remote itself. It does not substitute the
 
 ## Status
 
-Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 is verified on real hardware with ATVV v1.0, 16 kHz ADPCM, 120-byte frames, hold/release control, WAV decoding, and Chinese Whisper transcription. Codex submission and reconnect edge cases remain under validation.
+Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 is verified on real hardware with ATVV v1.0, 16 kHz ADPCM, 120-byte frames, hold/release control, WAV decoding, Chinese Whisper transcription, and an actual submission into the Codex composer. Reconnect and silence edge cases remain under validation.
 
 ## Features
 
@@ -26,6 +26,7 @@ Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 is verified on real hardware
 - IMA/DVI ADPCM at 8 kHz and 16 kHz
 - Remote release, second-press, and silence fallbacks
 - Fully local transcription with `whisper.cpp`
+- A Chinese technical-vocabulary prompt, overridable with `--prompt`
 - Safe Codex submission through macOS Accessibility
 - WAV and transcript retention for debugging
 
@@ -67,7 +68,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Protocol notes](docs/PROTOCOL.md), [R
 
 ## Security
 
-The bridge only submits non-empty transcripts. If Codex, Accessibility permission, or a verified text-input focus is unavailable, it falls back to copying the transcript. See [SECURITY.md](SECURITY.md).
+The bridge only submits non-empty transcripts. It focuses the editor only when exactly one enabled Codex text input is discoverable; otherwise it falls back to copying the transcript. See [SECURITY.md](SECURITY.md).
 
 ## License
 

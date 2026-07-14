@@ -20,7 +20,7 @@ BLE 遥控器
 - `ADPCMDecoder.swift`：无平台依赖的 IMA/DVI ADPCM 解码。
 - `AudioPipeline.swift`：RMS、增益、重采样和 WAV 编码。
 - `WhisperTranscriber.swift`：本地 `whisper-cli` 进程合同。
-- `CodexSubmitter.swift`：Codex 进程识别、焦点验证、粘贴和发送。
+- `CodexSubmitter.swift`：Codex 进程识别、Electron 可访问性树遍历、唯一编辑器聚焦、粘贴和发送。
 - `Configuration.swift`：CLI 模式和安全选项。
 
 ## 会话状态

@@ -3,6 +3,19 @@ import Testing
 
 @testable import MiAo
 
+@Test func parsesCustomWhisperPrompt() throws {
+    let configuration = try Configuration.parse([
+        "mi-ao",
+        "run",
+        "--prompt",
+        "这是自定义词汇。",
+        "--no-submit",
+    ])
+
+    #expect(configuration.whisperPrompt == "这是自定义词汇。")
+    #expect(configuration.submitToCodex == false)
+}
+
 @Test func parsesCaptureConfiguration() throws {
     let configuration = try Configuration.parse([
         "mi-ao",

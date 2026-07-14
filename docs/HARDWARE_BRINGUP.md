@@ -106,3 +106,7 @@ make preflight
 - Codex 未运行、无权限或焦点不是文本框时不误发；
 - 断开后能重新发现；
 - WAV、transcript 与 Codex 实际收到的文字一致。
+
+### 已验证基线（2026-07-14）
+
+小米蓝牙遥控器 2 Pro 固件 2671 已真实完成：按住语音键、松手停止、ADPCM 16 kHz 解码、本地 Whisper 转写“请回复米遥真实发送成功。”、发现并聚焦唯一 Codex `AXTextArea`、粘贴和回车发送。Codex 当前任务实际收到的文字与落盘 transcript 一致。

@@ -17,6 +17,8 @@
 - 小米蓝牙遥控器 2 Pro 的分阶段真机 Bring-up 与证据判定指南。
 - 从常见 BLE 服务检索已连接但停止广播的 HID 遥控器。
 - 兼容小米固件 2671 偶发的 ATVV v1.0 codecs 与 interaction model 字节对调 `CAPS_RESP`。
+- 中文 Whisper 技术词上下文提示与 `--prompt` 自定义覆盖。
+- Codex Electron 窗口中唯一可用文本编辑器的安全发现与主动聚焦。
 
 ### Changed
 

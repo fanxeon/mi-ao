@@ -20,7 +20,7 @@ BLE 遥控器
 flowchart LR
     HID["IOHIDManager<br/>Vendor/Product 过滤"] --> CAL["confirmed_calibration<br/>Usage → RemoteButton"]
     CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
-    PRESET --> POINTER["PointerActionExecutor"]
+    PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 方向键 / Codex"]
     PRESET --> FUTURE["未来 Codex / 演示执行器"]
     HID --> SUPPRESS["RemoteEventSuppressor<br/>关联原始 Quartz 键事件"]
 ```
@@ -40,8 +40,8 @@ flowchart LR
 - `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
 - `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
-- `PointerActionExecutor.swift`：方向加速、左右击、滚动、开关和 Codex 聚焦。
-- `RemoteEventSuppressor.swift`：短时关联遥控器 IOHID 与 Quartz `keyDown` / `keyUp`，尝试减少原始按键和映射动作双触发；Consumer Control 与完整真机时序仍待验收。
+- `ButtonActionExecutor.swift`：鼠标移动与点击、方向键/Return/Escape、模式切换，以及 Codex 启动和聚焦。
+- `RemoteEventSuppressor.swift`：短时关联遥控器 IOHID 与 Quartz 键盘/系统定义事件，并放行带米遥来源标记的合成键；Consumer Control 与完整真机时序仍待验收。
 - `Configuration.swift`：CLI 模式和安全选项。
 
 ## 会话状态

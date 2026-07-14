@@ -2,16 +2,33 @@
 import ApplicationServices
 import Foundation
 
+private let miAoSystemDefinedEventTypeRawValue: UInt32 = 14
+
 private func miAoSuppressionEventTap(
     proxy: CGEventTapProxy,
     type: CGEventType,
     event: CGEvent,
     userInfo: UnsafeMutableRawPointer?
 ) -> Unmanaged<CGEvent>? {
+    if event.getIntegerValueField(.eventSourceUserData)
+        == RemoteEventSuppressor.syntheticEventMarker
+    {
+        return Unmanaged.passUnretained(event)
+    }
     guard let userInfo else { return Unmanaged.passUnretained(event) }
     let suppressor = Unmanaged<RemoteEventSuppressor>.fromOpaque(userInfo).takeUnretainedValue()
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
         suppressor.reenableTap()
+        return Unmanaged.passUnretained(event)
+    }
+    if type.rawValue == miAoSystemDefinedEventTypeRawValue {
+        if suppressor.consumeAny(now: ProcessInfo.processInfo.systemUptime) {
+            return nil
+        }
+        usleep(4_000)
+        if suppressor.consumeAny(now: ProcessInfo.processInfo.systemUptime) {
+            return nil
+        }
         return Unmanaged.passUnretained(event)
     }
     guard type == .keyDown || type == .keyUp else { return Unmanaged.passUnretained(event) }
@@ -28,6 +45,8 @@ private func miAoSuppressionEventTap(
 }
 
 final class RemoteEventSuppressor {
+    static let syntheticEventMarker: Int64 = 0x4D49_414F
+
     private struct Token {
         let isDown: Bool
         let createdAt: TimeInterval
@@ -51,6 +70,7 @@ final class RemoteEventSuppressor {
             let mask =
                 CGEventMask(1 << CGEventType.keyDown.rawValue)
                 | CGEventMask(1 << CGEventType.keyUp.rawValue)
+                | CGEventMask(1 << miAoSystemDefinedEventTypeRawValue)
             guard
                 let tap = CGEvent.tapCreate(
                     tap: .cgSessionEventTap,
@@ -108,6 +128,15 @@ final class RemoteEventSuppressor {
         tokens.removeAll { now - $0.createdAt > 0.12 }
         guard let index = tokens.firstIndex(where: { $0.isDown == isDown }) else { return false }
         tokens.remove(at: index)
+        return true
+    }
+
+    func consumeAny(now: TimeInterval) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        tokens.removeAll { now - $0.createdAt > 0.12 }
+        guard !tokens.isEmpty else { return false }
+        tokens.removeFirst()
         return true
     }
 

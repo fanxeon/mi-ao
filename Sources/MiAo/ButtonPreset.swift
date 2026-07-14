@@ -27,8 +27,15 @@ enum ButtonAction: String, Codable {
     case pointerRightClick = "pointer.right_click"
     case pointerScrollUp = "pointer.scroll_up"
     case pointerScrollDown = "pointer.scroll_down"
-    case pointerToggle = "pointer.toggle"
+    case keyboardArrowUp = "keyboard.arrow_up"
+    case keyboardArrowDown = "keyboard.arrow_down"
+    case keyboardArrowLeft = "keyboard.arrow_left"
+    case keyboardArrowRight = "keyboard.arrow_right"
+    case keyboardReturn = "keyboard.return"
+    case keyboardEscape = "keyboard.escape"
+    case modeTogglePointerDirectional = "mode.toggle_pointer_directional"
     case codexFocus = "codex.focus"
+    case codexLaunchOrFocus = "codex.launch_or_focus"
     case presetCycle = "preset.cycle"
     case unmapped
 }
@@ -65,8 +72,8 @@ struct ButtonPreset: Equatable {
             .menu: .presetCycle,
             .volumeUp: .pointerScrollUp,
             .volumeDown: .pointerScrollDown,
-            .tv: .pointerToggle,
-            .power: .unmapped,
+            .tv: .modeTogglePointerDirectional,
+            .power: .codexLaunchOrFocus,
         ],
         requiredButtons: [.dpadUp, .dpadDown, .dpadLeft, .dpadRight, .center, .back]
     )

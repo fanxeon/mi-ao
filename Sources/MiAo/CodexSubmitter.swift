@@ -3,6 +3,12 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+enum CodexActivationResult: Equatable {
+    case activated
+    case launchRequested
+    case unavailable
+}
+
 struct CodexSubmitter {
     private let bundleIdentifier = "com.openai.codex"
 
@@ -53,6 +59,21 @@ struct CodexSubmitter {
             return false
         }
         return app.activate(options: [.activateAllWindows])
+    }
+
+    func launchOrActivateCodex() -> CodexActivationResult {
+        if activateCodex() { return .activated }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier)
+        else { return .unavailable }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
+            if let error {
+                fputs("启动 Codex 失败：\(error.localizedDescription)\n", stderr)
+            }
+        }
+        return .launchRequested
     }
 
     private func focusCodexEditor(in applicationElement: AXUIElement) -> Bool {

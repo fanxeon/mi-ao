@@ -68,13 +68,24 @@
 
 完整门禁和映射见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
 
+## `TV` 不切换模式，或电源键不启动 Codex
+
+这两个键不是基础六键门禁的一部分，必须分别校准：
+
+```bash
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button tv
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
+```
+
+如果终端始终观察不到电源键 HID 事件，它很可能只发送红外信号，Mac 无法接收，米遥不会把它标记成可用。若终端显示“未找到 Codex App”，请先确认官方 Codex macOS App 已安装且 bundle ID 为 `com.openai.codex`。
+
 ## 校准时前台 App 也响应了方向键
 
 `debug-buttons` 不会合成米遥动作，但 macOS 仍可能处理遥控器原始 HID 键。请停止校准，聚焦到空白且不会因方向键、返回键丢失内容的窗口，再重新运行。不要在未保存的编辑器、文件列表或删除确认框中校准。
 
 ## 指针动作和前台 App 同时响应
 
-当前事件关联过滤仍是 implementation preview，Consumer Control 或系统定义事件可能没有被 Quartz `keyDown` / `keyUp` 过滤器覆盖。立即按 `Control + C` 停止，改用 `--no-buttons`，并用脱敏日志报告具体按钮、macOS 和遥控器固件；不要用全局键盘重映射作为日常绕过方案。
+当前事件关联过滤仍是 implementation preview。过滤器已经监听 `keyDown`、`keyUp` 和 `systemDefined`，但不同固件的 Consumer Control 或电源事件仍可能无法与 IOHID 事件可靠关联。立即按 `Control + C` 停止，改用 `--no-buttons`，并用脱敏日志报告具体按钮、macOS 和遥控器固件；不要用全局键盘重映射作为日常绕过方案。
 
 ## 中文术语识别错误
 

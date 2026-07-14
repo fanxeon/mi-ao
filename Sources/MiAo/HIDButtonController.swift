@@ -29,7 +29,7 @@ final class HIDButtonController {
     private let configuration: Configuration
     private let map: CalibratedButtonMap
     private let preset: ButtonPreset
-    private let executor: PointerActionExecutor
+    private let executor: ButtonActionExecutor
     private let suppressor = RemoteEventSuppressor()
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
@@ -41,7 +41,7 @@ final class HIDButtonController {
         self.configuration = configuration
         self.map = map
         self.preset = preset
-        executor = PointerActionExecutor(preset: preset)
+        executor = ButtonActionExecutor(preset: preset)
     }
 
     deinit {

@@ -18,7 +18,7 @@
 - [x] 新设备兼容性 Issue 模板和脱敏门禁
 - [x] 项目版权、App 元数据、CODEOWNERS 和机器可读引用统一为 `FanXeon@Poemcoder with Codex`
 - [x] 中英文 Hero、About、发布帖和 Social Preview 文案已固定
-- [x] 方向键指针模式已进入 0.2 路线图
+- [x] 鼠标 / 方向键双控制模式和电源键启动 Codex 已实现，并明确标注待真机校准验收
 - [x] 中英文完整使用说明覆盖安装后日常操作、更新、隐私和卸载
 
 ## GitHub 仓库状态

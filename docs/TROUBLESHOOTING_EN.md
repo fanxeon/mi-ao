@@ -57,13 +57,24 @@ Use voice only while deferring pointer diagnostics:
 
 See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the complete gate and mapping.
 
+## `TV` does not switch modes, or Power does not launch Codex
+
+These keys are not part of the base six-button gate and must be calibrated separately:
+
+```bash
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button tv
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
+```
+
+If Power never produces a HID event, it is probably infrared-only and cannot be received by the Mac; MI-AO will not claim it as usable. If the terminal says Codex cannot be found, confirm the official Codex macOS app is installed with bundle ID `com.openai.codex`.
+
 ## The foreground app reacts during calibration
 
 `debug-buttons` does not synthesize MI-AO actions, but macOS can still handle the original remote HID key. Stop calibration, focus an empty window where arrows or Back cannot lose work, and retry. Do not calibrate in an unsaved editor, file list, or destructive confirmation dialog.
 
 ## Pointer movement and the foreground app both react
 
-Correlated event filtering is still an implementation preview. Consumer Control or system-defined events may not pass through the Quartz `keyDown` / `keyUp` filter. Stop immediately with `Control + C`, restart with `--no-buttons`, and report the specific button, macOS version, remote firmware, and redacted log. Do not treat a global keyboard remap as a routine workaround.
+Correlated event filtering is still an implementation preview. The tap now observes `keyDown`, `keyUp`, and `systemDefined`, but firmware-specific Consumer Control or Power events may still fail to correlate reliably with IOHID. Stop immediately with `Control + C`, restart with `--no-buttons`, and report the specific button, macOS version, remote firmware, and redacted log. Do not treat a global keyboard remap as a routine workaround.
 
 ## Project terms are transcribed incorrectly
 

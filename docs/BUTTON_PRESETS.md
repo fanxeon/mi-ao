@@ -18,27 +18,34 @@ flowchart LR
     D --> E["pointer 默认套装"]
     D --> F["Codex 会话套装<br/>计划中"]
     D --> G["更多社区套装<br/>计划中"]
-    E --> H["鼠标执行器"]
+    E --> H{"TV 切换控制模式"}
+    H --> J["鼠标执行器"]
+    H --> K["方向键 / Return / Escape"]
+    E --> L["电源键 → 启动或聚焦 Codex"]
     F --> I["Codex 导航执行器"]
 ```
 
 校准档案不会保存 `pointer.right_click` 一类动作。返回键在硬件层永远只是 `back`；它在 `pointer` 中可以是右击，在未来 Codex 套装中可以是取消或返回。
 
-## 默认 `pointer` 套装
+## 默认套装与两种控制模式
 
 | 实体按钮 | 默认动作 | 当前门禁 |
 | --- | --- | --- |
 | 语音键 | `voice.push_to_talk` | 继续使用已验证 ATVV 语音链路 |
-| 方向上 / 下 / 左 / 右 | `pointer.move_*` | 四项都必须人工确认 |
-| 中间确认键 | `pointer.left_click` | 必须人工确认 |
-| 返回键 | `pointer.right_click` | 物理 Usage `0x07/0xF1` 已确认；需按新档案格式再确认 |
+| 方向上 / 下 / 左 / 右 | 鼠标：`pointer.move_*`；方向键：`keyboard.arrow_*` | 四项都必须人工确认 |
+| 中间确认键 | 鼠标：`pointer.left_click`；方向键：`keyboard.return` | 必须人工确认 |
+| 返回键 | 鼠标：`pointer.right_click`；方向键：`keyboard.escape` | 物理 Usage `0x07/0xF1` 已确认；需按新档案格式再确认 |
 | 音量加 / 减 | `pointer.scroll_up/down` | 可选增强，未确认时不影响六键基础模式 |
-| `TV` | `pointer.toggle` | 可选增强 |
+| `TV` | `mode.toggle_pointer_directional` | 切换鼠标 / 方向键模式；需要单键校准 |
 | `HOME` | `codex.focus` | 可选增强 |
 | 菜单键 | `preset.cycle` | 当前只有一个套装时只提示状态 |
-| 电源键 | `unmapped` | 默认不接管 |
+| 电源键 | `codex.launch_or_focus` | 启动 Codex，已运行则聚焦；需要单键校准 |
 
 基础指针模式要求 `dpad_up`、`dpad_down`、`dpad_left`、`dpad_right`、`center`、`back` 六项全部存在、均观察到按下与松手，而且 Usage 互不冲突。缺一项时，米遥只保留语音链路并明确打印缺失项。
+
+启动后默认是鼠标模式。按一下已校准的 `TV` 键切到方向键模式，再按一次切回。方向键模式适合在 Codex 或其他前台 App 中移动选择：方向四键发送标准箭头键，中间确认发送 Return，返回发送 Escape。音量、`HOME`、菜单、语音和电源动作不随控制模式改变。
+
+电源键只有在真机能产生 HID 事件并完成校准时才能启动 Codex；如果它是纯红外键，米遥不会伪造支持。Codex 已运行时只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。
 
 ## 首次校准
 
@@ -66,6 +73,8 @@ flowchart LR
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button dpad_right
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button center
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button back
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button tv
+./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button power
 ```
 
 只有 `captureMode=confirmed_calibration` 的报告会进入运行时。自动学习报告、超时项、未观察到松手的项和两个按钮共用同一 Usage 的冲突档案都会被拒绝。
@@ -103,7 +112,7 @@ flowchart LR
 - 运行时只加载同 Vendor/Product 的人工确认档案；
 - 指针动作需要辅助功能权限；权限或事件过滤器缺失时拒绝启动按键动作；
 - macOS 普通用户进程无法在当前环境直接 seize 这支 HID 设备；米遥目前用 IOHID 来源事件与 Quartz 键盘事件做短时一次性关联，尝试拦截前台 App 收到的遥控器原始键；
-- 过滤器当前只覆盖 Quartz `keyDown` / `keyUp`，Consumer Control、系统定义事件和不同固件的转换结果仍需真机验证；极端情况下，与遥控器几乎同时发生的 Mac 键盘事件也可能被误判，因此这不是已完成的安全隔离；
+- 过滤器覆盖 Quartz `keyDown` / `keyUp` 和 `systemDefined`，并用来源标记放行米遥自己生成的方向键；Consumer Control、电源键和不同固件的转换结果仍需真机验证；极端情况下，与遥控器几乎同时发生的 Mac 键盘事件也可能被误判，因此这不是已完成的安全隔离；
 - 调试校准模式不会合成鼠标或键盘动作，但 macOS 仍可能处理遥控器原始 HID 键；请在无重要输入的窗口中校准；
 - `Control + C` 始终是退出入口；`--no-buttons` 是明确的安全回退。
 

@@ -46,9 +46,9 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 ## One remote, multiple presets
 
-Calibration identifies physical buttons; a preset decides what they do. The default `pointer` preset maps the D-pad to pointer movement, Center to left-click, Back to right-click, Volume to scrolling, `TV` to pointer toggle, `HOME` to Codex focus, Menu to preset cycling, Voice to hold-to-talk, and leaves Power unmapped.
+Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Power launches Codex or focuses it when already running; Volume scrolls, `HOME` focuses Codex, Menu cycles presets, and Voice remains hold-to-talk.
 
-> **Status boundary:** the preset architecture and pointer executor are implemented. The voice path and Back's physical Usage have hardware evidence, but the complete six-button calibration and end-to-end pointer acceptance run are still pending. Pointer mode is an implementation preview, not a hardware-verified claim.
+> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. The voice path and Back's physical Usage have hardware evidence, but the complete six-button acceptance run and individual HID verification for `TV` and Power are still pending. Physical-button actions remain an implementation preview.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 

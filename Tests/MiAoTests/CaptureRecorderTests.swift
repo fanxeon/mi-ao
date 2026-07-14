@@ -210,7 +210,8 @@ import Testing
     #expect(preset.action(for: .center) == .pointerLeftClick)
     #expect(preset.action(for: .back) == .pointerRightClick)
     #expect(preset.action(for: .volumeDown) == .pointerScrollDown)
-    #expect(preset.action(for: .power) == .unmapped)
+    #expect(preset.action(for: .tv) == .modeTogglePointerDirectional)
+    #expect(preset.action(for: .power) == .codexLaunchOrFocus)
 }
 
 @Test func parsesButtonDebugModeAndCalibrationDecisions() throws {
@@ -274,8 +275,42 @@ import Testing
     #expect(map.buttonsByUsage[HIDUsageKey(page: 0x07, usage: 0x52)] == .dpadUp)
     #expect(map.usagesByButton[.back] == HIDUsageKey(page: 0x07, usage: 0xF1))
     #expect(map.sourceFiles == [url])
-    #expect(PointerActionExecutor.pointerSpeed(heldSeconds: 0) == 260)
-    #expect(PointerActionExecutor.pointerSpeed(heldSeconds: 2) == 1_000)
+    #expect(ButtonActionExecutor.pointerSpeed(heldSeconds: 0) == 260)
+    #expect(ButtonActionExecutor.pointerSpeed(heldSeconds: 2) == 1_000)
+}
+
+@Test func directionalModeResolvesDpadCenterAndBackToKeyboard() {
+    let executor = ButtonActionExecutor(preset: .pointer)
+    #expect(executor.controlMode == .pointer)
+    executor.buttonDown(.tv)
+    #expect(executor.controlMode == .directional)
+    executor.buttonDown(.tv)
+    #expect(executor.controlMode == .pointer)
+
+    #expect(
+        ButtonActionExecutor.resolvedAction(
+            .pointerMoveUp,
+            mode: .directional
+        ) == .keyboardArrowUp
+    )
+    #expect(
+        ButtonActionExecutor.resolvedAction(
+            .pointerLeftClick,
+            mode: .directional
+        ) == .keyboardReturn
+    )
+    #expect(
+        ButtonActionExecutor.resolvedAction(
+            .pointerRightClick,
+            mode: .directional
+        ) == .keyboardEscape
+    )
+    #expect(
+        ButtonActionExecutor.resolvedAction(
+            .pointerMoveUp,
+            mode: .pointer
+        ) == .pointerMoveUp
+    )
 }
 
 @Test func newestCalibrationResultCanInvalidateAnOlderButton() throws {
@@ -339,6 +374,9 @@ import Testing
     #expect(suppressor.consume(isDown: true, now: 10.02) == false)
     suppressor.record(isDown: false, at: 20)
     #expect(suppressor.consume(isDown: false, now: 20.2) == false)
+    suppressor.record(isDown: true, at: 30)
+    #expect(suppressor.consumeAny(now: 30.01))
+    #expect(suppressor.consumeAny(now: 30.02) == false)
 }
 
 @Test func resolvesUsageFromKeyboardArrayReport() {

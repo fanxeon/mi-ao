@@ -11,13 +11,14 @@
 | 中文产品名 | **米遥** |
 | 英文识别名 | **MI-AO** |
 | GitHub 仓库 | `mi-ao` |
+| 支持平台 | **macOS 14+ only；当前不支持 Windows / Linux** |
 | CLI 可执行文件 | `mi-ao` |
 | Swift package / module | `MiAo` |
 | macOS Bundle ID | `com.fanx.miao` |
 | 模型缓存 | `~/.cache/mi-ao` |
 | 本地数据 | `~/Library/Application Support/mi-ao` |
 | 项目署名 | **FanXeon@Poemcoder with Codex** |
-| 一句话 | **按住说话，松手发送，让 Codex 开工。** |
+| 一句话 | **在 Mac 上按住说话，松手发送，让 Codex 开工。** |
 | 传播主张 | **一根真正握在手里的 Vibe Coding 魔法仙女棒。** |
 
 “米”保留首发硬件来自小米遥控器的记忆点，“遥”直接表达遥控器与远程触发；`MI-AO` 既是中文名的可读转写，也有短、清楚、适合命令行输入的技术识别度。

@@ -10,6 +10,7 @@
 - 项目署名：**FanXeon@Poemcoder with Codex**
 - 版权：`Copyright (c) 2026 FanXeon@Poemcoder with Codex`
 - 仓库：`fanxeon/mi-ao`
+- 平台：**macOS 14+ only；当前不支持 Windows / Linux**
 - 核心硬件：小米蓝牙遥控器 2 Pro，固件 2671
 - 核心动作：按住说话，松手发送
 
@@ -17,32 +18,32 @@
 
 **中文 Hero**
 
-> 在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成一根真正握在手里的 Codex 魔法仙女棒。
+> 在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成 Mac 上一根真正握在手里的 Codex 魔法仙女棒。
 
 **中文副文案**
 
-> 按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。
+> 仅适用于 macOS 14+。按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。
 
 **English Hero**
 
-> In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex.
+> In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex on Mac.
 
 **English subline**
 
-> Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
+> macOS 14+ only. Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
 
 ## 短文案
 
 ### GitHub About
 
 ```text
-Turn a Xiaomi Bluetooth Remote Control 2 Pro into a local push-to-talk magic wand for Codex on macOS.
+Xiaomi Bluetooth Remote Control 2 Pro × Codex for macOS — a real push-to-talk magic wand for Vibe Coding.
 ```
 
 ### 中文一句话
 
 ```text
-使用小米蓝牙遥控器 2 Pro 构建的 Codex 本地语音输入方案。
+仅适用于 macOS 14+：使用小米蓝牙遥控器 2 Pro 构建的 Codex 本地语音输入方案。
 ```
 
 ### Social Preview
@@ -62,11 +63,11 @@ Created by FanXeon@Poemcoder with Codex
 
 ### 中文
 
-米遥 MI-AO 是由 **FanXeon@Poemcoder with Codex** 创建的开源 macOS 项目。它读取小米蓝牙遥控器 2 Pro 自带麦克风的 BLE 语音数据，在 Mac 上完成 ADPCM 解码与本地 Whisper 转写，再把结果安全发送到 Codex。无需拿起手机，也无需先寻找屏幕上的麦克风按钮——按住、说话、松手，Agent 就开始工作。
+米遥 MI-AO 是由 **FanXeon@Poemcoder with Codex** 创建、仅适用于 macOS 14+ 的开源项目。它读取小米蓝牙遥控器 2 Pro 自带麦克风的 BLE 语音数据，在 Mac 上完成 ADPCM 解码与本地 Whisper 转写，再把结果安全发送到 Codex。无需拿起手机，也无需先寻找屏幕上的麦克风按钮——按住、说话、松手，Agent 就开始工作。
 
 ### English
 
-MI-AO is an open-source macOS project created by **FanXeon@Poemcoder with Codex**. It reads BLE audio from the microphone inside a Xiaomi Bluetooth Remote Control 2 Pro, decodes and transcribes it locally with Whisper, then safely submits the result to Codex. No phone and no on-screen microphone hunt: hold, speak, release, and let the agent work.
+MI-AO is an open-source project for macOS 14+ created by **FanXeon@Poemcoder with Codex**. It reads BLE audio from the microphone inside a Xiaomi Bluetooth Remote Control 2 Pro, decodes and transcribes it locally with Whisper, then safely submits the result to Codex. Windows and Linux are not currently supported. No phone and no on-screen microphone hunt: hold, speak, release, and let the agent work.
 
 ## 首发帖
 
@@ -113,6 +114,7 @@ If a voice remote is collecting dust in your drawer, help us light it up next.
 
 - 真正使用遥控器自带麦克风，不把 Mac 麦克风包装成硬件能力；
 - 当前端到端验证的是小米蓝牙遥控器 2 Pro 固件 2671；
+- 当前仅支持 macOS 14 或更高版本，不支持 Windows / Linux；
 - 语音转写默认在本机完成；
 - 当前是 source-first alpha，不宣传成免配置正式产品；
 - 项目由 FanXeon@Poemcoder 创建和维护，Codex 是 AI 工程协作者；

@@ -2,9 +2,9 @@
 
 # MI-AO 米遥
 
-**In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex.**
+**In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex on Mac.**
 
-Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
+**macOS 14 or later only; Windows and Linux are not currently supported.** Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.
 
 Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
@@ -20,7 +20,7 @@ Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 Hold the remote → say "inspect this project and continue" → release → Codex gets to work
 ```
 
-MI-AO is a Codex voice-input system built with the Xiaomi Bluetooth Remote Control 2 Pro. It reads BLE voice data from the microphone inside the remote, decodes and transcribes it locally on your Mac, then safely submits the result to the active Codex task. It is not another Mac-microphone dictation app. It turns a voice remote sitting in a drawer into a tactile entry point for Vibe Coding.
+MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Control 2 Pro to Codex. It reads BLE voice data from the microphone inside the remote, decodes and transcribes it locally on your Mac, then safely submits the result to the active Codex task. It is not another Mac-microphone dictation app. It turns a voice remote sitting in a drawer into a tactile entry point for Vibe Coding.
 
 > **Verified hardware:** Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 has completed a real hold-to-talk → local Whisper → Codex submission test.
 

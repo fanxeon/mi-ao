@@ -20,7 +20,7 @@
 **Description**
 
 ```text
-小米蓝牙遥控器 2 Pro × Codex：在 Vibe Coding 时代，把 Remote 变成真正握在手里的语音魔法仙女棒。
+小米蓝牙遥控器 2 Pro × Codex for macOS：在 Vibe Coding 时代，把 Remote 变成真正握在手里的语音魔法仙女棒。
 ```
 
 **Topics**

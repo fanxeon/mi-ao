@@ -6,7 +6,7 @@
 
 MI-AO separates hardware identity from user preference. A calibration profile answers “which physical button produced this HID Usage”; a preset decides “what that button does now.” Switching presets never requires recalibrating the remote.
 
-> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, pointer executor, and correlated event suppression are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 now has complete new-format calibration for all six required buttons, and D-pad Up has moved the real system cursor in a coordinate-monitored run. Remaining actions still need per-action acceptance, so the whole pointer mode is not yet marked end-to-end verified.
+> Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, and pointer executor are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 has complete new-format calibration for all six required buttons. All four directions passed direct cursor positioning and real-coordinate monitoring. Clicks, mode switching, and Power still need per-action acceptance, so the whole mode is not yet marked end-to-end verified.
 
 ## Mapping architecture
 
@@ -69,7 +69,7 @@ After calibration, use the safe one-command startup:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-It applies device-specific `TV 0x35→F20` and `Power 0x66→F21`, verifies the write, then starts MI-AO. Normal exit and INT/TERM/HUP restore the original mapping. Hardware testing confirmed IOHID still receives the original `0x35/0x66` while neutralization is active.
+It maps the six core buttons, TV, and Power to HID `No Event` for the exact device, verifies the write, then starts MI-AO. Normal exit, `Control+C`, `Control+Z`, and INT/TERM/HUP perform safe cleanup. Hardware testing confirmed D-pad and Center retain their original IOHID Usages under the complete mapping; the earlier TV/Power probe also retained their original Usages.
 
 The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
 
@@ -86,4 +86,4 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
 - `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
 
-Until the remaining directions, clicks, mode switch, and Power action complete hardware acceptance, pointer mode remains an **implementation preview**.
+Until clicks, mode switch, and Power complete hardware acceptance, the complete button mode remains an **implementation preview**.

@@ -32,7 +32,7 @@ cd /path/to/mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper matches only Vendor `0x2717` / Product `0x32B8`, temporarily neutralizes `TV` and Power as F20/F21, and restores on exit. For voice only, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`; it never changes `UserKeyMapping`.
+The wrapper matches only Vendor `0x2717` / Product `0x32B8`, temporarily maps D-pad, Center, Back, TV, and Power to HID `No Event`, and restores on exit. This prevents native arrows and Return from also reaching the frontmost app. For voice only, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`; it never changes `UserKeyMapping`.
 
 Wait for:
 
@@ -223,7 +223,7 @@ Use `restore --force` only when the ownership state file was lost and `status` s
 
 Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
 
-See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. All six required buttons are hardware-calibrated and D-pad Up has completed a real cursor-coordinate run; the remaining actions are still an implementation preview.
+See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. All six required buttons are hardware-calibrated and all four directions passed direct positioning with real-coordinate monitoring; clicks, mode switching, and Power remain an implementation preview.
 
 ## Local data
 
@@ -283,7 +283,7 @@ Uninstall restores any neutral mapping owned by MI-AO before removing the app or
 ## Current boundaries
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
-- Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and D-pad Up has completed its mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
+- Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and all four directions have completed their mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
 - The terminal must remain open; menu bar, background service and login start are not implemented yet.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.

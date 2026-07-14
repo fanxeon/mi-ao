@@ -10,6 +10,7 @@ enum RemoteControlMode: String, Equatable {
 
 final class ButtonActionExecutor {
     private let preset: ButtonPreset
+    private let debug: Bool
     private var timer: Timer?
     private var activeButton: RemoteButton?
     private var activeAction: ButtonAction?
@@ -19,8 +20,9 @@ final class ButtonActionExecutor {
     private var lastKeyRepeatAt = Date.distantPast
     private(set) var controlMode: RemoteControlMode = .pointer
 
-    init(preset: ButtonPreset) {
+    init(preset: ButtonPreset, debug: Bool = false) {
         self.preset = preset
+        self.debug = debug
     }
 
     func start() {
@@ -58,7 +60,8 @@ final class ButtonActionExecutor {
         pressedAt = Date()
         switch action {
         case .pointerMoveUp, .pointerMoveDown, .pointerMoveLeft, .pointerMoveRight:
-            movePointer(action: action, distance: 16)
+            _ = CGDisplayShowCursor(CGMainDisplayID())
+            movePointer(action: action, distance: 32, verify: debug)
         case .pointerLeftClick:
             postClick(button: .left)
         case .pointerRightClick:
@@ -158,7 +161,11 @@ final class ButtonActionExecutor {
         pressedAt = nil
     }
 
-    private func movePointer(action: ButtonAction, distance: Double) {
+    private func movePointer(
+        action: ButtonAction,
+        distance: Double,
+        verify: Bool = false
+    ) {
         guard let current = CGEvent(source: nil)?.location else { return }
         var target = current
         switch action {
@@ -168,6 +175,7 @@ final class ButtonActionExecutor {
         case .pointerMoveRight: target.x += distance
         default: return
         }
+        let warpResult = CGWarpMouseCursorPosition(target)
         let source = CGEventSource(stateID: .hidSystemState)
         CGEvent(
             mouseEventSource: source,
@@ -175,6 +183,15 @@ final class ButtonActionExecutor {
             mouseCursorPosition: target,
             mouseButton: .left
         )?.post(tap: .cghidEventTap)
+        if verify {
+            let expected = target
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                guard let actual = CGEvent(source: nil)?.location else { return }
+                print(
+                    "鼠标动作：warp=\(warpResult.rawValue)，请求 (\(Int(expected.x)), \(Int(expected.y)))，实际 (\(Int(actual.x)), \(Int(actual.y)))"
+                )
+            }
+        }
     }
 
     private func postClick(button: CGMouseButton) {

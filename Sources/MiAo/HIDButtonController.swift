@@ -47,7 +47,7 @@ final class HIDButtonController {
         self.configuration = configuration
         self.map = map
         self.preset = preset
-        executor = ButtonActionExecutor(preset: preset)
+        executor = ButtonActionExecutor(preset: preset, debug: configuration.debug)
     }
 
     deinit {

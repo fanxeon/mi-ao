@@ -30,6 +30,44 @@ case "${1:-}" in
           cat <<'MAPPING'
 10001df64   UserKeyMapping   (
   {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771154;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771153;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771152;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771151;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771112;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771313;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771125;
+  },
+  {
+    HIDKeyboardModifierMappingDst = 30064771072;
+    HIDKeyboardModifierMappingSrc = 30064771174;
+  }
+)
+MAPPING
+          ;;
+        legacy)
+          cat <<'MAPPING'
+10001df64   UserKeyMapping   (
+  {
     HIDKeyboardModifierMappingDst = 30064771183;
     HIDKeyboardModifierMappingSrc = 30064771125;
   },
@@ -98,6 +136,26 @@ if "$ROOT/scripts/remote-mapping.sh" restore >/dev/null 2>&1; then
 fi
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
 "$ROOT/scripts/remote-mapping.sh" restore --force >/dev/null
+
+echo legacy > "$FAKE_HID_STATE"
+mkdir -p "$VOICE_BRIDGE_DATA_DIR/system-mapping"
+cat > "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" <<'EOF'
+owner=mi-ao
+baseline=empty
+vendor_id=0x2717
+product_id=0x32b8
+tv=0x700000035->0x70000006f
+power=0x700000066->0x700000070
+EOF
+"$ROOT/scripts/remote-mapping.sh" apply >/dev/null
+[[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
+grep -q '^profile=core-no-event-v2$' \
+  "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+"$ROOT/scripts/remote-mapping.sh" restore >/dev/null
+
+echo legacy > "$FAKE_HID_STATE"
+"$ROOT/scripts/remote-mapping.sh" restore --force >/dev/null
+[[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
 
 echo foreign > "$FAKE_HID_STATE"
 if "$ROOT/scripts/remote-mapping.sh" apply >/dev/null 2>&1; then

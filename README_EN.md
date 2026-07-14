@@ -48,7 +48,7 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Power launches Codex or focuses it when already running; Volume scrolls, `HOME` focuses Codex, Menu cycles presets, and Voice remains hold-to-talk.
 
-> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. New-format calibration now confirms D-pad, Center, Back, `TV`, and Power on Xiaomi Remote 2 Pro firmware 2671. D-pad Up has completed a real cursor-coordinate acceptance run; remaining directions, clicks, mode switching, and Power actions still require per-action acceptance, so physical-button actions remain an implementation preview.
+> **Status boundary:** the preset architecture, dual control modes, and executor are implemented. New-format calibration confirms D-pad, Center, Back, `TV`, and Power on Xiaomi Remote 2 Pro firmware 2671. All four directions passed `No Event` isolation, direct cursor positioning, and real-coordinate monitoring; clicks, mode switching, and Power still require per-action acceptance, so physical-button actions remain an implementation preview.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 
@@ -82,7 +82,7 @@ For the verified Xiaomi Remote 2 Pro:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper temporarily applies device-specific `TV→F20` and `Power→F21`, while MI-AO continues reading the original IOHID Usage. When the bridge is ready, hold the voice button, speak, and release. `Control + C` stops MI-AO and restores the original mapping. For voice with no system mapping change, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`.
+The wrapper temporarily maps D-pad, Center, Back, TV, and Power to HID `No Event` for this exact device, while MI-AO continues reading the original IOHID Usage. This prevents the frontmost app from also receiving the remote's native arrow and Return keys. `Control + C` stops MI-AO and restores the original mapping. For voice with no system mapping change, use `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons`.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 

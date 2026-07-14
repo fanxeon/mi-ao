@@ -19,8 +19,8 @@ BLE 遥控器
 ```mermaid
 flowchart LR
     REMOTE["小米遥控器 HID service"] --> HID["IOHIDManager<br/>保留原始 Usage"]
-    REMOTE --> NEUTRAL["remote-mapping.sh<br/>TV→F20 / Power→F21"]
-    NEUTRAL --> MACOS["macOS 前台事件<br/>无原生电源副作用"]
+    REMOTE --> NEUTRAL["remote-mapping.sh<br/>八个按键→No Event"]
+    NEUTRAL --> MACOS["macOS 前台事件<br/>无原生箭头/按键副作用"]
     HID --> CAL["confirmed_calibration<br/>Usage → RemoteButton"]
     CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
     PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 方向键 / Codex"]
@@ -45,7 +45,7 @@ flowchart LR
 - `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
 - `ButtonActionExecutor.swift`：鼠标移动与点击、方向键/Return/Escape、模式切换，以及 Codex 启动和聚焦。
 - `RemoteEventSuppressor.swift`：短时关联遥控器 IOHID 与 Quartz 键盘/系统定义事件，并放行带米遥来源标记的合成键；Consumer Control 与完整真机时序仍待验收。
-- `remote-mapping.sh` / `run-with-mapping.sh`：设备专属 `hidutil` 中性化、所有权状态、回读验证、会话启动和退出恢复；当前只覆盖已确认的 `TV` / 电源键。
+- `remote-mapping.sh` / `run-with-mapping.sh`：八个已确认按键到 HID `No Event` 的设备专属中性化、旧版迁移、所有权状态、回读验证、会话启动和退出恢复。
 - `Configuration.swift`：CLI 模式和安全选项。
 
 ## 会话状态

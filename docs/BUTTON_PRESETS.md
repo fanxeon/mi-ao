@@ -6,7 +6,7 @@
 
 米遥把硬件识别和用户偏好分成两层：校准档案只回答“这个 HID Usage 是哪个实体按钮”，预设套装再决定“这个按钮现在做什么”。更换套装不需要重新校准遥控器。
 
-> 当前状态：`pointer` 默认套装、校准合并、冲突拒绝、鼠标执行器和事件关联抑制已经实现并通过自动测试；小米 2 Pro 固件 2671 的六个必需按钮已完成新格式真机校准，方向上已验证真实鼠标坐标移动。其余动作仍需逐项验收，因此暂不把整套指针模式标记为端到端验证。
+> 当前状态：`pointer` 默认套装、校准合并、冲突拒绝和鼠标执行器已经实现并通过自动测试；小米 2 Pro 固件 2671 的六个必需按钮已完成新格式真机校准，四个方向已验证直接光标定位与真实坐标变化。点击、模式切换和电源动作仍需逐项验收，因此暂不把整套指针模式标记为端到端验证。
 
 ## 映射架构
 
@@ -87,7 +87,7 @@ flowchart LR
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-这条命令按精确设备属性应用 `TV 0x35→F20`、`Power 0x66→F21`，写入后回读验证，再启动米遥；`Control+C`、正常退出、INT/TERM/HUP 都会触发恢复。真机已经确认中性映射生效时 IOHID 仍收到原始 `0x35/0x66`。
+这条命令按精确设备属性把六个核心键、TV 和电源映射为 HID `No Event`，写入后回读验证，再启动米遥；`Control+C`、`Control+Z`、正常退出、INT/TERM/HUP 都会触发安全清理。真机已确认全量映射下方向键和确认键仍保留原始 IOHID Usage；旧版 TV/Power 中性映射也已验证原始 Usage 保留。
 
 实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 
@@ -129,4 +129,4 @@ flowchart LR
 - 调试校准模式不会合成鼠标或键盘动作，但 macOS 仍可能处理遥控器原始 HID 键；请在无重要输入的窗口中校准；
 - `Control + C` 始终是退出入口；`--no-buttons` 是明确的安全回退。
 
-其余方向、左右击、模式切换和电源动作完成真机验收前，指针模式仍属于 **implementation preview**。
+左右击、模式切换和电源动作完成真机验收前，整套按键模式仍属于 **implementation preview**。

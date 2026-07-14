@@ -235,10 +235,6 @@ final class ButtonActionExecutor {
                 keyDown: isDown
             )
         else { return }
-        event.setIntegerValueField(
-            .eventSourceUserData,
-            value: RemoteEventSuppressor.syntheticEventMarker
-        )
         event.post(tap: .cghidEventTap)
     }
 

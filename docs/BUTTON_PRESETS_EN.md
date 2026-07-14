@@ -80,9 +80,9 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 - Runtime profiles must be user-confirmed and match the remote Vendor/Product.
 - The wrapper matches Vendor `0x2717`, Product `0x32B8`, the verified product name, and BLE transport. A second identical remote may also match.
 - Apply accepts an empty mapping only and refuses to overwrite any existing `UserKeyMapping`. Ownership state gates restore so unknown user mappings are never deleted.
-- Pointer actions require Accessibility permission; missing permission or a missing event filter disables button actions.
-- A normal user process cannot seize this HID device in the current environment. MI-AO currently correlates IOHID source events with one-shot Quartz keyboard events in an attempt to stop the foreground app from receiving the remote's original key.
-- The filter covers Quartz `keyDown` / `keyUp` and `systemDefined`, and a source marker lets MI-AO's own arrow events pass. `TV` and Power now have physical Usage evidence, but macOS Keyboard Power conversion and original-event suppression still require action-level hardware acceptance. A nearly simultaneous Mac-keyboard event can also be misclassified, so this is not a completed isolation boundary.
+- Pointer actions require Accessibility permission; missing permission disables button actions.
+- MI-AO installs no global Quartz keyboard event tap and never guesses an event source from timing. Events from the physical Mac keyboard do not enter MI-AO's button pipeline.
+- Native remote side effects are isolated only by the ten-key HID `No Event` mapping scoped to the exact device service. `TV` and Power have verified physical Usages, but their action results still require individual hardware acceptance.
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
 - `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
 

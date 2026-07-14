@@ -25,7 +25,6 @@ flowchart LR
     CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
     PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 方向键 / Codex"]
     PRESET --> FUTURE["未来 Codex / 演示执行器"]
-    HID --> SUPPRESS["RemoteEventSuppressor<br/>关联原始 Quartz 键事件"]
 ```
 
 硬件档案与动作预设是两个独立合同。`ButtonProfileStore` 只合并人工确认且与设备 Vendor/Product 一致的物理映射；`ButtonPreset` 决定当前动作。默认 `pointer` 缺少方向四键、确认或返回中任一必需项，或发现两个按钮共用同一 Usage 时，运行时拒绝启动实体按键动作，语音桥接不受影响。
@@ -44,9 +43,10 @@ flowchart LR
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
 - `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
 - `ButtonActionExecutor.swift`：鼠标移动与点击、方向键/Return/Escape、模式切换，以及 Codex 启动和聚焦。
-- `RemoteEventSuppressor.swift`：短时关联遥控器 IOHID 与 Quartz 键盘/系统定义事件，并放行带米遥来源标记的合成键；Consumer Control 与完整真机时序仍待验收。
 - `remote-mapping.sh` / `run-with-mapping.sh`：十个接管键到 HID `No Event` 的设备专属中性化；菜单和音量不进入映射。包含 v1/v2 迁移、所有权状态、回读验证和退出恢复。
 - `Configuration.swift`：CLI 模式和安全选项。
+
+米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十键 `No Event` 映射隔离。
 
 ## 会话状态
 

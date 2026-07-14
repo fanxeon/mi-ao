@@ -366,19 +366,6 @@ import Testing
     #expect(rejected)
 }
 
-@Test func suppressesOnlyMatchingFreshRemoteEventTokens() {
-    let suppressor = RemoteEventSuppressor()
-    suppressor.record(isDown: true, at: 10)
-    #expect(suppressor.consume(isDown: false, now: 10.01) == false)
-    #expect(suppressor.consume(isDown: true, now: 10.01))
-    #expect(suppressor.consume(isDown: true, now: 10.02) == false)
-    suppressor.record(isDown: false, at: 20)
-    #expect(suppressor.consume(isDown: false, now: 20.2) == false)
-    suppressor.record(isDown: true, at: 30)
-    #expect(suppressor.consumeAny(now: 30.01))
-    #expect(suppressor.consumeAny(now: 30.02) == false)
-}
-
 @Test func resolvesUsageFromKeyboardArrayReport() {
     #expect(
         ButtonLearner.normalizedUsage(

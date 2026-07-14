@@ -68,6 +68,7 @@ check:
 	xcrun swift-format lint --strict --recursive Sources Tests Package.swift
 	swift test
 	zsh Tests/Shell/RemoteMappingTests.sh
+	zsh Tests/Shell/KeyboardIsolationTests.sh
 	swift build -c release
 	plutil -lint Resources/Info.plist
 	git diff --check

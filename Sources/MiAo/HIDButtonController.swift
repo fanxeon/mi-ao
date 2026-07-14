@@ -35,7 +35,6 @@ final class HIDButtonController {
     private let map: CalibratedButtonMap
     private let preset: ButtonPreset
     private let executor: ButtonActionExecutor
-    private let suppressor = RemoteEventSuppressor()
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
     private var activeKey: HIDUsageKey?
@@ -58,7 +57,6 @@ final class HIDButtonController {
         guard AXIsProcessTrusted() else {
             throw BridgeError.configuration("实体按键动作需要辅助功能权限；请先运行 scripts/authorize.sh")
         }
-        try suppressor.start()
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         self.manager = manager
         IOHIDManagerSetDeviceMatching(
@@ -78,7 +76,6 @@ final class HIDButtonController {
         )
         let result = IOHIDManagerOpen(manager, openOptions)
         guard result == kIOReturnSuccess else {
-            suppressor.stop()
             throw BridgeError.configuration(
                 "无法打开遥控器 HID（IOReturn \(result)）；实体按键动作已拒绝启动"
             )
@@ -89,7 +86,6 @@ final class HIDButtonController {
 
     func stop() {
         executor.stop()
-        suppressor.stop()
         guard let manager else { return }
         IOHIDManagerUnscheduleFromRunLoop(
             manager,
@@ -127,7 +123,6 @@ final class HIDButtonController {
                 if configuration.debug {
                     print("HID 松手：\(activeButton.rawValue)")
                 }
-                suppressor.record(isDown: false)
                 executor.buttonUp(activeButton)
             }
             activeKey = nil
@@ -164,7 +159,6 @@ final class HIDButtonController {
                     )
                 )
             }
-            suppressor.record(isDown: true)
             executor.buttonDown(activeButton)
         }
     }

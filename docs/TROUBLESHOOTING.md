@@ -67,7 +67,7 @@
 
 - “缺少人工确认校准”：运行 `./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器"`，至少确认方向四键、中间确认和返回；
 - “按键校准冲突”：两个实体按钮被确认成同一 Usage，分别使用 `--button <标识>` 重测；
-- “需要辅助功能权限”或“无法建立键盘事件过滤器”：运行 `./scripts/authorize.sh`，在系统设置中授权已安装的米遥 App 后重启；
+- “需要辅助功能权限”：运行 `./scripts/authorize.sh`，在系统设置中授权已安装的米遥 App 后重启；
 - 指定 `--button-profile` 后失败：确认它是 `captureMode=confirmed_calibration` 的新格式完整档案，而不是 `learn-buttons` 自动学习报告。
 
 只使用语音、暂不处理鼠标问题：
@@ -95,7 +95,9 @@
 
 ## 指针动作和前台 App 同时响应
 
-当前事件关联过滤仍是 implementation preview。过滤器已经监听 `keyDown`、`keyUp` 和 `systemDefined`，但不同固件的 Consumer Control 或电源事件仍可能无法与 IOHID 事件可靠关联。立即按 `Control + C` 停止，改用 `--no-buttons`，并用脱敏日志报告具体按钮、macOS 和遥控器固件；不要用全局键盘重映射作为日常绕过方案。
+立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十个接管键均映射为 `No Event`，菜单和音量不在映射内。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
+
+米遥不建立全局 Quartz 键盘事件 tap。若 Mac 实体键盘出现按键丢失或修饰键卡住，应立即停止米遥并提交脱敏日志，这是安全缺陷而不是可接受的已知限制。
 
 ## 中文术语识别错误
 

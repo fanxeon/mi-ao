@@ -78,7 +78,9 @@ The verified Xiaomi Remote 2 Pro firmware 2671 result is `TV=0x07/0x35` and `Pow
 
 ## Pointer movement and the foreground app both react
 
-Correlated event filtering is still an implementation preview. The tap now observes `keyDown`, `keyUp`, and `systemDefined`, but firmware-specific Consumer Control or Power events may still fail to correlate reliably with IOHID. Stop immediately with `Control + C`, restart with `--no-buttons`, and report the specific button, macOS version, remote firmware, and redacted log. Do not treat a global keyboard remap as a routine workaround.
+Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all ten intercepted keys mapped to `No Event` for the current device, while Menu and Volume are absent. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
+
+MI-AO installs no global Quartz keyboard event tap. If the physical Mac keyboard loses keystrokes or leaves a modifier stuck, stop MI-AO immediately and submit a redacted log; that is a safety defect, not an accepted limitation.
 
 ## Project terms are transcribed incorrectly
 

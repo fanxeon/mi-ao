@@ -8,6 +8,7 @@ struct Configuration {
         case run
         case doctor
         case authorize
+        case learnButtons = "learn-buttons"
     }
 
     var mode: Mode = .run
@@ -31,6 +32,12 @@ struct Configuration {
     var debug = false
     var includeIdentifiers = false
     var includeDeviceNames = false
+    var hidVendorID = 0x2717
+    var hidProductID = 0x32B8
+    var buttonSeconds: TimeInterval = 10
+    var buttonProfileDirectory = NSString(
+        string: "~/Library/Application Support/mi-ao/button-profiles"
+    ).expandingTildeInPath
 
     static func parse(_ arguments: [String]) throws -> Configuration {
         var config = Configuration()
@@ -92,6 +99,17 @@ struct Configuration {
                 config.includeIdentifiers = true
             case "--include-device-names":
                 config.includeDeviceNames = true
+            case "--vendor-id":
+                config.hidVendorID = try parseInteger(try requireValue(for: flag), flag: flag)
+            case "--product-id":
+                config.hidProductID = try parseInteger(try requireValue(for: flag), flag: flag)
+            case "--button-seconds":
+                config.buttonSeconds = try parseDouble(try requireValue(for: flag), flag: flag)
+            case "--profile-dir":
+                config.buttonProfileDirectory =
+                    NSString(
+                        string: try requireValue(for: flag)
+                    ).expandingTildeInPath
             case "--help", "-h":
                 print(Self.help)
                 exit(0)
@@ -111,6 +129,20 @@ struct Configuration {
         return value
     }
 
+    private static func parseInteger(_ raw: String, flag: String) throws -> Int {
+        let normalized = raw.lowercased()
+        let value: Int?
+        if normalized.hasPrefix("0x") {
+            value = Int(normalized.dropFirst(2), radix: 16)
+        } else {
+            value = Int(normalized)
+        }
+        guard let value, value >= 0 else {
+            throw BridgeError.configuration("\(flag) 需要十进制或 0x 十六进制非负整数，收到: \(raw)")
+        }
+        return value
+    }
+
     private static var executableName: String {
         URL(fileURLWithPath: CommandLine.arguments.first ?? "voice-bridge").lastPathComponent
     }
@@ -125,6 +157,7 @@ struct Configuration {
           \(executableName) run [选项]
           \(executableName) doctor
           \(executableName) authorize
+          \(executableName) learn-buttons [选项]
 
         capture 选项：
           --identifier <UUID>        连接 scan 输出的 macOS peripheral UUID
@@ -150,6 +183,13 @@ struct Configuration {
           --no-submit                只转写，不发送给 Codex
           --force-submit             无法验证焦点控件时仍向 Codex 粘贴并回车
           --debug                    打印原始 GATT 数据
+
+        learn-buttons 选项：
+          --name <文本>              HID 产品名需包含该文本
+          --vendor-id <数字>         HID Vendor ID，默认 0x2717（小米）
+          --product-id <数字>        HID Product ID，默认 0x32B8
+          --button-seconds <秒>      每个按钮的等待时间，默认 10
+          --profile-dir <目录>       脱敏按键报告保存目录
         """
     }
 }

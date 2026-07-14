@@ -137,3 +137,63 @@ import Testing
     #expect(report.privacy.identifiers == "included")
     #expect(report.privacy.deviceNames == "included")
 }
+
+@Test func parsesButtonLearnerConfiguration() throws {
+    let configuration = try Configuration.parse([
+        "mi-ao",
+        "learn-buttons",
+        "--name",
+        "小米蓝牙语音遥控器",
+        "--vendor-id",
+        "0x2717",
+        "--product-id",
+        "12984",
+        "--button-seconds",
+        "12",
+        "--profile-dir",
+        "~/mi-ao-button-test",
+    ])
+
+    #expect(configuration.mode == .learnButtons)
+    #expect(configuration.hidVendorID == 0x2717)
+    #expect(configuration.hidProductID == 0x32B8)
+    #expect(configuration.buttonSeconds == 12)
+    #expect(configuration.buttonProfileDirectory.hasSuffix("/mi-ao-button-test"))
+}
+
+@Test func writesRedactedButtonProfile() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let now = Date(timeIntervalSince1970: 1_700_000_000)
+    let profile = ButtonProfile(
+        schemaVersion: 1,
+        generatedAt: now,
+        device: .init(vendorID: 0x2717, productID: 0x32B8, productName: "Xiaomi Remote"),
+        privacy: "No identifiers stored.",
+        observations: [
+            .init(
+                button: "dpad_up",
+                label: "方向上",
+                expectedTransport: "hid",
+                status: .observed,
+                usagePage: 0x07,
+                usage: 0x52,
+                rawValues: [1, 0],
+                pressObserved: true,
+                releaseObserved: true,
+                repeatCount: 0,
+                note: nil
+            )
+        ]
+    )
+
+    let url = try ButtonProfileWriter.write(profile, to: root.path, now: now)
+    let data = try Data(contentsOf: url)
+    let text = try #require(String(data: data, encoding: .utf8))
+    #expect(text.contains("Xiaomi Remote"))
+    #expect(text.contains("11111111-2222-3333-4444-555555555555") == false)
+
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    #expect(try decoder.decode(ButtonProfile.self, from: data) == profile)
+}

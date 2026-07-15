@@ -23,6 +23,14 @@ import Testing
     #expect(service.registerCount == 0)
 }
 
+@Test func loginItemControllerRetriesRegistrationWhenServiceWasNotFound() throws {
+    let service = FakeLoginItemService(state: .unavailable)
+    let controller = LoginItemController(service: service)
+
+    #expect(try controller.setEnabled(true) == .enabled)
+    #expect(service.registerCount == 1)
+}
+
 private final class FakeLoginItemService: LoginItemService {
     var state: LoginItemState
     private(set) var registerCount = 0

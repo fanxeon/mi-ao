@@ -17,7 +17,7 @@ enum LoginItemState: Equatable {
         case .requiresApproval:
             return "可选 · 已请求，需要在“登录项与扩展”中允许"
         case .unavailable:
-            return "可选 · 当前 App 无法注册，请重新安装或检查签名"
+            return "可选 · 系统暂未定位登录项，可点击开关重试并查看真实错误"
         }
     }
 }
@@ -78,7 +78,12 @@ struct LoginItemController {
                 }
             case .requiresApproval:
                 service.openSystemSettings()
-            case .enabled, .unavailable:
+            case .unavailable:
+                try service.register()
+                if service.state == .requiresApproval {
+                    service.openSystemSettings()
+                }
+            case .enabled:
                 break
             }
         } else if current != .disabled {

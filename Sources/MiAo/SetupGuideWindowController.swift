@@ -4,31 +4,113 @@ import ApplicationServices
 @preconcurrency import CoreBluetooth
 import Foundation
 
+private enum SetupInterfaceStyle {
+    static func applySurface(to view: NSView, radius: CGFloat = 20, emphasized: Bool = false) {
+        view.wantsLayer = true
+        view.layer?.cornerRadius = radius
+        view.layer?.masksToBounds = true
+        view.layer?.backgroundColor =
+            NSColor.labelColor.withAlphaComponent(emphasized ? 0.10 : 0.075).cgColor
+        view.layer?.borderWidth = 1
+        view.layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.055).cgColor
+    }
+
+    static func applyActionStyle(to button: NSButton, primary: Bool, compact: Bool = false) {
+        button.isBordered = true
+        button.bezelStyle = .rounded
+        button.controlSize = compact ? .small : .regular
+        button.font = .systemFont(ofSize: compact ? 12 : 13, weight: .semibold)
+        button.contentTintColor = primary ? .controlAccentColor : nil
+    }
+
+    static func requirementColors(_ requirement: SetupRequirement) -> (text: NSColor, fill: NSColor) {
+        switch requirement {
+        case .required:
+            return (.systemBlue, NSColor.systemBlue.withAlphaComponent(0.13))
+        case .featureRequired:
+            return (.systemOrange, NSColor.systemOrange.withAlphaComponent(0.14))
+        case .optional:
+            return (.secondaryLabelColor, NSColor.labelColor.withAlphaComponent(0.08))
+        }
+    }
+}
+
+private final class FlippedLayoutView: NSView {
+    override var isFlipped: Bool { true }
+}
+
+private final class SetupToggleRowView: NSView {
+    init(title: String, detail: String, toggle: NSSwitch) {
+        super.init(frame: .zero)
+        SetupInterfaceStyle.applySurface(to: self, radius: 18)
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .systemFont(ofSize: 11)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.controlSize = .regular
+        toggle.setAccessibilityLabel(title)
+
+        addSubview(titleLabel)
+        addSubview(detailLabel)
+        addSubview(toggle)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 72),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 15),
+            titleLabel.trailingAnchor.constraint(equalTo: toggle.leadingAnchor, constant: -16),
+            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            detailLabel.trailingAnchor.constraint(equalTo: toggle.leadingAnchor, constant: -16),
+            detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -13),
+            toggle.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
+            toggle.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+}
+
 private final class SetupCheckRowView: NSView {
+    private let iconPlate = NSView()
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let requirementLabel = NSTextField(labelWithString: "")
     private let detailLabel = NSTextField(wrappingLabelWithString: "")
     private let actionButton = NSButton()
+    private var actionWidthConstraint: NSLayoutConstraint!
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        wantsLayer = true
-        layer?.cornerRadius = 12
-        layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.075).cgColor
+        SetupInterfaceStyle.applySurface(to: self, radius: 20)
+
+        iconPlate.translatesAutoresizingMaskIntoConstraints = false
+        iconPlate.wantsLayer = true
+        iconPlate.layer?.cornerRadius = 20
+        iconPlate.layer?.masksToBounds = true
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
         iconView.contentTintColor = .secondaryLabelColor
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
 
         requirementLabel.translatesAutoresizingMaskIntoConstraints = false
-        requirementLabel.font = .systemFont(ofSize: 10, weight: .semibold)
+        requirementLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         requirementLabel.alignment = .center
         requirementLabel.wantsLayer = true
-        requirementLabel.layer?.cornerRadius = 5
+        requirementLabel.layer?.cornerRadius = 12
+        requirementLabel.layer?.masksToBounds = true
 
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         detailLabel.font = .systemFont(ofSize: 12)
@@ -36,24 +118,30 @@ private final class SetupCheckRowView: NSView {
         detailLabel.maximumNumberOfLines = 2
 
         actionButton.translatesAutoresizingMaskIntoConstraints = false
-        actionButton.bezelStyle = .rounded
-        actionButton.controlSize = .small
         actionButton.isHidden = true
+        actionButton.setAccessibilityIdentifier("setup-check-action")
 
-        addSubview(iconView)
+        addSubview(iconPlate)
+        iconPlate.addSubview(iconView)
         addSubview(titleLabel)
         addSubview(requirementLabel)
         addSubview(detailLabel)
         addSubview(actionButton)
 
+        actionWidthConstraint = actionButton.widthAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 74),
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 88),
+            iconPlate.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            iconPlate.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconPlate.widthAnchor.constraint(equalToConstant: 40),
+            iconPlate.heightAnchor.constraint(equalToConstant: 40),
+            iconView.centerXAnchor.constraint(equalTo: iconPlate.centerXAnchor),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 24),
-            iconView.heightAnchor.constraint(equalToConstant: 24),
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 13),
+            iconView.widthAnchor.constraint(equalToConstant: 22),
+            iconView.heightAnchor.constraint(equalToConstant: 22),
+            titleLabel.leadingAnchor.constraint(equalTo: iconPlate.trailingAnchor, constant: 14),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 17),
             titleLabel.trailingAnchor.constraint(
                 lessThanOrEqualTo: requirementLabel.leadingAnchor,
                 constant: -8
@@ -63,15 +151,16 @@ private final class SetupCheckRowView: NSView {
                 constant: -10
             ),
             requirementLabel.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            requirementLabel.widthAnchor.constraint(equalToConstant: 88),
-            requirementLabel.heightAnchor.constraint(equalToConstant: 20),
+            requirementLabel.widthAnchor.constraint(equalToConstant: 96),
+            requirementLabel.heightAnchor.constraint(equalToConstant: 24),
             detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
             detailLabel.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -12),
-            detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -12),
-            actionButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -15),
+            actionButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
             actionButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            actionButton.widthAnchor.constraint(equalToConstant: 112),
+            actionButton.heightAnchor.constraint(equalToConstant: 34),
+            actionWidthConstraint,
         ])
     }
 
@@ -82,20 +171,9 @@ private final class SetupCheckRowView: NSView {
         titleLabel.stringValue = check.title
         detailLabel.stringValue = check.detail
         requirementLabel.stringValue = check.requirement.title
-        switch check.requirement {
-        case .required:
-            requirementLabel.textColor = .systemBlue
-            requirementLabel.layer?.backgroundColor =
-                NSColor.systemBlue.withAlphaComponent(0.11).cgColor
-        case .featureRequired:
-            requirementLabel.textColor = .systemOrange
-            requirementLabel.layer?.backgroundColor =
-                NSColor.systemOrange.withAlphaComponent(0.12).cgColor
-        case .optional:
-            requirementLabel.textColor = .secondaryLabelColor
-            requirementLabel.layer?.backgroundColor =
-                NSColor.secondaryLabelColor.withAlphaComponent(0.09).cgColor
-        }
+        let requirementColors = SetupInterfaceStyle.requirementColors(check.requirement)
+        requirementLabel.textColor = requirementColors.text
+        requirementLabel.layer?.backgroundColor = requirementColors.fill.cgColor
         let symbolName: String
         let color: NSColor
         switch check.state {
@@ -111,6 +189,7 @@ private final class SetupCheckRowView: NSView {
         }
         iconView.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: check.title)
         iconView.contentTintColor = color
+        iconPlate.layer?.backgroundColor = color.withAlphaComponent(0.14).cgColor
 
         if let actionTitle = check.actionTitle, check.action != nil {
             actionButton.title = actionTitle
@@ -118,9 +197,12 @@ private final class SetupCheckRowView: NSView {
             actionButton.action = action
             actionButton.identifier = NSUserInterfaceItemIdentifier(check.id.rawValue)
             actionButton.isHidden = false
+            actionWidthConstraint.constant = 116
+            SetupInterfaceStyle.applyActionStyle(to: actionButton, primary: false, compact: true)
         } else {
             actionButton.isHidden = true
             actionButton.identifier = nil
+            actionWidthConstraint.constant = 0
         }
     }
 }
@@ -137,24 +219,13 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     private let summaryLabel = NSTextField(wrappingLabelWithString: "")
     private let preferenceStateLabel = NSTextField(wrappingLabelWithString: "")
     private let loginItemStateLabel = NSTextField(wrappingLabelWithString: "")
-    private let automaticSubmitCheckbox = NSButton(
-        checkboxWithTitle: "自动发送到 Codex（需要辅助功能与 Codex）",
-        target: nil,
-        action: nil
-    )
-    private let buttonControlCheckbox = NSButton(
-        checkboxWithTitle: "启用遥控器按键控制（需要辅助功能；默认方案使用 Codex）",
-        target: nil,
-        action: nil
-    )
-    private let loginAtStartupCheckbox = NSButton(
-        checkboxWithTitle: "登录时启动（可选，可随时关闭）",
-        target: nil,
-        action: nil
-    )
+    private let automaticSubmitCheckbox = NSSwitch()
+    private let buttonControlCheckbox = NSSwitch()
+    private let loginAtStartupCheckbox = NSSwitch()
     private let openLoginItemsButton = NSButton(title: "打开登录项设置", target: nil, action: nil)
     private let refreshButton = NSButton(title: "重新检查", target: nil, action: nil)
     private let startButton = NSButton(title: "连接遥控器并开始", target: nil, action: nil)
+    private let pageTabs = NSTabViewController()
     private var report: SetupEnvironmentReport?
     private var bluetoothRequester: BluetoothAuthorizationRequester?
     private var process: Process?
@@ -176,13 +247,16 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         preferences = snapshot.preferences
         preferencesLoadState = snapshot.state
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 680, height: 870),
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 760),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         window.title = "米遥设置向导"
-        window.minSize = NSSize(width: 600, height: 820)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = .windowBackgroundColor
+        window.minSize = NSSize(width: 620, height: 680)
         window.isReleasedWhenClosed = false
         super.init(window: window)
         window.delegate = self
@@ -218,61 +292,93 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     private func buildInterface() {
         guard let contentView = window?.contentView else { return }
 
-        let titleLabel = NSTextField(labelWithString: "让米遥在这台 Mac 上就绪")
-        titleLabel.font = .systemFont(ofSize: 25, weight: .bold)
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
-        let subtitleLabel = NSTextField(
-            wrappingLabelWithString: "“必须”和“当前功能必需”会影响启动；“可选”未授权也能继续。米遥只在必要时请求系统权限。"
-        )
-        subtitleLabel.font = .systemFont(ofSize: 13)
-        subtitleLabel.textColor = .secondaryLabelColor
-
-        let header = NSStackView(views: [titleLabel, subtitleLabel])
-        header.orientation = .vertical
-        header.alignment = .leading
-        header.spacing = 7
+        let heroView = buildHeroView()
+        let overviewView = buildOverviewView()
 
         let checksStack = NSStackView(
             views: SetupCheckID.allCases.compactMap { rows[$0] }
         )
         checksStack.orientation = .vertical
-        checksStack.alignment = .width
-        checksStack.spacing = 8
+        checksStack.alignment = .leading
+        checksStack.spacing = 10
 
         let preferencesView = buildPreferencesView()
 
-        summaryLabel.font = .systemFont(ofSize: 12)
+        let checksHeader = buildSectionHeader(
+            title: "设备与权限检查",
+            detail: "只需处理标注为“必须”或“当前功能必需”的项目。"
+        )
+        let checksSection = NSStackView(views: [checksHeader, checksStack])
+        checksSection.orientation = .vertical
+        checksSection.alignment = .leading
+        checksSection.spacing = 12
+        checksHeader.widthAnchor.constraint(equalTo: checksSection.widthAnchor).isActive = true
+        checksStack.widthAnchor.constraint(equalTo: checksSection.widthAnchor).isActive = true
+
+        pageTabs.tabStyle = .segmentedControlOnTop
+        pageTabs.transitionOptions = [.crossfade, .allowUserInteraction]
+        pageTabs.canPropagateSelectedChildViewControllerTitle = false
+        pageTabs.addChild(makeTabPage(title: "开始", content: overviewView))
+        pageTabs.addChild(makeTabPage(title: "权限与连接", content: checksSection))
+        pageTabs.addChild(makeTabPage(title: "控制偏好", content: preferencesView))
+        pageTabs.view.translatesAutoresizingMaskIntoConstraints = false
+        pageTabs.view.setAccessibilityLabel("米遥设置分类")
+
+        summaryLabel.font = .systemFont(ofSize: 12, weight: .medium)
         summaryLabel.textColor = .secondaryLabelColor
+        let summaryView = NSView()
+        SetupInterfaceStyle.applySurface(to: summaryView, radius: 16)
+        let summaryIcon = NSImageView()
+        summaryIcon.translatesAutoresizingMaskIntoConstraints = false
+        summaryIcon.image = NSImage(systemSymbolName: "info.circle.fill", accessibilityDescription: nil)
+        summaryIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+        summaryIcon.contentTintColor = .secondaryLabelColor
+        summaryLabel.translatesAutoresizingMaskIntoConstraints = false
+        summaryView.addSubview(summaryIcon)
+        summaryView.addSubview(summaryLabel)
+        NSLayoutConstraint.activate([
+            summaryView.heightAnchor.constraint(greaterThanOrEqualToConstant: 52),
+            summaryIcon.leadingAnchor.constraint(equalTo: summaryView.leadingAnchor, constant: 17),
+            summaryIcon.centerYAnchor.constraint(equalTo: summaryView.centerYAnchor),
+            summaryIcon.widthAnchor.constraint(equalToConstant: 18),
+            summaryIcon.heightAnchor.constraint(equalToConstant: 18),
+            summaryLabel.leadingAnchor.constraint(equalTo: summaryIcon.trailingAnchor, constant: 10),
+            summaryLabel.trailingAnchor.constraint(equalTo: summaryView.trailingAnchor, constant: -17),
+            summaryLabel.topAnchor.constraint(equalTo: summaryView.topAnchor, constant: 13),
+            summaryLabel.bottomAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: -13),
+        ])
 
         refreshButton.target = self
         refreshButton.action = #selector(refreshPressed)
-        refreshButton.bezelStyle = .rounded
+        refreshButton.setAccessibilityLabel("重新检查环境")
 
         startButton.target = self
         startButton.action = #selector(startPressed)
-        startButton.bezelStyle = .rounded
         startButton.keyEquivalent = "\r"
+        startButton.setAccessibilityLabel("连接遥控器并开始")
 
         let buttonSpacer = NSView()
         let buttons = NSStackView(views: [refreshButton, buttonSpacer, startButton])
         buttons.orientation = .horizontal
         buttons.alignment = .centerY
-        buttons.spacing = 10
+        buttons.spacing = 12
 
         let rootStack = NSStackView(
-            views: [header, preferencesView, checksStack, summaryLabel, buttons]
+            views: [heroView, pageTabs.view, summaryView, buttons]
         )
         rootStack.translatesAutoresizingMaskIntoConstraints = false
         rootStack.orientation = .vertical
-        rootStack.alignment = .width
-        rootStack.spacing = 16
+        rootStack.alignment = .leading
+        rootStack.spacing = 24
         contentView.addSubview(rootStack)
 
         let fullWidthViews: [NSView] = [
-            header,
-            preferencesView,
-            checksStack,
-            summaryLabel,
+            heroView,
+            pageTabs.view,
+            summaryView,
             buttons,
         ]
         let fullWidthConstraints = fullWidthViews.map {
@@ -286,29 +392,140 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
             [
                 rootStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
                 rootStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
-                rootStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 26),
-                rootStack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -24),
+                rootStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+                rootStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
                 buttonSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1),
-                startButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 176),
+                refreshButton.widthAnchor.constraint(equalToConstant: 124),
+                refreshButton.heightAnchor.constraint(equalToConstant: 44),
+                startButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 202),
+                startButton.heightAnchor.constraint(equalToConstant: 44),
+                pageTabs.view.heightAnchor.constraint(equalToConstant: 340),
             ] + fullWidthConstraints + rowWidthConstraints)
     }
 
-    private func buildPreferencesView() -> NSView {
-        let container = NSView()
-        container.wantsLayer = true
-        container.layer?.cornerRadius = 12
-        container.layer?.backgroundColor =
-            NSColor.controlAccentColor.withAlphaComponent(0.055).cgColor
+    private func makeTabPage(title: String, content: NSView) -> NSViewController {
+        let controller = NSViewController()
+        controller.title = title
 
-        let title = NSTextField(labelWithString: "使用方式与可选项")
-        title.font = .systemFont(ofSize: 14, weight: .semibold)
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.scrollerStyle = .overlay
 
-        let explanation = NSTextField(
-            wrappingLabelWithString:
-                "核心必需：macOS 14+、本地语音引擎、蓝牙和 App 启动组件。下面三项由你决定。"
+        let documentView = FlippedLayoutView()
+        documentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.documentView = documentView
+        content.translatesAutoresizingMaskIntoConstraints = false
+        documentView.addSubview(content)
+        NSLayoutConstraint.activate([
+            documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+            content.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
+            content.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 12),
+            content.bottomAnchor.constraint(equalTo: documentView.bottomAnchor, constant: -12),
+        ])
+        controller.view = scrollView
+        return controller
+    }
+
+    private func buildOverviewView() -> NSView {
+        let sectionHeader = buildSectionHeader(
+            title: "开始使用",
+            detail: "默认完整模式会把语音提交给 Codex，并启用遥控器按键控制。"
         )
-        explanation.font = .systemFont(ofSize: 11)
-        explanation.textColor = .secondaryLabelColor
+
+        let stepsCard = NSView()
+        SetupInterfaceStyle.applySurface(to: stepsCard, radius: 22, emphasized: true)
+        let steps = NSStackView(
+            views: [
+                buildOverviewStep(
+                    number: "1",
+                    title: "完成必要授权",
+                    detail: "在“权限与连接”页处理橙色项目。"
+                ),
+                buildOverviewStep(
+                    number: "2",
+                    title: "确认遥控器已连接",
+                    detail: "米遥只会匹配已验证的小米蓝牙遥控器 2 Pro。"
+                ),
+                buildOverviewStep(
+                    number: "3",
+                    title: "按住说话，松开提交",
+                    detail: "环境就绪后，点击下方主按钮即可进入菜单栏运行。"
+                ),
+            ]
+        )
+        steps.translatesAutoresizingMaskIntoConstraints = false
+        steps.orientation = .vertical
+        steps.alignment = .leading
+        steps.spacing = 14
+        stepsCard.addSubview(steps)
+        let arrangedSteps = steps.arrangedSubviews
+        arrangedSteps.forEach {
+            $0.widthAnchor.constraint(equalTo: steps.widthAnchor).isActive = true
+        }
+        NSLayoutConstraint.activate([
+            steps.leadingAnchor.constraint(equalTo: stepsCard.leadingAnchor, constant: 20),
+            steps.trailingAnchor.constraint(equalTo: stepsCard.trailingAnchor, constant: -20),
+            steps.topAnchor.constraint(equalTo: stepsCard.topAnchor, constant: 20),
+            steps.bottomAnchor.constraint(equalTo: stepsCard.bottomAnchor, constant: -20),
+        ])
+
+        let stack = NSStackView(views: [sectionHeader, stepsCard])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 12
+        sectionHeader.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        stepsCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        return stack
+    }
+
+    private func buildOverviewStep(number: String, title: String, detail: String) -> NSView {
+        let numberLabel = NSTextField(labelWithString: number)
+        numberLabel.translatesAutoresizingMaskIntoConstraints = false
+        numberLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        numberLabel.alignment = .center
+        numberLabel.textColor = .white
+        numberLabel.wantsLayer = true
+        numberLabel.layer?.cornerRadius = 14
+        numberLabel.layer?.masksToBounds = true
+        numberLabel.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .systemFont(ofSize: 12)
+        detailLabel.textColor = .secondaryLabelColor
+
+        let step = NSView()
+        step.addSubview(numberLabel)
+        step.addSubview(titleLabel)
+        step.addSubview(detailLabel)
+        NSLayoutConstraint.activate([
+            step.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            numberLabel.leadingAnchor.constraint(equalTo: step.leadingAnchor),
+            numberLabel.topAnchor.constraint(equalTo: step.topAnchor),
+            numberLabel.widthAnchor.constraint(equalToConstant: 28),
+            numberLabel.heightAnchor.constraint(equalToConstant: 28),
+            titleLabel.leadingAnchor.constraint(equalTo: numberLabel.trailingAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: step.topAnchor, constant: 1),
+            titleLabel.trailingAnchor.constraint(equalTo: step.trailingAnchor),
+            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 3),
+            detailLabel.trailingAnchor.constraint(equalTo: step.trailingAnchor),
+            detailLabel.bottomAnchor.constraint(equalTo: step.bottomAnchor),
+        ])
+        return step
+    }
+
+    private func buildPreferencesView() -> NSView {
+        let sectionHeader = buildSectionHeader(
+            title: "使用方式",
+            detail: "开关只影响对应功能；关闭后，相关系统授权会立即变为可选。"
+        )
 
         automaticSubmitCheckbox.target = self
         automaticSubmitCheckbox.action = #selector(preferencesChanged)
@@ -319,49 +536,140 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
         openLoginItemsButton.target = self
         openLoginItemsButton.action = #selector(openLoginItemsSettings)
-        openLoginItemsButton.bezelStyle = .rounded
-        openLoginItemsButton.controlSize = .small
+        openLoginItemsButton.setAccessibilityLabel("打开 macOS 登录项设置")
         openLoginItemsButton.isHidden = true
+        SetupInterfaceStyle.applyActionStyle(to: openLoginItemsButton, primary: false, compact: true)
 
-        loginItemStateLabel.font = .systemFont(ofSize: 10)
+        loginItemStateLabel.font = .systemFont(ofSize: 11)
         loginItemStateLabel.textColor = .secondaryLabelColor
-        preferenceStateLabel.font = .systemFont(ofSize: 10)
+        preferenceStateLabel.font = .systemFont(ofSize: 11)
         preferenceStateLabel.textColor = .systemOrange
 
-        let loginSpacer = NSView()
-        let loginRow = NSStackView(
-            views: [loginAtStartupCheckbox, loginSpacer, openLoginItemsButton]
+        let automaticSubmitRow = SetupToggleRowView(
+            title: "自动发送到 Codex",
+            detail: "松开语音键后，转写内容会自动粘贴并发送。",
+            toggle: automaticSubmitCheckbox
         )
-        loginRow.orientation = .horizontal
-        loginRow.alignment = .centerY
-        loginRow.spacing = 8
+        let buttonControlRow = SetupToggleRowView(
+            title: "遥控器按键控制",
+            detail: "用方向、音量和常用键操作 Codex 与指针。",
+            toggle: buttonControlCheckbox
+        )
+        let loginRow = SetupToggleRowView(
+            title: "登录后自动启动",
+            detail: "可选。不启用也可随时从“应用程序”打开米遥。",
+            toggle: loginAtStartupCheckbox
+        )
+        let loginStateSpacer = NSView()
+        let loginStateRow = NSStackView(
+            views: [loginItemStateLabel, loginStateSpacer, openLoginItemsButton]
+        )
+        loginStateRow.orientation = .horizontal
+        loginStateRow.alignment = .centerY
+        loginStateRow.spacing = 8
+        loginStateSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1).isActive = true
 
-        let stack = NSStackView(
-            views: [
-                title,
-                explanation,
-                automaticSubmitCheckbox,
-                buttonControlCheckbox,
-                loginRow,
-                loginItemStateLabel,
-                preferenceStateLabel,
-            ]
-        )
+        let preferenceViews: [NSView] = [
+            sectionHeader,
+            automaticSubmitRow,
+            buttonControlRow,
+            loginRow,
+            loginStateRow,
+            preferenceStateLabel,
+        ]
+        let stack = NSStackView(views: preferenceViews)
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.orientation = .vertical
-        stack.alignment = .width
-        stack.spacing = 5
-        container.addSubview(stack)
+        stack.alignment = .leading
+        stack.spacing = 10
+        preferenceViews.forEach {
+            $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
+
+        return stack
+    }
+
+    private func buildHeroView() -> NSView {
+        let hero = NSVisualEffectView()
+        hero.material = .headerView
+        hero.blendingMode = .withinWindow
+        hero.state = .active
+        hero.wantsLayer = true
+        hero.layer?.cornerRadius = 26
+        hero.layer?.masksToBounds = true
+        hero.layer?.borderWidth = 1
+        hero.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
+
+        let markPlate = NSView()
+        markPlate.translatesAutoresizingMaskIntoConstraints = false
+        markPlate.wantsLayer = true
+        markPlate.layer?.cornerRadius = 16
+        markPlate.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        markPlate.layer?.masksToBounds = true
+
+        let mark = NSImageView()
+        mark.translatesAutoresizingMaskIntoConstraints = false
+        mark.image = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: "米遥")
+        mark.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        mark.contentTintColor = .white
+        markPlate.addSubview(mark)
+
+        let eyebrow = NSTextField(labelWithString: "米遥 · 设置向导")
+        eyebrow.translatesAutoresizingMaskIntoConstraints = false
+        eyebrow.font = .systemFont(ofSize: 12, weight: .semibold)
+        eyebrow.textColor = .controlAccentColor
+
+        let title = NSTextField(labelWithString: "让米遥在这台 Mac 上就绪")
+        title.translatesAutoresizingMaskIntoConstraints = false
+        title.font = .systemFont(ofSize: 27, weight: .bold)
+
+        let subtitle = NSTextField(
+            wrappingLabelWithString: "权限只在当前功能真正需要时才请求。完成必要项后，就可以按住遥控器说话，让 Codex 干活。"
+        )
+        subtitle.translatesAutoresizingMaskIntoConstraints = false
+        subtitle.font = .systemFont(ofSize: 13)
+        subtitle.textColor = .secondaryLabelColor
+        subtitle.maximumNumberOfLines = 2
+
+        let identity = NSStackView(views: [markPlate, eyebrow])
+        identity.orientation = .horizontal
+        identity.alignment = .centerY
+        identity.spacing = 12
+        let copy = NSStackView(views: [identity, title, subtitle])
+        copy.translatesAutoresizingMaskIntoConstraints = false
+        copy.orientation = .vertical
+        copy.alignment = .leading
+        copy.spacing = 8
+        hero.addSubview(copy)
 
         NSLayoutConstraint.activate([
-            container.heightAnchor.constraint(greaterThanOrEqualToConstant: 154),
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 13),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
-            loginSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1),
+            hero.heightAnchor.constraint(equalToConstant: 154),
+            markPlate.widthAnchor.constraint(equalToConstant: 48),
+            markPlate.heightAnchor.constraint(equalToConstant: 48),
+            mark.centerXAnchor.constraint(equalTo: markPlate.centerXAnchor),
+            mark.centerYAnchor.constraint(equalTo: markPlate.centerYAnchor),
+            mark.widthAnchor.constraint(equalToConstant: 26),
+            mark.heightAnchor.constraint(equalToConstant: 26),
+            copy.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 22),
+            copy.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -22),
+            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 20),
+            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -20),
         ])
-        return container
+        return hero
+    }
+
+    private func buildSectionHeader(title: String, detail: String) -> NSView {
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.font = .systemFont(ofSize: 12)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+        let stack = NSStackView(views: [titleLabel, detailLabel])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 4
+        return stack
     }
 
     @objc private func refreshPressed() {
@@ -397,6 +705,8 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
             startButton.isEnabled = false
         }
         refreshButton.isEnabled = process == nil
+        SetupInterfaceStyle.applyActionStyle(to: refreshButton, primary: false)
+        SetupInterfaceStyle.applyActionStyle(to: startButton, primary: true)
     }
 
     private func updatePreferenceControls() {
@@ -428,7 +738,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
             openLoginItemsButton.isHidden = false
         case .unavailable:
             loginAtStartupCheckbox.state = .off
-            loginAtStartupCheckbox.isEnabled = false
+            loginAtStartupCheckbox.isEnabled = true
             openLoginItemsButton.isHidden = true
         }
         loginItemStateLabel.stringValue = loginState.detail

@@ -69,7 +69,7 @@ The guide's “修复权限” action opens the correct pane and reveals the cur
 ## Launch at Login is unavailable or requires approval
 
 - “Requires approval” means the optional request still needs approval in System Settings → General → Login Items & Extensions.
-- “Unavailable” usually means the app is running from `dist` or `.build`, or its installation/signature cannot be registered. Reinstall to `~/Applications/米遥.app`.
+- “Unavailable” usually means the app is running from `dist` or `.build`, or ServiceManagement has not located the current signature yet. From the installed app, toggle it once to retry registration and surface the real `SMAppService` error; reinstall only if that retry still fails.
 - An ad-hoc update may require the old login item to be disabled and the current app registered again.
 - Manual launch remains available. MI-AO reports the real `SMAppService` state and never substitutes a local success flag. See [Permissions](PERMISSIONS_EN.md).
 

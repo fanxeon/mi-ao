@@ -20,7 +20,8 @@ private enum SetupInterfaceStyle {
         button.bezelStyle = .rounded
         button.controlSize = compact ? .small : .regular
         button.font = .systemFont(ofSize: compact ? 12 : 13, weight: .semibold)
-        button.contentTintColor = primary ? .controlAccentColor : nil
+        button.bezelColor = primary ? .controlAccentColor : nil
+        button.contentTintColor = primary ? .white : nil
     }
 
     static func requirementColors(_ requirement: SetupRequirement) -> (text: NSColor, fill: NSColor) {
@@ -131,34 +132,31 @@ private final class SetupCheckRowView: NSView {
         actionWidthConstraint = actionButton.widthAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 88),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 98),
             iconPlate.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
-            iconPlate.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconPlate.topAnchor.constraint(equalTo: topAnchor, constant: 18),
             iconPlate.widthAnchor.constraint(equalToConstant: 40),
             iconPlate.heightAnchor.constraint(equalToConstant: 40),
             iconView.centerXAnchor.constraint(equalTo: iconPlate.centerXAnchor),
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconView.centerYAnchor.constraint(equalTo: iconPlate.centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 22),
             iconView.heightAnchor.constraint(equalToConstant: 22),
             titleLabel.leadingAnchor.constraint(equalTo: iconPlate.trailingAnchor, constant: 14),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 17),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(
-                lessThanOrEqualTo: requirementLabel.leadingAnchor,
+                lessThanOrEqualTo: actionButton.leadingAnchor,
                 constant: -8
             ),
-            requirementLabel.trailingAnchor.constraint(
-                lessThanOrEqualTo: actionButton.leadingAnchor,
-                constant: -10
-            ),
-            requirementLabel.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            requirementLabel.widthAnchor.constraint(equalToConstant: 96),
+            requirementLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            requirementLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
+            requirementLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 54),
             requirementLabel.heightAnchor.constraint(equalToConstant: 24),
             detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
+            detailLabel.topAnchor.constraint(equalTo: requirementLabel.bottomAnchor, constant: 6),
             detailLabel.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -12),
             detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -15),
             actionButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
-            actionButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            actionButton.centerYAnchor.constraint(equalTo: iconPlate.centerYAnchor),
             actionButton.heightAnchor.constraint(equalToConstant: 34),
             actionWidthConstraint,
         ])
@@ -207,6 +205,54 @@ private final class SetupCheckRowView: NSView {
     }
 }
 
+private final class SetupGuideStepRowView: NSView {
+    init(number: String, title: String, detail: String) {
+        super.init(frame: .zero)
+
+        let numberLabel = NSTextField(labelWithString: number)
+        numberLabel.translatesAutoresizingMaskIntoConstraints = false
+        numberLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .bold)
+        numberLabel.alignment = .center
+        numberLabel.textColor = .white
+        numberLabel.wantsLayer = true
+        numberLabel.layer?.cornerRadius = 16
+        numberLabel.layer?.masksToBounds = true
+        numberLabel.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .systemFont(ofSize: 12)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+
+        addSubview(numberLabel)
+        addSubview(titleLabel)
+        addSubview(detailLabel)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 54),
+            numberLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            numberLabel.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            numberLabel.widthAnchor.constraint(equalToConstant: 32),
+            numberLabel.heightAnchor.constraint(equalToConstant: 32),
+            titleLabel.leadingAnchor.constraint(equalTo: numberLabel.trailingAnchor, constant: 14),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 3),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            detailLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            detailLabel.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+}
+
 final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     private let configuration: Configuration
     private let standalone: Bool
@@ -247,7 +293,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         preferences = snapshot.preferences
         preferencesLoadState = snapshot.state
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 760),
+            contentRect: NSRect(x: 0, y: 0, width: 760, height: 780),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -256,7 +302,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.backgroundColor = .windowBackgroundColor
-        window.minSize = NSSize(width: 620, height: 680)
+        window.minSize = NSSize(width: 660, height: 720)
         window.isReleasedWhenClosed = false
         super.init(window: window)
         window.delegate = self
@@ -296,6 +342,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
         let heroView = buildHeroView()
+        heroView.translatesAutoresizingMaskIntoConstraints = false
         let overviewView = buildOverviewView()
 
         let checksStack = NSStackView(
@@ -306,6 +353,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         checksStack.spacing = 10
 
         let preferencesView = buildPreferencesView()
+        let buttonGuideView = buildButtonGuideView()
 
         let checksHeader = buildSectionHeader(
             title: "设备与权限检查",
@@ -319,17 +367,19 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         checksStack.widthAnchor.constraint(equalTo: checksSection.widthAnchor).isActive = true
 
         pageTabs.tabStyle = .segmentedControlOnTop
-        pageTabs.transitionOptions = [.crossfade, .allowUserInteraction]
+        pageTabs.transitionOptions = []
         pageTabs.canPropagateSelectedChildViewControllerTitle = false
         pageTabs.addChild(makeTabPage(title: "开始", content: overviewView))
         pageTabs.addChild(makeTabPage(title: "权限与连接", content: checksSection))
         pageTabs.addChild(makeTabPage(title: "控制偏好", content: preferencesView))
+        pageTabs.addChild(makeTabPage(title: "按键指南", content: buttonGuideView))
         pageTabs.view.translatesAutoresizingMaskIntoConstraints = false
         pageTabs.view.setAccessibilityLabel("米遥设置分类")
 
         summaryLabel.font = .systemFont(ofSize: 12, weight: .medium)
         summaryLabel.textColor = .secondaryLabelColor
         let summaryView = NSView()
+        summaryView.translatesAutoresizingMaskIntoConstraints = false
         SetupInterfaceStyle.applySurface(to: summaryView, radius: 16)
         let summaryIcon = NSImageView()
         summaryIcon.translatesAutoresizingMaskIntoConstraints = false
@@ -366,41 +416,37 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         buttons.alignment = .centerY
         buttons.spacing = 12
 
-        let rootStack = NSStackView(
-            views: [heroView, pageTabs.view, summaryView, buttons]
-        )
-        rootStack.translatesAutoresizingMaskIntoConstraints = false
-        rootStack.orientation = .vertical
-        rootStack.alignment = .leading
-        rootStack.spacing = 24
-        contentView.addSubview(rootStack)
+        buttons.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(heroView)
+        contentView.addSubview(pageTabs.view)
+        contentView.addSubview(summaryView)
+        contentView.addSubview(buttons)
 
-        let fullWidthViews: [NSView] = [
-            heroView,
-            pageTabs.view,
-            summaryView,
-            buttons,
-        ]
-        let fullWidthConstraints = fullWidthViews.map {
-            $0.widthAnchor.constraint(equalTo: rootStack.widthAnchor)
-        }
         let rowWidthConstraints = SetupCheckID.allCases.compactMap { rows[$0] }.map {
             $0.widthAnchor.constraint(equalTo: checksStack.widthAnchor)
         }
 
         NSLayoutConstraint.activate(
             [
-                rootStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
-                rootStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
-                rootStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
-                rootStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
+                heroView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
+                heroView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
+                heroView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 22),
+                pageTabs.view.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
+                pageTabs.view.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
+                pageTabs.view.topAnchor.constraint(equalTo: heroView.bottomAnchor, constant: 18),
+                pageTabs.view.bottomAnchor.constraint(equalTo: summaryView.topAnchor, constant: -18),
+                summaryView.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
+                summaryView.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
+                buttons.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
+                buttons.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
+                buttons.topAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: 12),
+                buttons.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
                 buttonSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1),
                 refreshButton.widthAnchor.constraint(equalToConstant: 124),
                 refreshButton.heightAnchor.constraint(equalToConstant: 44),
                 startButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 202),
                 startButton.heightAnchor.constraint(equalToConstant: 44),
-                pageTabs.view.heightAnchor.constraint(equalToConstant: 340),
-            ] + fullWidthConstraints + rowWidthConstraints)
+            ] + rowWidthConstraints)
     }
 
     private func makeTabPage(title: String, content: NSView) -> NSViewController {
@@ -431,8 +477,8 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
     private func buildOverviewView() -> NSView {
         let sectionHeader = buildSectionHeader(
-            title: "开始使用",
-            detail: "默认完整模式会把语音提交给 Codex，并启用遥控器按键控制。"
+            title: "三步开始使用",
+            detail: "先选好使用方式，再完成有标记的检查；检查通过前，米遥不会修改系统按键映射。"
         )
 
         let stepsCard = NSView()
@@ -440,85 +486,107 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         let steps = NSStackView(
             views: [
                 buildOverviewStep(
-                    number: "1",
-                    title: "完成必要授权",
-                    detail: "在“权限与连接”页处理橙色项目。"
+                    number: "01",
+                    title: "选择使用方式",
+                    detail: "在“控制偏好”中决定是否自动发送到 Codex 与启用遥控器按键控制。"
                 ),
                 buildOverviewStep(
-                    number: "2",
-                    title: "确认遥控器已连接",
-                    detail: "米遥只会匹配已验证的小米蓝牙遥控器 2 Pro。"
+                    number: "02",
+                    title: "完成必要检查并连接遥控器",
+                    detail: "在“权限与连接”处理橙色项目，并确认小米蓝牙遥控器 2 Pro 已连接。"
                 ),
                 buildOverviewStep(
-                    number: "3",
-                    title: "按住说话，松开提交",
-                    detail: "环境就绪后，点击下方主按钮即可进入菜单栏运行。"
+                    number: "03",
+                    title: "启动后按住说话，松开提交",
+                    detail: "环境就绪后点击下方主按钮；之后可随时在菜单栏打开设置与诊断。"
                 ),
             ]
         )
         steps.translatesAutoresizingMaskIntoConstraints = false
         steps.orientation = .vertical
         steps.alignment = .leading
-        steps.spacing = 14
+        steps.spacing = 16
         stepsCard.addSubview(steps)
         let arrangedSteps = steps.arrangedSubviews
         arrangedSteps.forEach {
             $0.widthAnchor.constraint(equalTo: steps.widthAnchor).isActive = true
         }
         NSLayoutConstraint.activate([
-            steps.leadingAnchor.constraint(equalTo: stepsCard.leadingAnchor, constant: 20),
-            steps.trailingAnchor.constraint(equalTo: stepsCard.trailingAnchor, constant: -20),
-            steps.topAnchor.constraint(equalTo: stepsCard.topAnchor, constant: 20),
-            steps.bottomAnchor.constraint(equalTo: stepsCard.bottomAnchor, constant: -20),
+            steps.leadingAnchor.constraint(equalTo: stepsCard.leadingAnchor, constant: 22),
+            steps.trailingAnchor.constraint(equalTo: stepsCard.trailingAnchor, constant: -22),
+            steps.topAnchor.constraint(equalTo: stepsCard.topAnchor, constant: 22),
+            steps.bottomAnchor.constraint(equalTo: stepsCard.bottomAnchor, constant: -22),
         ])
 
-        let stack = NSStackView(views: [sectionHeader, stepsCard])
+        let continueButton = NSButton(
+            title: "下一步：选择使用方式",
+            target: self,
+            action: #selector(showControlPreferences)
+        )
+        continueButton.setAccessibilityLabel("前往控制偏好")
+        SetupInterfaceStyle.applyActionStyle(to: continueButton, primary: true)
+
+        let stack = NSStackView(views: [sectionHeader, stepsCard, continueButton])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
         sectionHeader.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         stepsCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        continueButton.heightAnchor.constraint(equalToConstant: 34).isActive = true
         return stack
     }
 
     private func buildOverviewStep(number: String, title: String, detail: String) -> NSView {
-        let numberLabel = NSTextField(labelWithString: number)
-        numberLabel.translatesAutoresizingMaskIntoConstraints = false
-        numberLabel.font = .systemFont(ofSize: 12, weight: .bold)
-        numberLabel.alignment = .center
-        numberLabel.textColor = .white
-        numberLabel.wantsLayer = true
-        numberLabel.layer?.cornerRadius = 14
-        numberLabel.layer?.masksToBounds = true
-        numberLabel.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        SetupGuideStepRowView(number: number, title: title, detail: detail)
+    }
 
-        let titleLabel = NSTextField(labelWithString: title)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        let detailLabel = NSTextField(wrappingLabelWithString: detail)
-        detailLabel.translatesAutoresizingMaskIntoConstraints = false
-        detailLabel.font = .systemFont(ofSize: 12)
-        detailLabel.textColor = .secondaryLabelColor
+    private func buildButtonGuideView() -> NSView {
+        let sectionHeader = buildSectionHeader(
+            title: "按键指南",
+            detail: "默认 pointer 预设已经写入 App。TV 只切换方向环；其余按钮在两种模式下保持相同。"
+        )
 
-        let step = NSView()
-        step.addSubview(numberLabel)
-        step.addSubview(titleLabel)
-        step.addSubview(detailLabel)
+        let guideCard = NSView()
+        SetupInterfaceStyle.applySurface(to: guideCard, radius: 22, emphasized: true)
+
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageAlignment = .alignCenter
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.setAccessibilityLabel("小米蓝牙遥控器 2 Pro 的米遥按键映射图")
+        let imageURL = Bundle.main.resourceURL?
+            .appendingPathComponent("Brand/mi-ao-button-map.png")
+        imageView.image = imageURL.flatMap(NSImage.init(contentsOf:))
+
+        let caption = NSTextField(
+            wrappingLabelWithString: "向下滚动查看完整示意图。确认始终是 Return，返回始终是 Escape；菜单键保留 macOS 原生鼠标右键。"
+        )
+        caption.translatesAutoresizingMaskIntoConstraints = false
+        caption.font = .systemFont(ofSize: 12)
+        caption.textColor = .secondaryLabelColor
+        caption.alignment = .center
+        caption.maximumNumberOfLines = 2
+
+        guideCard.addSubview(imageView)
+        guideCard.addSubview(caption)
         NSLayoutConstraint.activate([
-            step.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            numberLabel.leadingAnchor.constraint(equalTo: step.leadingAnchor),
-            numberLabel.topAnchor.constraint(equalTo: step.topAnchor),
-            numberLabel.widthAnchor.constraint(equalToConstant: 28),
-            numberLabel.heightAnchor.constraint(equalToConstant: 28),
-            titleLabel.leadingAnchor.constraint(equalTo: numberLabel.trailingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: step.topAnchor, constant: 1),
-            titleLabel.trailingAnchor.constraint(equalTo: step.trailingAnchor),
-            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 3),
-            detailLabel.trailingAnchor.constraint(equalTo: step.trailingAnchor),
-            detailLabel.bottomAnchor.constraint(equalTo: step.bottomAnchor),
+            imageView.topAnchor.constraint(equalTo: guideCard.topAnchor, constant: 18),
+            imageView.centerXAnchor.constraint(equalTo: guideCard.centerXAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 420),
+            imageView.heightAnchor.constraint(equalToConstant: 560),
+            caption.leadingAnchor.constraint(equalTo: guideCard.leadingAnchor, constant: 22),
+            caption.trailingAnchor.constraint(equalTo: guideCard.trailingAnchor, constant: -22),
+            caption.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 12),
+            caption.bottomAnchor.constraint(equalTo: guideCard.bottomAnchor, constant: -18),
         ])
-        return step
+
+        let stack = NSStackView(views: [sectionHeader, guideCard])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 12
+        sectionHeader.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        guideCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        return stack
     }
 
     private func buildPreferencesView() -> NSView {
@@ -604,14 +672,16 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         markPlate.translatesAutoresizingMaskIntoConstraints = false
         markPlate.wantsLayer = true
         markPlate.layer?.cornerRadius = 16
-        markPlate.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        markPlate.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.92).cgColor
         markPlate.layer?.masksToBounds = true
 
         let mark = NSImageView()
         mark.translatesAutoresizingMaskIntoConstraints = false
-        mark.image = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: "米遥")
-        mark.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
-        mark.contentTintColor = .white
+        let brandURL = Bundle.main.resourceURL?
+            .appendingPathComponent("Brand/mi-ao-symbol-gradient-1024.png")
+        mark.image = brandURL.flatMap(NSImage.init(contentsOf:))
+        mark.imageScaling = .scaleProportionallyUpOrDown
+        mark.setAccessibilityLabel("米遥品牌标识")
         markPlate.addSubview(mark)
 
         let eyebrow = NSTextField(labelWithString: "米遥 · 设置向导")
@@ -621,13 +691,13 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
         let title = NSTextField(labelWithString: "让米遥在这台 Mac 上就绪")
         title.translatesAutoresizingMaskIntoConstraints = false
-        title.font = .systemFont(ofSize: 27, weight: .bold)
+        title.font = .systemFont(ofSize: 25, weight: .bold)
 
         let subtitle = NSTextField(
             wrappingLabelWithString: "权限只在当前功能真正需要时才请求。完成必要项后，就可以按住遥控器说话，让 Codex 干活。"
         )
         subtitle.translatesAutoresizingMaskIntoConstraints = false
-        subtitle.font = .systemFont(ofSize: 13)
+        subtitle.font = .systemFont(ofSize: 12)
         subtitle.textColor = .secondaryLabelColor
         subtitle.maximumNumberOfLines = 2
 
@@ -639,21 +709,21 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         copy.translatesAutoresizingMaskIntoConstraints = false
         copy.orientation = .vertical
         copy.alignment = .leading
-        copy.spacing = 8
+        copy.spacing = 6
         hero.addSubview(copy)
 
         NSLayoutConstraint.activate([
-            hero.heightAnchor.constraint(equalToConstant: 154),
-            markPlate.widthAnchor.constraint(equalToConstant: 48),
-            markPlate.heightAnchor.constraint(equalToConstant: 48),
+            hero.heightAnchor.constraint(equalToConstant: 132),
+            markPlate.widthAnchor.constraint(equalToConstant: 44),
+            markPlate.heightAnchor.constraint(equalToConstant: 44),
             mark.centerXAnchor.constraint(equalTo: markPlate.centerXAnchor),
             mark.centerYAnchor.constraint(equalTo: markPlate.centerYAnchor),
-            mark.widthAnchor.constraint(equalToConstant: 26),
-            mark.heightAnchor.constraint(equalToConstant: 26),
+            mark.widthAnchor.constraint(equalToConstant: 28),
+            mark.heightAnchor.constraint(equalToConstant: 28),
             copy.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 22),
             copy.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -22),
-            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 20),
-            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -20),
+            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 16),
+            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -16),
         ])
         return hero
     }
@@ -674,6 +744,10 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
     @objc private func refreshPressed() {
         refresh()
+    }
+
+    @objc private func showControlPreferences() {
+        pageTabs.selectedTabViewItemIndex = 2
     }
 
     private func refresh() {
@@ -700,7 +774,11 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
             startButton.title = "连接遥控器并开始"
             startButton.isEnabled = process == nil
         } else {
-            summaryLabel.stringValue = "还有项目需要处理；米遥不会在检查通过前修改系统按键映射。"
+            let remainingCount = report.checks.filter {
+                $0.requirement.blocksStart && $0.state != .ready
+            }.count
+            summaryLabel.stringValue =
+                "还差 \(remainingCount) 项必要检查；请在“权限与连接”页处理橙色项目。米遥在检查通过前不会修改系统按键映射。"
             startButton.title = "完成上方设置后开始"
             startButton.isEnabled = false
         }

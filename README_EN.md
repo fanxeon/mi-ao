@@ -2,6 +2,8 @@
 
 # MI-AO 米遥
 
+> Rapid iteration is in progress — stay tuned.
+
 <p align="center">
   <img src="docs/assets/mi-ao-logo.png" width="180" alt="MI-AO Center Connection logo">
 </p>
@@ -98,7 +100,7 @@ The source-first alpha keeps secure ad-hoc signing. After a source update change
 
 ### 2. Follow the setup guide
 
-The guide first lets you choose automatic Codex submission, remote button control, and optional Launch at Login. It then checks macOS, Whisper, MI-AO Accessibility, Bluetooth, Codex, and the safe launcher. Only “Required” and “Required by enabled features” block startup; Accessibility and Codex become optional when submission and button control are both off. See [Permissions and optional features](docs/PERMISSIONS_EN.md).
+The guide has four pages: Start, Permissions & Connection, Control Preferences, and Button Guide. Choose automatic Codex submission, remote button control, and optional Launch at Login first; then resolve the required macOS, Whisper, MI-AO Accessibility, Bluetooth, Codex, and safe-launcher checks. The Button Guide includes the default mapping image. Only “Required” and “Required by enabled features” block startup; Accessibility and Codex become optional when submission and button control are both off. See [Permissions and optional features](docs/PERMISSIONS_EN.md).
 
 If a busy Codex process lacks the per-process compatibility argument, the guide explains the requirement and does not restart it. A restart occurs only after explicit confirmation. The argument changes no Codex preference, opens no debugging port and expires when Codex quits. See the [complete pairing and first connection guide](docs/PAIRING_EN.md).
 

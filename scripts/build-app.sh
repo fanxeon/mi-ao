@@ -20,6 +20,7 @@ cp "$BUILD_BIN" "$CONTENTS/MacOS/$EXECUTABLE_NAME"
 cp "$ROOT/Resources/Info.plist" "$CONTENTS/Info.plist"
 ditto "$ROOT/Resources/HardwareProfiles" "$CONTENTS/Resources/HardwareProfiles"
 ditto "$ROOT/Resources/Brand" "$CONTENTS/Resources/Brand"
+cp "$ROOT/docs/assets/mi-ao-button-map.png" "$CONTENTS/Resources/Brand/mi-ao-button-map.png"
 "$ROOT/scripts/build-icon.sh" "$CONTENTS/Resources/AppIcon.icns" >/dev/null
 
 cp "$ROOT/Resources/Info.plist" "$RUNTIME_ROOT/Resources/Info.plist"

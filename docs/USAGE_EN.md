@@ -10,7 +10,7 @@ This guide starts after installation and covers daily startup, hold-to-talk beha
 
 MI-AO is currently a **source-first alpha**. After installation, double-click `~/Applications/米遥.app` in Finder.
 
-On first use, double-clicking opens the setup guide. Accessibility and Codex become feature-required or optional based on the submission and button-control choices; Launch at Login is always optional. After the first successful start, manual and optional login launches read the same preferences and invoke the same real gate. See [Permissions and optional features](PERMISSIONS_EN.md).
+On first use, double-clicking opens the setup guide. It follows the real path of Start → Control Preferences → Permissions & Connection → Start: choose submission and button control first, then resolve only the checks required by those choices. The Button Guide page contains the built-in default mapping image. Launch at Login is always optional. After the first successful start, manual and optional login launches read the same preferences and invoke the same real gate. See [Permissions and optional features](PERMISSIONS_EN.md).
 
 Startup checks Codex first: a closed app is launched compatibly, while a running process without the argument causes a safe refusal before the remote mapping changes. MI-AO never restarts a busy Codex process automatically. Safe `--no-submit` transcription skips this check.
 

@@ -16,6 +16,8 @@ make verify
 
 安装过程在用户自己的 Mac 上完成 Swift release 构建、ad-hoc 签名、模型下载和 App 安装，并自动打开设置向导。Codex 本次进程的辅助功能兼容参数、米遥辅助功能和蓝牙权限仍必须由用户本人在向导或系统设置中显式确认；向导不会绕过 TCC，也不会自动重启忙碌的 Codex。参数可用 `./scripts/codex-accessibility.sh disable --restart` 立即撤销，也会在 Codex 退出后自然失效。
 
+ad-hoc 签名的 designated requirement 会绑定当前二进制 CDHash。源码更新改变 CDHash 后，旧辅助功能条目可能继续显示开启，但不能授权新构建。安装脚本会比较更新前后的 CDHash 并提示重新添加；向导自动轮询真实 `AXIsProcessTrusted()` 状态。项目不会改成仅凭 `com.fanx.miao` 匹配的宽松 requirement，因为那会让同 Bundle ID 的其他本地代码共享权限。
+
 ## 发布物
 
 公开 Alpha 默认提供：

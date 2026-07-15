@@ -1,4 +1,5 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
+import Foundation
 import Testing
 
 @testable import MiAo
@@ -32,4 +33,22 @@ import Testing
 @Test func parsesSetupGuideModeExplicitly() throws {
     let configuration = try Configuration.parse(["mi-ao", "setup"])
     #expect(configuration.mode == .setup)
+}
+
+@Test func installationContextStillReadsPreFingerprintFormat() throws {
+    let plist = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0"><dict>
+          <key>repositoryRoot</key><string>/tmp/mi-ao</string>
+          <key>version</key><string>0.1.0</string>
+          <key>installedAt</key><string>2026-07-15T00:00:00Z</string>
+        </dict></plist>
+        """
+    let context = try PropertyListDecoder().decode(
+        MiAoInstallationContext.self,
+        from: Data(plist.utf8)
+    )
+    #expect(context.repositoryRoot == "/tmp/mi-ao")
+    #expect(context.codeHash == nil)
 }

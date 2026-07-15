@@ -105,6 +105,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     private var report: SetupEnvironmentReport?
     private var bluetoothRequester: BluetoothAuthorizationRequester?
     private var process: Process?
+    private var refreshTimer: Timer?
 
     init(configuration: Configuration, standalone: Bool) {
         self.configuration = configuration
@@ -136,10 +137,17 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         window?.makeKeyAndOrderFront(sender)
         NSApplication.shared.activate(ignoringOtherApps: true)
         refresh()
+        startAutoRefresh()
     }
 
     func windowWillClose(_ notification: Notification) {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
         if standalone { NSApplication.shared.terminate(nil) }
+    }
+
+    deinit {
+        refreshTimer?.invalidate()
     }
 
     private func buildInterface() {
@@ -250,12 +258,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
         switch action {
         case .requestAccessibility:
-            let options =
-                [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true]
-                as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-            openPrivacyPane(anchor: "Privacy_Accessibility")
-            scheduleRefresh()
+            repairAccessibilityAuthorization()
         case .requestBluetooth:
             bluetoothRequester = BluetoothAuthorizationRequester { [weak self] in
                 self?.scheduleRefresh()
@@ -328,6 +331,29 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
             }
             self?.refresh()
         }
+    }
+
+    private func repairAccessibilityAuthorization() {
+        let options =
+            [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true]
+            as CFDictionary
+        if AXIsProcessTrustedWithOptions(options) {
+            refresh()
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "请重新添加当前米遥 App"
+        alert.informativeText =
+            "源码版更新后 ad-hoc 签名会变化。系统设置里即使旧“米遥”仍显示开启，也不代表当前构建已获授权。请选中旧“米遥”并移除，再点击“+”添加 Finder 中显示的当前 App。向导会自动刷新，无需重启。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "打开设置并显示 App")
+        alert.addButton(withTitle: "取消")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+        openPrivacyPane(anchor: "Privacy_Accessibility")
+        scheduleRefresh()
     }
 
     private func runSetupRepair() {
@@ -429,6 +455,16 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refresh()
         }
+    }
+
+    private func startAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) {
+            [weak self] _ in
+            guard self?.window?.isVisible == true else { return }
+            self?.refresh()
+        }
+        refreshTimer?.tolerance = 0.25
     }
 
     private func showError(title: String, message: String) {

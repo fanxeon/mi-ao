@@ -56,6 +56,7 @@ struct MiAoInstallationContext: Codable, Equatable {
     let repositoryRoot: String
     let version: String
     let installedAt: String
+    let codeHash: String?
 
     var repositoryURL: URL { URL(fileURLWithPath: repositoryRoot, isDirectory: true) }
 
@@ -221,10 +222,12 @@ struct SetupEnvironmentInspector {
         return SetupCheck(
             id: .accessibility,
             title: "米遥辅助功能",
-            detail: trusted ? "已允许控制 Codex 与执行遥控器动作" : "需要你在系统设置中明确允许“米遥”",
+            detail: trusted
+                ? "已允许控制 Codex 与执行遥控器动作"
+                : "当前 App 未获授权；若系统已显示开启，请移除旧“米遥”后重新添加",
             state: trusted ? .ready : .actionRequired,
             action: trusted ? nil : .requestAccessibility,
-            actionTitle: trusted ? nil : "请求权限"
+            actionTitle: trusted ? nil : "修复权限"
         )
     }
 

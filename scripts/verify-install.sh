@@ -24,6 +24,11 @@ if [[ ! -f "$CONTEXT_FILE" ]]; then
 fi
 plutil -extract repositoryRoot raw -o - "$CONTEXT_FILE" | grep -Fxq "$ROOT"
 echo "设置向导启动来源：已验证"
+stored_code_hash="$(plutil -extract codeHash raw -o - "$CONTEXT_FILE")"
+installed_code_hash="$(codesign -dv --verbose=4 "$INSTALL_APP" 2>&1 | sed -n 's/^CDHash=//p' | head -n 1)"
+[[ "$stored_code_hash" == "$installed_code_hash" ]] \
+  || { echo "安装签名指纹与设置向导记录不一致" >&2; exit 1; }
+echo "安装签名指纹：已验证"
 runtime_lock="$APP_DATA_DIR/runtime.lock/pid"
 runtime_pid=""
 [[ -f "$runtime_lock" ]] && runtime_pid="$(<"$runtime_lock")"

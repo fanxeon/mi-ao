@@ -90,6 +90,8 @@ cd mi-ao
 
 The setup script installs `whisper-cpp`, downloads the multilingual base model, builds and installs `~/Applications/米遥.app`, then opens the setup guide. This is the only project command required for a first install.
 
+The source-first alpha keeps secure ad-hoc signing. After a source update changes the binary, macOS may leave an older “米遥” row switched on even though the current build is not authorized. The guide explains how to remove the stale row, re-add the current app, and refreshes automatically. MI-AO does not weaken TCC with a bundle-ID-only designated requirement.
+
 ### 2. Follow the setup guide
 
 The guide checks macOS, Whisper and its model, MI-AO Accessibility, Bluetooth, the Codex composer and the safe launcher. Use the card actions to grant system permissions. Choose “配对遥控器”, hold Menu + `HOME` on the Xiaomi Remote 2 Pro, then click Connect in macOS Bluetooth settings.

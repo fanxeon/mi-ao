@@ -56,6 +56,16 @@ The compatibility argument affects only the current Codex process, changes no pr
 
 Do not use `--force-submit` as a routine workaround; it bypasses the unique-editor check.
 
+## System Settings says MI-AO is on, but the guide still says unauthorized
+
+This is an identity change after rebuilding the source-first ad-hoc app, not a missed toggle. The stale row can remain enabled, but it is tied to the previous binary CDHash and does not authorize the current build.
+
+1. In System Settings → Privacy & Security → Accessibility, select the old “米遥” row and remove it with `-`.
+2. Choose `+` and add `~/Applications/米遥.app` again.
+3. Enable the new row. Keep the guide open; it refreshes automatically within 1.5 seconds without restarting MI-AO.
+
+The guide's “修复权限” action opens the correct pane and reveals the current app in Finder. `./scripts/authorize.sh` now opens that real app guide instead of reporting the potentially misleading state of a Terminal-launched child process.
+
 ## Voice works but pointer mode does not start
 
 This is a safe fallback, not a voice failure. Follow the specific terminal diagnostic:

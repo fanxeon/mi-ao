@@ -783,7 +783,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             withBundleIdentifier: "com.openai.codex"
         ).isEmpty
         print("Codex: \(codexRunning ? "正在运行 (com.openai.codex)" : "未运行")")
-        print("辅助功能: \(AXIsProcessTrusted() ? "已授权" : "未授权")")
+        print("辅助功能（当前进程）: \(AXIsProcessTrusted() ? "已授权" : "未授权")")
+        print("辅助功能提示: Terminal 启动的 doctor 不能代替 App 向导状态；请以双击米遥 App 后的检查为准")
         let bluetoothAuthorization: String
         switch CBManager.authorization {
         case .allowedAlways: bluetoothAuthorization = "已授权"

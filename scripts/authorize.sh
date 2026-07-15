@@ -9,4 +9,5 @@ if [[ ! -x "$INSTALLED_BIN" ]]; then
   "$ROOT/scripts/install-app.sh"
 fi
 
-exec "$INSTALLED_BIN" authorize
+echo "正在打开米遥设置向导。请使用“米遥辅助功能”卡片完成授权；向导会自动刷新状态。"
+open "$INSTALL_APP" --args setup

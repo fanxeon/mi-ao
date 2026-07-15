@@ -9,6 +9,8 @@ source "$ROOT/scripts/lib/project.sh"
 [[ -x "$ROOT/scripts/stop.sh" ]]
 [[ -x "$ROOT/scripts/codex-accessibility.sh" ]]
 zsh -n \
+  "$ROOT/scripts/authorize.sh" \
+  "$ROOT/scripts/install-app.sh" \
   "$ROOT/scripts/run.sh" \
   "$ROOT/scripts/run-with-mapping.sh" \
   "$ROOT/scripts/start.sh" \

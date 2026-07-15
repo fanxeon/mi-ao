@@ -36,7 +36,7 @@ private enum SetupInterfaceStyle {
     }
 }
 
-private final class FlippedLayoutView: NSView {
+private class FlippedLayoutView: NSView {
     override var isFlipped: Bool { true }
 }
 
@@ -132,9 +132,9 @@ private final class SetupCheckRowView: NSView {
         actionWidthConstraint = actionButton.widthAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 98),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 88),
             iconPlate.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
-            iconPlate.topAnchor.constraint(equalTo: topAnchor, constant: 18),
+            iconPlate.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconPlate.widthAnchor.constraint(equalToConstant: 40),
             iconPlate.heightAnchor.constraint(equalToConstant: 40),
             iconView.centerXAnchor.constraint(equalTo: iconPlate.centerXAnchor),
@@ -142,17 +142,21 @@ private final class SetupCheckRowView: NSView {
             iconView.widthAnchor.constraint(equalToConstant: 22),
             iconView.heightAnchor.constraint(equalToConstant: 22),
             titleLabel.leadingAnchor.constraint(equalTo: iconPlate.trailingAnchor, constant: 14),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 18),
             titleLabel.trailingAnchor.constraint(
-                lessThanOrEqualTo: actionButton.leadingAnchor,
+                lessThanOrEqualTo: requirementLabel.leadingAnchor,
                 constant: -8
             ),
-            requirementLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            requirementLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
+            requirementLabel.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
+            requirementLabel.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            requirementLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: actionButton.leadingAnchor,
+                constant: -10
+            ),
             requirementLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 54),
             requirementLabel.heightAnchor.constraint(equalToConstant: 24),
             detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            detailLabel.topAnchor.constraint(equalTo: requirementLabel.bottomAnchor, constant: 6),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
             detailLabel.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -12),
             detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -15),
             actionButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
@@ -203,54 +207,6 @@ private final class SetupCheckRowView: NSView {
             actionWidthConstraint.constant = 0
         }
     }
-}
-
-private final class SetupGuideStepRowView: NSView {
-    init(number: String, title: String, detail: String) {
-        super.init(frame: .zero)
-
-        let numberLabel = NSTextField(labelWithString: number)
-        numberLabel.translatesAutoresizingMaskIntoConstraints = false
-        numberLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .bold)
-        numberLabel.alignment = .center
-        numberLabel.textColor = .white
-        numberLabel.wantsLayer = true
-        numberLabel.layer?.cornerRadius = 16
-        numberLabel.layer?.masksToBounds = true
-        numberLabel.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
-
-        let titleLabel = NSTextField(labelWithString: title)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-
-        let detailLabel = NSTextField(wrappingLabelWithString: detail)
-        detailLabel.translatesAutoresizingMaskIntoConstraints = false
-        detailLabel.font = .systemFont(ofSize: 12)
-        detailLabel.textColor = .secondaryLabelColor
-        detailLabel.maximumNumberOfLines = 2
-
-        addSubview(numberLabel)
-        addSubview(titleLabel)
-        addSubview(detailLabel)
-
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 54),
-            numberLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
-            numberLabel.topAnchor.constraint(equalTo: topAnchor, constant: 2),
-            numberLabel.widthAnchor.constraint(equalToConstant: 32),
-            numberLabel.heightAnchor.constraint(equalToConstant: 32),
-            titleLabel.leadingAnchor.constraint(equalTo: numberLabel.trailingAnchor, constant: 14),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
-            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            detailLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
-            detailLabel.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
 }
 
 final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
@@ -537,7 +493,30 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func buildOverviewStep(number: String, title: String, detail: String) -> NSView {
-        SetupGuideStepRowView(number: number, title: title, detail: detail)
+        let numberLabel = NSTextField(labelWithString: number)
+        numberLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .bold)
+        numberLabel.textColor = .controlAccentColor
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+
+        let titleRow = NSStackView(views: [numberLabel, titleLabel])
+        titleRow.orientation = .horizontal
+        titleRow.alignment = .firstBaseline
+        titleRow.spacing = 8
+
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.font = .systemFont(ofSize: 12)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+
+        let step = NSStackView(views: [titleRow, detailLabel])
+        step.orientation = .vertical
+        step.alignment = .leading
+        step.spacing = 4
+        titleRow.widthAnchor.constraint(equalTo: step.widthAnchor).isActive = true
+        detailLabel.widthAnchor.constraint(equalTo: step.widthAnchor).isActive = true
+        return step
     }
 
     private func buildButtonGuideView() -> NSView {
@@ -668,22 +647,6 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         hero.layer?.borderWidth = 1
         hero.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
 
-        let markPlate = NSView()
-        markPlate.translatesAutoresizingMaskIntoConstraints = false
-        markPlate.wantsLayer = true
-        markPlate.layer?.cornerRadius = 16
-        markPlate.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.92).cgColor
-        markPlate.layer?.masksToBounds = true
-
-        let mark = NSImageView()
-        mark.translatesAutoresizingMaskIntoConstraints = false
-        let brandURL = Bundle.main.resourceURL?
-            .appendingPathComponent("Brand/mi-ao-symbol-gradient-1024.png")
-        mark.image = brandURL.flatMap(NSImage.init(contentsOf:))
-        mark.imageScaling = .scaleProportionallyUpOrDown
-        mark.setAccessibilityLabel("米遥品牌标识")
-        markPlate.addSubview(mark)
-
         let eyebrow = NSTextField(labelWithString: "米遥 · 设置向导")
         eyebrow.translatesAutoresizingMaskIntoConstraints = false
         eyebrow.font = .systemFont(ofSize: 12, weight: .semibold)
@@ -701,11 +664,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         subtitle.textColor = .secondaryLabelColor
         subtitle.maximumNumberOfLines = 2
 
-        let identity = NSStackView(views: [markPlate, eyebrow])
-        identity.orientation = .horizontal
-        identity.alignment = .centerY
-        identity.spacing = 12
-        let copy = NSStackView(views: [identity, title, subtitle])
+        let copy = NSStackView(views: [eyebrow, title, subtitle])
         copy.translatesAutoresizingMaskIntoConstraints = false
         copy.orientation = .vertical
         copy.alignment = .leading
@@ -713,17 +672,11 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         hero.addSubview(copy)
 
         NSLayoutConstraint.activate([
-            hero.heightAnchor.constraint(equalToConstant: 132),
-            markPlate.widthAnchor.constraint(equalToConstant: 44),
-            markPlate.heightAnchor.constraint(equalToConstant: 44),
-            mark.centerXAnchor.constraint(equalTo: markPlate.centerXAnchor),
-            mark.centerYAnchor.constraint(equalTo: markPlate.centerYAnchor),
-            mark.widthAnchor.constraint(equalToConstant: 28),
-            mark.heightAnchor.constraint(equalToConstant: 28),
-            copy.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 22),
-            copy.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -22),
-            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 16),
-            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -16),
+            hero.heightAnchor.constraint(equalToConstant: 116),
+            copy.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 24),
+            copy.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -24),
+            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 18),
+            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -18),
         ])
         return hero
     }

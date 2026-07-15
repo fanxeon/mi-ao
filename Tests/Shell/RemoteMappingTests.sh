@@ -361,6 +361,27 @@ chmod +x "$TEMP_ROOT/checker"
 export MI_AO_BUTTON_CHECK_SCRIPT="$TEMP_ROOT/checker"
 export MI_AO_TEST_ROOT="$ROOT"
 
+cat > "$TEMP_ROOT/codex-accessibility" <<'EOF'
+#!/bin/zsh
+[[ "${1:-}" == "ensure" ]]
+exit "${FAKE_CODEX_EXIT:-0}"
+EOF
+chmod +x "$TEMP_ROOT/codex-accessibility"
+export MI_AO_CODEX_ACCESSIBILITY_SCRIPT="$TEMP_ROOT/codex-accessibility"
+
+echo empty > "$FAKE_HID_STATE"
+set +e
+FAKE_CODEX_EXIT=8 MI_AO_RUN_SCRIPT="$TEMP_ROOT/runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --name test >/dev/null 2>&1
+wrapper_status=$?
+set -e
+[[ "$wrapper_status" == "8" ]]
+[[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
+[[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
+
+FAKE_CODEX_EXIT=8 MI_AO_RUN_SCRIPT="$TEMP_ROOT/runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --no-submit --no-buttons >/dev/null
+
 echo empty > "$FAKE_HID_STATE"
 set +e
 FAKE_CHECK_EXIT=9 MI_AO_RUN_SCRIPT="$TEMP_ROOT/runner" \

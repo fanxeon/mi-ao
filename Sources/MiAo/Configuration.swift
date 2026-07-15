@@ -6,6 +6,7 @@ struct Configuration {
         case scan
         case capture
         case run
+        case setup
         case doctor
         case authorize
         case checkButtons = "check-buttons"
@@ -49,6 +50,10 @@ struct Configuration {
     static func parse(_ arguments: [String]) throws -> Configuration {
         var config = Configuration()
         var index = 1
+
+        if arguments.count == 1, Bundle.main.bundleURL.pathExtension == "app" {
+            config.mode = .setup
+        }
 
         if index < arguments.count, let mode = Mode(rawValue: arguments[index]) {
             config.mode = mode
@@ -178,6 +183,7 @@ struct Configuration {
           \(executableName) scan [--scan-seconds 20] [--debug]
           \(executableName) capture [--identifier <UUID> | --name <文本>] [选项]
           \(executableName) run [选项]
+          \(executableName) setup
           \(executableName) doctor
           \(executableName) authorize
           \(executableName) check-buttons [run 选项]
@@ -224,6 +230,7 @@ struct Configuration {
 
         debug-buttons 使用相同选项，但每个结果都必须人工确认；只预览当前预设动作，不实际执行米遥动作。
         check-buttons 在修改系统映射前验证辅助功能权限和可用按键档案，不启动 BLE 或执行按键动作。
+        setup 打开首次设置向导；直接双击已安装的米遥 App 也会进入该向导。
         校准期间原始 HID 键仍可能由 macOS 或前台 App 处理，请先聚焦到安全窗口。
         """
     }

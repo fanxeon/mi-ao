@@ -10,7 +10,7 @@
 ./scripts/verify-install.sh
 ```
 
-它会检查 App、Bundle ID、签名、Codex 进程、蓝牙权限、辅助功能、`whisper-cli` 和模型。
+它会检查 App、Bundle ID、签名、Codex 进程、蓝牙权限、辅助功能、Codex 输入控件、`whisper-cli` 和模型。
 
 同时检查遥控器映射状态：
 
@@ -59,7 +59,17 @@
 
 - `Codex 未运行`：先打开 Codex App；
 - `尚未授予辅助功能权限`：给 `~/Applications/米遥.app` 授权；
-- `无法安全聚焦唯一的 Codex 输入框`：关闭 Codex 的重叠弹窗或多编辑器状态后重试。
+- `候选输入控件：0`：运行 `./scripts/codex-accessibility.sh enable --restart`，进入一个可编辑的 Codex 任务后重试；
+- `无法安全聚焦唯一的 Codex 输入框`：先检查兼容状态，再关闭遮住输入区的弹窗或多编辑器状态。
+
+先运行以下命令确认兼容状态：
+
+```bash
+./scripts/codex-accessibility.sh status
+./scripts/authorize.sh
+```
+
+兼容参数只影响本次 Codex 进程，不修改偏好设置、不开放调试端口。Codex 退出后即失效；需要立即撤销时运行 `./scripts/codex-accessibility.sh disable --restart`。
 
 不要把 `--force-submit` 当作日常解决方案。它会跳过编辑器唯一性检查。
 

@@ -7,12 +7,14 @@ source "$ROOT/scripts/lib/project.sh"
 MAPPING_SCRIPT="$ROOT/scripts/remote-mapping.sh"
 RUN_SCRIPT="${MI_AO_RUN_SCRIPT:-$ROOT/scripts/run.sh}"
 BUTTON_CHECK_SCRIPT="${MI_AO_BUTTON_CHECK_SCRIPT:-$ROOT/scripts/check-buttons.sh}"
+CODEX_ACCESSIBILITY_SCRIPT="${MI_AO_CODEX_ACCESSIBILITY_SCRIPT:-$ROOT/scripts/codex-accessibility.sh}"
 mapping_active=false
 child_pid=""
 resolved_profile=""
 runtime_lock="$APP_DATA_DIR/runtime.lock"
 owns_runtime_lock=false
 skip_mapping=false
+skip_codex_compatibility=false
 runtime_token="$$-$RANDOM-$(date +%s)"
 
 for argument in "$@"; do
@@ -23,8 +25,19 @@ for argument in "$@"; do
     --no-buttons)
       skip_mapping=true
       ;;
+    --no-submit)
+      skip_codex_compatibility=true
+      ;;
+    --force-submit)
+      skip_codex_compatibility=true
+      ;;
   esac
 done
+
+if ! $skip_codex_compatibility; then
+  "$CODEX_ACCESSIBILITY_SCRIPT" ensure
+  export MI_AO_CODEX_ACCESSIBILITY_READY=1
+fi
 
 acquire_runtime_lock() {
   mkdir -p "$APP_DATA_DIR"

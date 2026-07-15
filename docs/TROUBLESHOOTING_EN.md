@@ -10,7 +10,7 @@
 ./scripts/verify-install.sh
 ```
 
-This checks the app, Bundle ID, signature, Codex process, Bluetooth and Accessibility permissions, `whisper-cli`, and the model.
+This checks the app, Bundle ID, signature, Codex process, Bluetooth, Accessibility, Codex composer automation, `whisper-cli`, and the model.
 
 It also reports remote mapping state. After an abnormal exit, run `./scripts/remote-mapping.sh status`; if MI-AO neutralization remains active, keep the remote connected and run `./scripts/remote-mapping.sh restore`. Unknown user mappings are never deleted.
 
@@ -42,7 +42,17 @@ MI-AO copies the transcript instead of submitting when its safety check fails.
 
 - `Codex is not running`: open the Codex app.
 - Accessibility is missing: authorize `~/Applications/米遥.app`.
-- A unique editor cannot be focused: close overlapping Codex dialogs or multi-editor states and retry.
+- `Composer candidates: 0`: run `./scripts/codex-accessibility.sh enable --restart`, open an editable Codex task, and retry.
+- The unique Accessibility editor cannot be focused: check compatibility, then close overlapping dialogs or multi-editor states and retry.
+
+Check the compatibility state first:
+
+```bash
+./scripts/codex-accessibility.sh status
+./scripts/authorize.sh
+```
+
+The compatibility argument affects only the current Codex process, changes no preferences, and opens no debugging port. It expires when Codex quits; reverse it immediately with `./scripts/codex-accessibility.sh disable --restart`.
 
 Do not use `--force-submit` as a routine workaround; it bypasses the unique-editor check.
 

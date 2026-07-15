@@ -14,7 +14,16 @@ installed_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$
   || { echo "Bundle ID 不一致：$installed_bundle_id" >&2; exit 1; }
 
 "$INSTALLED_BIN" doctor
+"$ROOT/scripts/codex-accessibility.sh" status
 "$ROOT/scripts/remote-mapping.sh" status
+
+CONTEXT_FILE="$APP_DATA_DIR/install-context.plist"
+if [[ ! -f "$CONTEXT_FILE" ]]; then
+  echo "安装来源记录缺失：$CONTEXT_FILE" >&2
+  exit 1
+fi
+plutil -extract repositoryRoot raw -o - "$CONTEXT_FILE" | grep -Fxq "$ROOT"
+echo "设置向导启动来源：已验证"
 runtime_lock="$APP_DATA_DIR/runtime.lock/pid"
 runtime_pid=""
 [[ -f "$runtime_lock" ]] && runtime_pid="$(<"$runtime_lock")"

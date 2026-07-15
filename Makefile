@@ -1,5 +1,5 @@
 # Copyright (c) 2026 FanXeon@Poemcoder with Codex
-.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture learn-buttons debug-buttons check-buttons run-mapped mapping-status mapping-restore check clean
+.PHONY: build release test format lint app install setup preflight verify authorize codex-accessibility uninstall source-release doctor scan capture learn-buttons debug-buttons check-buttons run-mapped mapping-status mapping-restore check clean
 
 build:
 	swift build
@@ -33,6 +33,9 @@ verify:
 
 authorize:
 	./scripts/authorize.sh
+
+codex-accessibility:
+	./scripts/codex-accessibility.sh status
 
 uninstall:
 	./scripts/uninstall.sh
@@ -72,6 +75,7 @@ check:
 	swift test
 	zsh Tests/Shell/RemoteMappingTests.sh
 	zsh Tests/Shell/KeyboardIsolationTests.sh
+	zsh Tests/Shell/CodexLaunchGateTests.sh
 	zsh Tests/Shell/AppBundleTests.sh
 	plutil -lint Resources/Info.plist
 	git diff --check

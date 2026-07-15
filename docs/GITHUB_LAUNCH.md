@@ -112,7 +112,7 @@ MI-AO 0.1.0 — Remote-to-Codex hardware alpha
 2. 已验证硬件：小米蓝牙遥控器 2 Pro，固件 2671；
 3. 安装：源码优先、本地构建、ad-hoc 签名；
 4. 安全：本地 Whisper、唯一编辑器门禁、失败时只复制；
-5. 限制：尚无菜单栏、开机自启、Developer ID 与广泛硬件矩阵；
+5. 限制：已有首次设置向导与菜单栏 GUI，但尚无开机自启、Developer ID 与广泛硬件矩阵；
 6. 贡献召集：寻找其他 ATVV 语音遥控器的脱敏证据。
 7. 作者署名：`Created by FanXeon@Poemcoder with Codex`。
 

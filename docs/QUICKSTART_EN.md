@@ -21,31 +21,27 @@ cd mi-ao
 ./scripts/setup.sh
 ```
 
-The app is installed to `~/Applications/米遥.app`, the model to `~/.cache/mi-ao`, and recordings to `~/Library/Application Support/mi-ao/recordings`.
+The app is installed to `~/Applications/米遥.app`, the model to `~/.cache/mi-ao`, and recordings to `~/Library/Application Support/mi-ao/recordings`. The setup guide opens automatically when installation finishes.
 
 MI-AO currently uses a local source build and ad-hoc signing. Do not download unofficial "unsigned" or "quarantine-free" DMGs.
 
-## 2. Pair and authorize
+## 2. Pair from the guide
 
-Open System Settings → Bluetooth. On the Xiaomi Bluetooth Remote Control 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect and wait for the Connected status. Pairing shortcuts for other remotes may differ; see the device manual and the [complete pairing guide](PAIRING_EN.md).
+Complete the Bluetooth card in the setup guide and choose “配对遥控器”. On the Xiaomi Bluetooth Remote Control 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect and wait for the Connected status. Pairing shortcuts for other remotes may differ; see the device manual and the [complete pairing guide](PAIRING_EN.md).
 
-Then run:
+## 3. Complete the six real checks
 
-```bash
-./scripts/authorize.sh
-```
+The guide checks macOS, the local speech engine, MI-AO Accessibility, Bluetooth, the Codex composer and the safe launcher. Use each card action until every check is green.
 
-Grant Accessibility access to the installed MI-AO app, not a temporary binary inside `.build`. macOS asks for Bluetooth access separately when the bridge starts for the first time; allow it then.
+Grant Accessibility to the installed MI-AO app, not a temporary binary inside `.build`. A closed Codex app is launched with its built-in Chromium accessibility argument. If a busy process lacks the argument, the guide reports it and waits for explicit restart confirmation. The argument affects only that process, changes no preferences and opens no debugging port.
 
-## 3A. Run the verified Xiaomi Remote 2 Pro
+## 4A. Start the verified Xiaomi Remote 2 Pro
 
-```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器" --no-buttons
-```
+Choose “连接遥控器并开始”. The guide calls the same real launch gate as `./scripts/start.sh`, closes after success and leaves MI-AO in the menu bar.
 
-When the bridge reports that it is ready, hold the remote's voice button, speak, and release. MI-AO activates Codex and submits only when exactly one editor is available.
+Click the menu-bar icon and wait for the ready state. Then hold the remote's voice button, speak and release. The panel also provides Codex focus, recordings, setup diagnostics and safe exit.
 
-## 3B. Bring up another remote
+## 4B. Bring up another remote
 
 ```bash
 ./scripts/capture.sh --scan-seconds 30
@@ -56,15 +52,17 @@ During capture, test a short press, hold-to-talk and release, a second press, an
 
 Device identity is redacted by default, but raw `events.jsonl` payloads still require manual review before sharing. Follow the complete [hardware bring-up guide](HARDWARE_BRINGUP.md).
 
-## 4. Enable the default pointer preset
+## 5. Terminal fallback and the default pointer preset
 
-Xiaomi Remote 2 Pro firmware 2671 ships with a built-in twelve-key hardware profile, so a clean install needs no recalibration. Run:
+Xiaomi Remote 2 Pro firmware 2671 ships with a built-in twelve-key hardware profile, so a clean install needs no recalibration. The terminal fallback uses the same gate:
 
 ```bash
 ./scripts/start.sh
 ```
 
 The wrapper runs `check-buttons` first. It changes the system only after Accessibility permission and the button runtime are both ready, then generates neutralization from the same hardware profile.
+
+If Codex is closed, `start.sh` launches it with the per-process compatibility argument. If a busy Codex process is already running without that argument, MI-AO exits before changing the remote mapping and never restarts Codex automatically.
 
 If the same model behaves differently, uses another firmware, or you are bringing up another remote, stop MI-AO and calibrate:
 

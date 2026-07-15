@@ -13,8 +13,8 @@ Pairing shortcuts differ on other remotes. Do not assume the shortcut below appl
 First-time setup has three separate layers:
 
 1. **Pair the remote with macOS:** System Settings → Bluetooth shows the remote as Connected.
-2. **Authorize MI-AO:** macOS allows the installed MI-AO app to use Bluetooth and Accessibility.
-3. **Connect the MI-AO bridge:** the terminal reports `桥接已就绪` after discovering the ATVV voice service.
+2. **Authorize MI-AO:** use the setup guide to grant Bluetooth and Accessibility to the installed app and prepare the Codex composer.
+3. **Connect the MI-AO bridge:** start from the guide and wait for the ready state in the menu-bar panel.
 
 A Connected status in System Settings does not yet mean that the voice bridge is ready.
 
@@ -28,7 +28,7 @@ cd mi-ao
 ./scripts/setup.sh
 ```
 
-The installed app is `~/Applications/米遥.app`. Run the remaining commands from the cloned repository.
+The installed app is `~/Applications/米遥.app`, and the setup guide opens automatically. Double-click the app later to run the checks again.
 
 ## 1. Put the remote into pairing mode
 
@@ -47,29 +47,15 @@ The buttons must be held simultaneously. If the remote was paired with a TV or s
 
 Remember the exact name shown by macOS. The verified unit uses `小米蓝牙语音遥控器`; if yours differs, use a stable, unique part of its displayed name with `--name` below.
 
-## 3. Grant permissions
+## 3. Grant permissions in the guide
 
-Request Accessibility access:
+Use the MI-AO Accessibility and Bluetooth cards. Enable only the installed app under System Settings, not a temporary binary inside `.build`.
 
-```bash
-./scripts/authorize.sh
-```
-
-Enable the installed MI-AO app in System Settings → Privacy & Security → Accessibility. Do not authorize a temporary binary inside `.build`.
-
-macOS requests Bluetooth access when the bridge is run for the first time. Allow it. If it was denied earlier, enable MI-AO manually under Privacy & Security → Bluetooth.
+The Codex composer card distinguishes missing, installed-but-closed, compatible-running and incompatible-running states. A closed Codex app needs no manual preparation: the launch gate opens it with the per-process argument. A busy incompatible process is never restarted automatically; restart occurs only after choosing “准备 Codex” and confirming again. The argument changes no preference and opens no debugging port.
 
 ## 4. Connect MI-AO to the remote
 
-Start with a safe test that does not submit to Codex:
-
-```bash
-./scripts/run.sh \
-  --name "小米蓝牙语音遥控器" \
-  --no-submit
-```
-
-Allow Bluetooth access if macOS asks. A successful connection produces logs similar to:
+When every card is green, choose “连接遥控器并开始”. The guide runs the real permission and button gate, closes after success and leaves MI-AO in the menu bar. Troubleshooting logs for a successful connection look like:
 
 ```text
 蓝牙已就绪
@@ -79,24 +65,16 @@ ATVV v1.0，codec=…
 桥接已就绪：按遥控器语音键开始说话
 ```
 
-The bridge is ready only after the final message appears. The current release has no second in-app pairing screen. The first `--no-submit` run is a foreground diagnostic; daily use starts in the background with `start.sh` and exposes connection state in the menu bar.
+The bridge is ready only when the menu-bar panel says `已就绪 · 按住语音键说话`. The guide opens macOS Bluetooth settings, while macOS remains the source of truth for actual pairing and connection.
 
 ## 5. Run the first voice test
 
 1. After the ready message, hold the voice button in the top-right corner.
 2. Keep holding while saying a short test sentence.
 3. Release after speaking.
-4. Wait for a `转写：…` line. The bridge becomes ready again as soon as the recording enters the background queue.
+4. Wait for `已发送到 Codex` in the menu-bar panel and confirm that the active Codex task receives the same text.
 
-`--no-submit` performs the real Bluetooth capture and local transcription but never sends text to Codex. After it succeeds, stop with `Control + C`.
-
-Open the Codex macOS app, enter the task that should receive the instruction, and run normal mode:
-
-```bash
-./scripts/start.sh
-```
-
-Speak one short instruction. First-time setup is complete only when the terminal reports `已发送到 Codex` and the active Codex task receives the same text.
+For transcription-only diagnostics, run `./scripts/run.sh --name "小米蓝牙语音遥控器" --no-submit --no-buttons` from the repository. It is a troubleshooting path, not a required first-run step.
 
 ## Daily reconnection
 

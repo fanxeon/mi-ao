@@ -1,10 +1,20 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
+import AppKit
 import Darwin
 import Foundation
 
 var runtimeSessionNeedsCleanup = false
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
+    if configuration.mode == .setup {
+        let setupWindowController = SetupGuideWindowController(
+            configuration: configuration,
+            standalone: true
+        )
+        setupWindowController.showWindow(nil)
+        NSApplication.shared.run()
+        exit(0)
+    }
     if configuration.mode == .learnButtons || configuration.mode == .debugButtons {
         let learner = ButtonLearner(configuration: configuration)
         try learner.start()
@@ -25,7 +35,7 @@ do {
     var terminationSignalSource: DispatchSourceSignal?
     if configuration.mode == .run {
         runtimeSessionNeedsCleanup = true
-        menuBarController = MenuBarController(outputDirectory: configuration.outputDirectory)
+        menuBarController = MenuBarController(configuration: configuration)
     }
     let bridge = BLEVoiceBridge(
         configuration: configuration,

@@ -12,6 +12,7 @@ BLE 遥控器
   -> PCM gain + 16 kHz resampling
   -> serial background speech queue
   -> local whisper.cpp
+  -> Codex process accessibility tree
   -> verified Codex text input + clipboard change guard
 ```
 
@@ -39,8 +40,9 @@ flowchart LR
 - `AudioPipeline.swift`：RMS、增益、重采样和 WAV 编码。
 - `WhisperTranscriber.swift`：本地 `whisper-cli` 进程合同。
 - `SpeechJobQueue.swift`：最多两条任务的串行后台队列、唯一文件名、私有文件权限，以及有序转写/提交。
-- `CodexSubmitter.swift`：Codex 进程识别、Electron 可访问性树遍历、唯一编辑器聚焦、非阻塞粘贴/发送和剪贴板并发变化保护。
-- `MenuBarController.swift`：连接、录音、处理、提交和错误状态，以及聚焦 Codex、打开记录和安全退出入口。
+- `CodexSubmitter.swift`：Codex 进程识别、Accessibility 唯一编辑器发现与聚焦、带兼容参数的启动、非阻塞粘贴/发送和剪贴板并发变化保护。
+- `SetupEnvironment.swift` / `SetupGuideWindowController.swift`：首次设置的六项真实环境检查、系统授权入口、安装来源合同，以及通过既有启动门禁开始运行；不自行伪造授权、配对或连接成功。
+- `MenuBarController.swift`：状态图标与轻量 popover GUI；显示连接、录音、处理、提交和错误状态，并提供聚焦 Codex、打开记录、设置诊断和安全退出入口。
 - `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
 - `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
@@ -48,7 +50,9 @@ flowchart LR
 - `ButtonActionExecutor.swift`：鼠标移动、方向键/Return/Escape、模式切换，以及 Codex 启动、聚焦和上/下一个会话。
 - `remote-mapping.sh` / `run-with-mapping.sh`：十二个接管键到 HID `No Event` 的设备专属中性化；菜单不进入映射并沿用 macOS 原生鼠标右键。包含 v1/v2/v3 迁移、单实例锁、所有权状态、回读验证和退出恢复。
 - `start.sh` / `stop.sh`：日常后台启停；运行锁记录真实 App PID，菜单退出、命令停止和外层包装器都会触发同一所有权校验恢复。即使启动终端或包装器意外消失，App 的正常退出路径仍会恢复映射。
-- `Configuration.swift`：CLI 模式和安全选项。
+- `Configuration.swift`：CLI 模式和安全选项；显式 `setup` 或双击 App 进入向导，显式 `run` 才进入桥接运行时。
+
+`setup.sh` 在安装时写入权限为 `0600` 的 `install-context.plist`，只记录当前源码目录、版本和安装时间。GUI 只从该目录拼接固定脚本路径并检查可执行性，不接受任意命令文本，也不依赖 PATH 猜测项目脚本。GUI 的开始按钮与命令行共用 `run-with-mapping.sh`、`check-buttons`、单实例锁和退出恢复合同。
 
 米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十二键 `No Event` 映射隔离。HOME 的单/双击仲裁只在已确认的遥控器 HOME 事件上运行。
 
@@ -60,6 +64,8 @@ disconnected -> discovering -> ready -> opening -> streaming -> ready
 ```
 
 录音帧离开主线程后立即回到 `ready`，因此上一条正在转写时仍能接收按键和下一段语音。队列最多容纳一条处理中和一条等待中，第三条明确拒绝而不是无限积压。安全退出会等待已接收任务完成。失败不会伪造成功：协议错误会终止当前进程；单次转写或提交失败会保留本地文件并在菜单栏显示原因。
+
+当前 Codex 默认不把网页输入区暴露为完整 AX 控件树。`codex-accessibility.sh` 使用 Codex 自带 Chromium 的 `--force-renderer-accessibility` 参数启动当前进程；它不修改偏好设置、不开放调试端口，退出后自然失效。公开控件树后，米遥仍要求活动窗口中恰好存在一个可用 `AXTextArea`，否则只复制 transcript 而不回车。
 
 `capture` 与 `run` 使用同一套 CoreBluetooth 回调，但行为边界不同：`capture` 可以连接未知协议、读取可读特征并订阅全部 notify/indicate，却不会向未知 characteristic 写入数据；只有识别到标准 ATVV UUID 后才复用已知能力协商。
 

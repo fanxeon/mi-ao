@@ -8,14 +8,11 @@ This guide starts after installation and covers daily startup, hold-to-talk beha
 
 ## Current launch model
 
-MI-AO is currently a **source-first alpha**. Start it from the cloned repository:
+MI-AO is currently a **source-first alpha**. After installation, double-click `~/Applications/米遥.app` in Finder.
 
-```bash
-cd /path/to/mi-ao
-./scripts/start.sh
-```
+Double-clicking opens the setup guide instead of immediately taking over remote keys. After all six checks pass, “连接遥控器并开始” invokes the real launch gate. The guide closes after success and MI-AO remains in the menu bar. Login start is not implemented.
 
-The command returns while MI-AO continues in the background. Its menu bar item shows search, connection, ready, recording, background transcription, submission and error states. Double-clicking `米遥.app` bypasses the button preflight and is still not a supported daily entry point. Login start is not implemented.
+Startup checks Codex first: a closed app is launched compatibly, while a running process without the argument causes a safe refusal before the remote mapping changes. MI-AO never restarts a busy Codex process automatically. Safe `--no-submit` transcription skips this check.
 
 The background log is stored at `~/Library/Application Support/mi-ao/logs/mi-ao.log`. It is unnecessary for daily use; inspect it only for troubleshooting or a redacted issue report.
 
@@ -26,17 +23,15 @@ The background log is stored at `~/Library/Application Support/mi-ao/logs/mi-ao.
 - Confirm that `小米蓝牙语音遥控器` is connected in System Settings → Bluetooth. If it has not been paired, hold Menu + `HOME` simultaneously and follow the [pairing and first connection guide](PAIRING_EN.md).
 - Open the Codex macOS app.
 - Open the Codex task that should receive the instruction and close dialogs covering its editor.
+- On first use, after Codex restarts, or after an update, open the guide and inspect the Codex composer card. Save current work before explicitly confirming any restart.
 
 ### 2. Start MI-AO
 
-```bash
-cd /path/to/mi-ao
-./scripts/start.sh
-```
+Double-click `~/Applications/米遥.app`, wait until every check is green, then choose “连接遥控器并开始”. `./scripts/start.sh` remains the terminal fallback.
 
 The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event`; Menu is excluded and keeps the native macOS right-click. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
 
-Wait for the launcher to confirm startup, or check the menu bar for:
+Click the menu-bar icon and wait for:
 
 ```text
 状态：已就绪 · 按住语音键说话
@@ -66,7 +61,7 @@ The queue holds at most one active and one waiting job. You can therefore record
 
 ### 4. Stop
 
-Choose “安全退出并恢复遥控器” from the menu bar, or run `./scripts/stop.sh`. Safe exit finishes accepted speech work, stops the bridge, and restores the remote's system mapping without deleting the app, model, recordings or permissions. Foreground debug sessions still support `Control + C`.
+Click the menu-bar icon and choose “安全退出并恢复遥控器”, or run `./scripts/stop.sh`. Safe exit finishes accepted speech work, stops the bridge, and restores the remote's system mapping without deleting the app, model, recordings or permissions. The same panel provides Codex focus, recordings and setup diagnostics. Foreground debug sessions still support `Control + C`.
 
 ## How submission works
 
@@ -74,11 +69,11 @@ In default mode MI-AO:
 
 1. transcribes the remote audio locally;
 2. verifies that Codex is running;
-3. finds exactly one usable editor in the active Codex window;
+3. finds and focuses exactly one usable composer in the active Codex process accessibility tree;
 4. temporarily uses the clipboard to paste and press Return;
 5. restores the previous clipboard only when the clipboard still contains MI-AO's injected data.
 
-If you copy something new during submission, MI-AO keeps the new clipboard content instead of overwriting it with an old snapshot. If Codex is missing, Accessibility is not authorized, or a unique editor cannot be proven, MI-AO does not press Return blindly. It leaves the transcript on the clipboard and explains the reason in the menu bar and log so it can be reviewed and pasted manually.
+The compatibility argument opens no debugging port and does not let MI-AO read conversation content; speech text still enters through clipboard paste. If you copy something new during submission, MI-AO keeps the new clipboard content instead of overwriting it with an old snapshot. If Codex is missing, permission is not authorized, or a unique composer cannot be proven, MI-AO does not press Return blindly. It leaves the transcript on the clipboard and explains the reason for manual review.
 
 ## Effective spoken instructions
 

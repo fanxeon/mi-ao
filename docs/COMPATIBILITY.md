@@ -29,7 +29,7 @@ MI-AO marks a device compatible only when reproducible evidence exists from real
 - 按住后收到 `AUDIO_START`，松手收到 `AUDIO_STOP`；
 - 连续音频 notify 解码为 16 kHz WAV；
 - 本地 Whisper 可正确识别真实中文语音；
-- Codex Accessibility 树中找到唯一 `AXTextArea` 后完成真实提交；
+- 历史真机验收曾在 Codex Accessibility 树中找到唯一 `AXTextArea` 后完成真实提交；Codex 26.707+ 需要带 `--force-renderer-accessibility` 启动当前进程，等待本轮真机复验后更新为新链路证据；
 - 验证日期：2026-07-14。
 
 ### 实体按键证据

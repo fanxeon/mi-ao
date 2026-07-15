@@ -22,6 +22,8 @@ enum CodexTaskDirection: Equatable {
 }
 
 struct CodexSubmitter {
+    static let accessibilityLaunchArgument = "--force-renderer-accessibility"
+
     private let bundleIdentifier = "com.openai.codex"
 
     func submit(
@@ -64,12 +66,12 @@ struct CodexSubmitter {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             if !force {
                 let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
-                guard focusCodexEditor(in: applicationElement) else {
+                guard focusCodexEditorWithAccessibility(in: applicationElement) else {
                     copyOnly(text)
                     completion(
                         .failure(
                             BridgeError.submission(
-                                "无法安全聚焦唯一的 Codex 输入框；transcript 已复制到剪贴板"
+                                "无法安全聚焦唯一的 Codex 输入框；请使用 ./scripts/codex-accessibility.sh enable --restart 启动 Codex；transcript 已复制到剪贴板"
                             )
                         )
                     )
@@ -112,12 +114,35 @@ struct CodexSubmitter {
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
+        configuration.arguments = [Self.accessibilityLaunchArgument]
         NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
             if let error {
                 fputs("启动 Codex 失败：\(error.localizedDescription)\n", stderr)
             }
         }
         return .launchRequested
+    }
+
+    func editorDiagnostics() -> [String] {
+        guard
+            let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+                .first
+        else { return ["Codex 未运行"] }
+        let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
+        let searchRoot = elementAttribute(applicationElement, kAXFocusedWindowAttribute) ?? applicationElement
+        let focused = elementAttribute(applicationElement, kAXFocusedUIElementAttribute)
+        let candidates = findTextInputs(in: searchRoot)
+        var lines = ["候选输入控件：\(candidates.count)"]
+        if let focused {
+            lines.append("当前焦点：\(describe(element: focused))")
+        } else {
+            lines.append("当前焦点：不可读取")
+        }
+        lines.append(
+            contentsOf: candidates.enumerated().map { index, element in
+                "候选 \(index + 1)：\(describe(element: element))"
+            })
+        return lines
     }
 
     @discardableResult
@@ -135,7 +160,7 @@ struct CodexSubmitter {
         return AXUIElementPerformAction(menuItem, kAXPressAction as CFString) == .success
     }
 
-    private func focusCodexEditor(in applicationElement: AXUIElement) -> Bool {
+    private func focusCodexEditorWithAccessibility(in applicationElement: AXUIElement) -> Bool {
         let searchRoot = elementAttribute(applicationElement, kAXFocusedWindowAttribute) ?? applicationElement
         let candidates = findTextInputs(in: searchRoot)
         guard candidates.count == 1 else { return false }
@@ -233,6 +258,28 @@ struct CodexSubmitter {
             return nil
         }
         return value as? String
+    }
+
+    private func booleanAttribute(_ element: AXUIElement, _ attribute: String) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else {
+            return nil
+        }
+        return value as? Bool
+    }
+
+    private func describe(element: AXUIElement) -> String {
+        let attributes: [(String, String)] = [
+            ("role", stringAttribute(element, kAXRoleAttribute) ?? "?"),
+            ("subrole", stringAttribute(element, kAXSubroleAttribute) ?? "-"),
+            ("identifier", stringAttribute(element, kAXIdentifierAttribute) ?? "-"),
+            ("title", stringAttribute(element, kAXTitleAttribute) ?? "-"),
+            ("description", stringAttribute(element, kAXDescriptionAttribute) ?? "-"),
+            ("placeholder", stringAttribute(element, kAXPlaceholderValueAttribute) ?? "-"),
+            ("focused", booleanAttribute(element, kAXFocusedAttribute).map(String.init) ?? "?"),
+            ("enabled", booleanAttribute(element, kAXEnabledAttribute).map(String.init) ?? "?"),
+        ]
+        return attributes.map { "\($0.0)=\($0.1)" }.joined(separator: " ")
     }
 
     private func copyOnly(_ text: String) {

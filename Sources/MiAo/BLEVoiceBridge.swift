@@ -160,7 +160,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 if self.peripheral == nil {
                     self.fatal("没有发现匹配的遥控器。先运行 scan，或用 --name/--identifier 指定设备。")
                 }
-            case .doctor, .authorize, .checkButtons, .learnButtons, .debugButtons:
+            case .setup, .doctor, .authorize, .checkButtons, .learnButtons, .debugButtons:
                 break
             }
         }
@@ -805,6 +805,9 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             print("model: 未下载")
         }
         print("output: \(configuration.outputDirectory)")
+        for line in CodexSubmitter().editorDiagnostics() {
+            print("Codex editor: \(line)")
+        }
     }
 
     private func requestAccessibilityAuthorization() {
@@ -815,6 +818,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "语音桥接 App"
             print("已请求辅助功能权限。请在系统设置中启用 \(appName)，然后重新运行 doctor 检查。")
         }
+
+        print("若 Codex 输入区仍不可读取，请运行 ./scripts/codex-accessibility.sh enable --restart")
     }
 
     private func hex(_ data: Data) -> String {

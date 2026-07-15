@@ -36,12 +36,12 @@ echo ""
 echo "安装完成：$BUILD_BIN"
 echo "App：$INSTALL_APP"
 echo "模型：$MODEL_PATH"
-echo "下一步："
-echo "  已验证的小米 2 Pro："
-echo "  $ROOT/scripts/start.sh"
-echo "  停止并恢复遥控器："
-echo "  $ROOT/scripts/stop.sh"
-echo "  仅使用语音、不修改按键映射："
-echo "  $ROOT/scripts/run.sh --name \"小米蓝牙语音遥控器\" --no-buttons"
-echo "  其他设备先采集脱敏证据："
-echo "  $ROOT/scripts/capture.sh --scan-seconds 30"
+echo "下一步：跟随米遥设置向导完成配对、权限、Codex 检查和首次启动。"
+echo "命令行备用启动：$ROOT/scripts/start.sh"
+echo "命令行安全停止：$ROOT/scripts/stop.sh"
+
+if [[ "${MI_AO_SKIP_SETUP_GUIDE:-0}" != "1" ]]; then
+  echo ""
+  echo "正在打开米遥设置向导…"
+  open "$INSTALL_APP" --args setup
+fi

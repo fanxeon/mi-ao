@@ -32,11 +32,11 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Verified hardware | Xiaomi Bluetooth Remote Control 2 Pro, firmware 2671, connected over Bluetooth Low Energy |
 | Target app | Codex for macOS, bundle ID `com.openai.codex` |
 | Local toolchain | Swift 6.0+, Xcode Command Line Tools, Homebrew, and `whisper.cpp` |
-| Permissions | Bluetooth for the remote; Accessibility for safe submission and button actions |
+| Permissions | Bluetooth for the remote; Accessibility to verify the Codex composer and run button actions |
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
-| Delivery | **Source-first alpha**; locally built and ad-hoc signed, with one-command background launch and a visible menu bar |
+| Delivery | **Source-first alpha**; one local build command opens a guided setup, followed by a real-state menu-bar GUI |
 
 The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
 
@@ -46,8 +46,8 @@ The first setup needs network access to install `whisper-cpp` and download the m
 - **A real hardware microphone.** Audio comes from the remote, not a disguised MacBook microphone path.
 - **Local speech processing.** ADPCM decoding and `whisper.cpp` transcription run on your Mac.
 - **Ready for the next instruction.** Transcription and submission run on a serial background queue instead of blocking BLE, buttons, or the next recording.
-- **Fail-safe submission.** MI-AO submits only when exactly one enabled Codex editor is found; otherwise it only copies the transcript.
-- **Visible state and safe exit.** The menu bar shows search, connection, recording, background processing, submission and error states.
+- **Fail-safe submission.** MI-AO submits only when the current Codex accessibility tree contains exactly one usable composer; otherwise it only copies the transcript.
+- **Visible state and safe exit.** Click the menu-bar icon for search, connection, recording, processing and submission state, plus Codex focus, records, diagnostics and safe exit.
 - **Evidence-driven compatibility.** A privacy-aware GATT capture mode makes new remote support reproducible.
 - **Works from a verified baseline and remains recalibratable.** The Xiaomi Remote 2 Pro uses a built-in hardware profile; debug mode can create local overrides without observing the Mac keyboard or synthesizing actions.
 
@@ -88,31 +88,29 @@ cd mi-ao
 ./scripts/setup.sh
 ```
 
-The setup script installs `whisper-cpp`, downloads the multilingual base model, builds the release app, and installs it as `~/Applications/米遥.app`.
+The setup script installs `whisper-cpp`, downloads the multilingual base model, builds and installs `~/Applications/米遥.app`, then opens the setup guide. This is the only project command required for a first install.
 
-### 2. Pair and authorize
+### 2. Follow the setup guide
 
-Open System Settings → Bluetooth. On the Xiaomi Remote 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect, wait for the Connected status, then run:
+The guide checks macOS, Whisper and its model, MI-AO Accessibility, Bluetooth, the Codex composer and the safe launcher. Use the card actions to grant system permissions. Choose “配对遥控器”, hold Menu + `HOME` on the Xiaomi Remote 2 Pro, then click Connect in macOS Bluetooth settings.
 
-```bash
-./scripts/authorize.sh
-```
-
-`authorize.sh` requests Accessibility access. macOS separately requests Bluetooth access when the bridge runs for the first time. Grant both permissions to the installed MI-AO app. See the [complete pairing and first connection guide](docs/PAIRING_EN.md) for exact steps, a safe first test, reconnection and recovery.
+If a busy Codex process lacks the per-process compatibility argument, the guide explains the requirement and does not restart it. A restart occurs only after explicit confirmation. The argument changes no Codex preference, opens no debugging port and expires when Codex quits. See the [complete pairing and first connection guide](docs/PAIRING_EN.md).
 
 ### 3. Run
 
-For the verified Xiaomi Remote 2 Pro:
+When all checks pass, choose “连接遥控器并开始”. The equivalent terminal fallback is:
 
 ```bash
 ./scripts/start.sh
 ```
 
-The background launcher first runs `check-buttons`. If Accessibility permission or the button runtime is unavailable, it exits without changing the system. On success it generates the twelve-key HID `No Event` mapping from the same built-in hardware profile used by the runtime. Menu stays the native macOS right-click. Choose “安全退出并恢复遥控器” in the menu bar, or run `./scripts/stop.sh`, to finish accepted speech work and restore the original mapping.
+The guide and terminal fallback use the same `check-buttons` launch gate. If Accessibility or the button runtime is unavailable, startup exits without changing the system. On success it generates the twelve-key HID `No Event` mapping from the built-in hardware profile. Menu keeps the native right-click. Click the menu-bar icon for the GUI; safe exit finishes accepted speech work and restores the mapping.
+
+Daily startup never interrupts a busy Codex process. If Codex is closed, MI-AO launches it with the per-process compatibility argument. If Codex is already running without that argument, startup stops before changing the remote mapping and explains what to do; it never restarts Codex automatically. Safe `--no-submit` transcription does not require Codex compatibility.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 
-See the [complete usage guide](docs/USAGE_EN.md) for menu-bar state, consecutive speech, transcription-only mode, project vocabulary, updates and local data cleanup. Double-clicking the app bypasses the button preflight and is not the recommended entry point.
+Double-click `~/Applications/米遥.app` at any time to reopen the guide. Its Start button still uses the real launch gate and never bypasses button checks. See the [complete usage guide](docs/USAGE_EN.md) for the menu-bar GUI, consecutive speech, transcription-only mode, project vocabulary, updates and cleanup.
 
 ## Compatibility
 
@@ -131,8 +129,8 @@ BLE voice remote
   → IMA/DVI ADPCM
   → 16 kHz PCM / WAV
   → local whisper.cpp
-  → macOS Accessibility
-  → the unique Codex editor
+  → the active Codex process accessibility tree
+  → exactly one usable Codex composer
 ```
 
 The current implementation supports ATVV v0.4 and v1.0, 8 kHz and 16 kHz ADPCM, remote `AUDIO_STOP`, second-press termination, and silence timeout fallback. See [Architecture](docs/ARCHITECTURE.md) and [Protocol notes](docs/PROTOCOL.md).
@@ -146,6 +144,7 @@ Physical buttons use a separate path: `HID Usage → confirmed physical button �
 - The recordings directory is user-only and speech artifacts use mode `0600`; they are never uploaded automatically.
 - If the user copies something new during submission, MI-AO detects the clipboard change and never overwrites it with an older snapshot.
 - Empty transcripts, a missing Codex process, missing permission, or an ambiguous editor never trigger automatic submission.
+- The Codex launch argument exposes only the current process accessibility tree. It opens no debugging port and changes no Codex preferences; text still enters through the guarded clipboard paste path.
 - Capture reports hash peripheral UUIDs and hide device names by default. Raw GATT payload still requires manual review before sharing.
 
 Read the complete policy in [SECURITY_EN.md](SECURITY_EN.md).
@@ -170,7 +169,7 @@ The highest-value contribution is reproducible evidence from new hardware. You c
 
 - contributing a redacted GATT capture for another voice remote;
 - improving ATVV / ADPCM adapters and fixtures;
-- improving the menu bar and reconnect experience;
+- improving device selection, reconnect feedback and login start;
 - improving documentation, diagnostics, and privacy review.
 
 Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims without real hardware evidence are not merged.

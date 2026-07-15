@@ -12,10 +12,9 @@ cd mi-ao
 make preflight
 make setup
 make verify
-make authorize
 ```
 
-安装过程在用户自己的 Mac 上完成 Swift release 构建、ad-hoc 签名、模型下载和 App 安装。辅助功能和蓝牙权限仍必须由用户本人确认。
+安装过程在用户自己的 Mac 上完成 Swift release 构建、ad-hoc 签名、模型下载和 App 安装，并自动打开设置向导。Codex 本次进程的辅助功能兼容参数、米遥辅助功能和蓝牙权限仍必须由用户本人在向导或系统设置中显式确认；向导不会绕过 TCC，也不会自动重启忙碌的 Codex。参数可用 `./scripts/codex-accessibility.sh disable --restart` 立即撤销，也会在 Codex 退出后自然失效。
 
 ## 发布物
 
@@ -35,6 +34,8 @@ make authorize
 make preflight       # 构建环境检查
 make install         # 本机构建并安装 App
 make verify          # 签名、Bundle ID 和 doctor 验证
+open ~/Applications/米遥.app # 打开设置向导
+make codex-accessibility # 检查 Codex 本次进程的辅助功能兼容状态
 make authorize       # 请求已安装 App 的辅助功能权限
 make uninstall       # 仅删除 App，保留模型和录音
 scripts/uninstall.sh --all-data

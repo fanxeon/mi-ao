@@ -34,15 +34,15 @@ enum ButtonProfileStore {
         directory: String,
         preset: ButtonPreset,
         vendorID: Int,
-        productID: Int
+        productID: Int,
+        baseline: CalibratedButtonMap? = nil
     ) throws -> CalibratedButtonMap? {
         let directoryURL = URL(fileURLWithPath: directory, isDirectory: true)
-        guard
-            let urls = try? FileManager.default.contentsOfDirectory(
+        let urls =
+            (try? FileManager.default.contentsOfDirectory(
                 at: directoryURL,
                 includingPropertiesForKeys: nil
-            )
-        else { return nil }
+            )) ?? []
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -60,16 +60,22 @@ enum ButtonProfileStore {
             }
             .sorted { $0.0.generatedAt < $1.0.generatedAt }
 
-        return try buildMap(from: profiles, preset: preset)
+        return try buildMap(from: profiles, preset: preset, baseline: baseline)
     }
 
     static func buildMap(
         from profiles: [(ButtonProfile, URL)],
-        preset: ButtonPreset
+        preset: ButtonPreset,
+        baseline: CalibratedButtonMap? = nil
     ) throws -> CalibratedButtonMap? {
-        guard let lastProfile = profiles.last?.0 else { return nil }
-        var usagesByButton: [RemoteButton: HIDUsageKey] = [:]
+        guard let lastProfile = profiles.last?.0 else { return baseline }
+        var usagesByButton = baseline?.usagesByButton ?? [:]
         var sourceByButton: [RemoteButton: URL] = [:]
+        if let baseline, let sourceURL = baseline.sourceFiles.first {
+            for button in baseline.usagesByButton.keys {
+                sourceByButton[button] = sourceURL
+            }
+        }
 
         for (profile, url) in profiles {
             for observation in profile.observations {

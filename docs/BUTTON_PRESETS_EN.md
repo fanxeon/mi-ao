@@ -4,7 +4,7 @@
 
 [中文](BUTTON_PRESETS.md) · [Usage](USAGE_EN.md) · [Roadmap](ROADMAP.md)
 
-MI-AO separates hardware identity from user preference. A calibration profile answers “which physical button produced this HID Usage”; a preset decides “what that button does now.” Switching presets never requires recalibrating the remote.
+MI-AO separates hardware identity from user preference. A built-in hardware profile or local calibration answers “which physical button produced this HID Usage”; a preset decides “what that button does now.” Switching presets never requires recalibrating the remote.
 
 > Current status: the default `pointer` preset, confirmed-profile merge, conflict rejection, and pointer executor are implemented and covered by automated tests. Xiaomi Remote 2 Pro firmware 2671 has complete new-format calibration for all twelve intercepted keys. All four directions passed direct cursor positioning and real-coordinate monitoring, and Volume Up/Down passed bidirectional Codex task navigation acceptance. HOME click arbitration, mode switching, and Power still need per-action acceptance.
 
@@ -12,7 +12,7 @@ MI-AO separates hardware identity from user preference. A calibration profile an
 
 ```mermaid
 flowchart LR
-    A["Remote HID event"] --> B["User-confirmed calibration"]
+    A["Remote HID event"] --> B["Built-in hardware profile<br/>+ local calibration overrides"]
     B --> C["Physical button ID<br/>dpad_up / back / center"]
     C --> D{"Selected preset"}
     D --> E["Default pointer preset"]
@@ -33,9 +33,9 @@ The hardware profile never stores an action such as `keyboard.escape`. Back rema
 | Physical button | Default action | Gate |
 | --- | --- | --- |
 | Voice | `voice.push_to_talk` | Uses the verified ATVV voice path |
-| D-pad | Pointer: `pointer.move_*`; directional: `keyboard.arrow_*` | All four directions require confirmation |
-| Center | Always `keyboard.return` | Required |
-| Back | Always `keyboard.escape` | Physical `0x07/0xF1` verified; new-format confirmation still required |
+| D-pad | Pointer: `pointer.move_*`; directional: `keyboard.arrow_*` | Firmware 2671 verified Usages are built in |
+| Center | Always `keyboard.return` | Firmware 2671 verified Usage is built in |
+| Back | Always `keyboard.escape` | Built-in firmware 2671 Usage `0x07/0xF1` |
 | Volume +/- | `codex.previous_task/next_task` | `0x07/0x80`, `0x07/0x81`; bidirectional action accepted |
 | `TV` | `mode.toggle_pointer_directional` | New-format hardware confirmation: `0x07/0x35` |
 | `HOME` | One click: `keyboard.page_down`; double-click within 350 ms: `keyboard.page_up` | Single-click waits for the double-click window, so a double-click never emits Page Down first |
@@ -48,7 +48,11 @@ Startup defaults to pointer mode. A calibrated `TV` press switches to directiona
 
 On Xiaomi Remote 2 Pro firmware 2671, `TV` and Power are confirmed as Keyboard Usage `0x35` and Keyboard Power `0x66`; neither is infrared-only. Volume Up/Down are confirmed as `0x80` / `0x81` and invoke Codex's Previous Task / Next Task menu items directly through Accessibility. MI-AO does not synthesize `Cmd+Shift+[` / `Cmd+Shift+]` or any modifier for these actions. Power activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch. Other remotes still require independent calibration and must not reuse these Usage values blindly.
 
-## Calibrate
+## Built-in profile and optional calibration
+
+Xiaomi Remote 2 Pro firmware 2671 loads `Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist` by default, so a clean install does not need a local report. The profile contains only verified device identity and physical Usages—never mouse or Codex actions.
+
+If the same model behaves differently, the firmware differs, or another remote is being added, run:
 
 Stop MI-AO, then run:
 
@@ -60,17 +64,17 @@ Stop MI-AO, then run:
 
 Use Return/`y` to confirm, `r` to retry, `s` to skip, or `q` to save confirmed work and stop. Single-button sessions can be merged, so buttons may be calibrated separately with `--button dpad_up`, `--button center`, and so on. Use `--button volume_up` and `--button volume_down` for Codex task navigation.
 
-Only reports with `captureMode=confirmed_calibration` are eligible. Automatic learning, timeouts, missing release evidence, and duplicate Usage assignments are rejected.
+Only local reports with `captureMode=confirmed_calibration` can override the built-in profile. Automatic learning, timeouts, missing release evidence, and duplicate Usage assignments are rejected. Explicitly invalidating a required key makes preflight fail instead of silently returning to the built-in value.
 
 ## Run and recover
 
-After calibration, use the safe one-command startup:
+Use the safe one-command startup:
 
 ```bash
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event` for the exact device. Menu is excluded and keeps the native macOS right-click. The wrapper verifies writes and restores on normal exit or signals.
+It runs `check-buttons` first, then generates the twelve-key HID `No Event` mapping from the same hardware profile used by the Swift runtime. Permission, profile, or runtime failure leaves the system unchanged. Menu is excluded and keeps the native macOS right-click. The wrapper verifies writes and restores on normal exit or signals.
 
 The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
 
@@ -78,7 +82,8 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 
 ## macOS safety boundary
 
-- Runtime profiles must be user-confirmed and match the remote Vendor/Product.
+- The verified device starts from a Vendor/Product-matched built-in profile; local confirmed reports override it in time order.
+- `check-buttons` must pass before neutralization, preventing a half-started state where macOS keys are blocked but MI-AO has no button runtime.
 - The wrapper matches Vendor `0x2717`, Product `0x32B8`, the verified product name, and BLE transport. A second identical remote may also match.
 - Apply accepts an empty mapping only and refuses to overwrite any existing `UserKeyMapping`. Ownership state gates restore so unknown user mappings are never deleted.
 - Pointer actions require Accessibility permission; missing permission disables button actions.

@@ -165,23 +165,62 @@ final class HIDButtonController {
 }
 
 enum ButtonRuntimeFactory {
+    private static func resolvedMap(configuration: Configuration) throws -> CalibratedButtonMap? {
+        let preset = try ButtonPreset.named(configuration.buttonPresetID)
+        if let path = configuration.buttonProfilePath {
+            return try ButtonProfileStore.loadConfirmedMap(file: path, preset: preset)
+        }
+
+        let baseline = try HardwareProfileStore.loadBuiltIn(
+            vendorID: configuration.hidVendorID,
+            productID: configuration.hidProductID,
+            preset: preset
+        )
+        return try ButtonProfileStore.loadConfirmedMap(
+            directory: configuration.buttonProfileDirectory,
+            preset: preset,
+            vendorID: configuration.hidVendorID,
+            productID: configuration.hidProductID,
+            baseline: baseline
+        )
+    }
+
+    static func validate(configuration: Configuration) throws {
+        guard configuration.buttonsEnabled else {
+            throw BridgeError.configuration("check-buttons 不能与 --no-buttons 同时使用")
+        }
+        guard AXIsProcessTrusted() else {
+            throw BridgeError.configuration("实体按键动作需要辅助功能权限；请先运行 scripts/authorize.sh")
+        }
+        guard try resolvedMap(configuration: configuration) != nil else {
+            throw BridgeError.configuration("没有可用的按键硬件档案，未修改系统映射")
+        }
+        print("按键运行时检查通过：权限和硬件档案均已就绪")
+    }
+
+    static func writeResolvedProfile(configuration: Configuration, to path: String) throws {
+        guard
+            let baseline = try HardwareProfileStore.loadBuiltInProfile(
+                vendorID: configuration.hidVendorID,
+                productID: configuration.hidProductID
+            )
+        else {
+            throw BridgeError.configuration("没有匹配的内置硬件档案，无法导出映射")
+        }
+        guard let map = try resolvedMap(configuration: configuration) else {
+            throw BridgeError.configuration("没有可用的按键硬件档案，无法导出映射")
+        }
+        try HardwareProfileStore.write(baseline.replacingUsages(with: map), to: path)
+        print("已导出解析后的硬件档案：\(path)")
+    }
+
     static func make(configuration: Configuration) throws -> HIDButtonController? {
         guard configuration.buttonsEnabled else {
             print("实体按键动作：已通过 --no-buttons 禁用")
             return nil
         }
         let preset = try ButtonPreset.named(configuration.buttonPresetID)
-        let map: CalibratedButtonMap?
-        if let path = configuration.buttonProfilePath {
-            map = try ButtonProfileStore.loadConfirmedMap(file: path, preset: preset)
-        } else {
-            map = try ButtonProfileStore.loadConfirmedMap(
-                directory: configuration.buttonProfileDirectory,
-                preset: preset,
-                vendorID: configuration.hidVendorID,
-                productID: configuration.hidProductID
-            )
-        }
+        let map = try resolvedMap(configuration: configuration)
 
         guard let map else {
             let required = preset.requiredButtons.map(\.rawValue).sorted().joined(separator: ", ")

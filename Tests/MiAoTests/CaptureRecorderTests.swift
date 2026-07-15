@@ -260,6 +260,125 @@ import Testing
     #expect(configuration.buttonPresetID == "pointer")
     #expect(configuration.buttonProfilePath?.hasSuffix("/confirmed.json") == true)
     #expect(configuration.buttonsEnabled == false)
+
+    let check = try Configuration.parse(["mi-ao", "check-buttons", "--preset", "pointer"])
+    #expect(check.mode == .checkButtons)
+
+    let emitted = try Configuration.parse([
+        "mi-ao", "check-buttons", "--emit-profile", "/tmp/mi-ao-resolved.plist",
+    ])
+    #expect(emitted.resolvedProfilePath == "/tmp/mi-ao-resolved.plist")
+}
+
+@Test func builtInXiaomiProfileSupportsCleanInstallAndMatchesVerifiedUsages() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let profileURL =
+        repositoryRoot
+        .appendingPathComponent("Resources/HardwareProfiles", isDirectory: true)
+        .appendingPathComponent(HardwareProfileStore.defaultFilename)
+    let profile = try HardwareProfileStore.load(from: profileURL)
+    let baseline = try profile.makeButtonMap(sourceURL: profileURL, preset: .pointer)
+
+    #expect(profile.id == "xiaomi-remote-2-pro-2671")
+    #expect(profile.vendorID == 0x2717)
+    #expect(profile.productID == 0x32B8)
+    #expect(profile.interceptedButtons.count == 12)
+    #expect(baseline.usagesByButton[.dpadUp] == HIDUsageKey(page: 0x07, usage: 0x52))
+    #expect(baseline.usagesByButton[.back] == HIDUsageKey(page: 0x07, usage: 0xF1))
+    #expect(baseline.usagesByButton[.home] == HIDUsageKey(page: 0x07, usage: 0x4A))
+    #expect(baseline.usagesByButton[.volumeDown] == HIDUsageKey(page: 0x07, usage: 0x81))
+
+    let cleanInstallMap = try ButtonProfileStore.loadConfirmedMap(
+        directory: repositoryRoot.appendingPathComponent("missing-profile-directory").path,
+        preset: .pointer,
+        vendorID: profile.vendorID,
+        productID: profile.productID,
+        baseline: baseline
+    )
+    #expect(cleanInstallMap?.usagesByButton == baseline.usagesByButton)
+}
+
+@Test func localCalibrationCanOverrideBuiltInUsageInResolvedProfile() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let profileURL =
+        repositoryRoot
+        .appendingPathComponent("Resources/HardwareProfiles", isDirectory: true)
+        .appendingPathComponent(HardwareProfileStore.defaultFilename)
+    let profile = try HardwareProfileStore.load(from: profileURL)
+    let baseline = try profile.makeButtonMap(sourceURL: profileURL, preset: .pointer)
+
+    var usages = baseline.usagesByButton
+    usages[.dpadUp] = HIDUsageKey(page: 0x07, usage: 0x60)
+    var buttonsByUsage = baseline.buttonsByUsage
+    buttonsByUsage.removeValue(forKey: HIDUsageKey(page: 0x07, usage: 0x52))
+    buttonsByUsage[HIDUsageKey(page: 0x07, usage: 0x60)] = .dpadUp
+    let overridden = CalibratedButtonMap(
+        vendorID: baseline.vendorID,
+        productID: baseline.productID,
+        productName: baseline.productName,
+        buttonsByUsage: buttonsByUsage,
+        usagesByButton: usages,
+        sourceFiles: baseline.sourceFiles
+    )
+
+    let resolved = try profile.replacingUsages(with: overridden)
+    let dpadUp = try #require(resolved.buttons.first { $0.button == .dpadUp })
+    #expect(dpadUp.usagePage == 0x07)
+    #expect(dpadUp.usage == 0x60)
+    #expect(resolved.buttons.count == profile.buttons.count)
+}
+
+@Test func localCalibrationCanInvalidateBuiltInBaseline() throws {
+    let baselineURL = URL(fileURLWithPath: "/built-in/xiaomi.plist")
+    let baselineProfile = try HardwareProfileStore.load(
+        from: URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources/HardwareProfiles")
+            .appendingPathComponent(HardwareProfileStore.defaultFilename)
+    )
+    let baseline = try baselineProfile.makeButtonMap(sourceURL: baselineURL, preset: .pointer)
+    let invalidation = ButtonProfile(
+        schemaVersion: 4,
+        captureMode: "confirmed_calibration",
+        generatedAt: Date(timeIntervalSince1970: 300),
+        device: .init(
+            vendorID: baselineProfile.vendorID,
+            productID: baselineProfile.productID,
+            productName: baselineProfile.productName
+        ),
+        privacy: "redacted",
+        observations: [
+            .init(
+                button: RemoteButton.dpadUp.rawValue,
+                label: "dpad_up",
+                expectedTransport: "hid",
+                status: .notObserved,
+                usagePage: nil,
+                usage: nil,
+                elementUsage: nil,
+                rawValues: [],
+                pressObserved: false,
+                releaseObserved: false,
+                repeatCount: 0,
+                note: "explicit invalidation"
+            )
+        ]
+    )
+
+    let map = try ButtonProfileStore.buildMap(
+        from: [(invalidation, URL(fileURLWithPath: "/tmp/invalidation.json"))],
+        preset: .pointer,
+        baseline: baseline
+    )
+    #expect(map == nil)
 }
 
 @Test func mergesConfirmedCalibrationForRequiredPointerButtons() throws {

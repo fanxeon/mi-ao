@@ -219,6 +219,34 @@ echo empty > "$FAKE_HID_STATE"
 [[ ! -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
 
 echo expected > "$FAKE_HID_STATE"
+mkdir -p "$VOICE_BRIDGE_DATA_DIR/system-mapping"
+cat > "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" <<'EOF'
+owner=mi-ao
+baseline=empty
+vendor_id=0x2717
+product_id=0x32b8
+profile=custom-no-event-v4
+up=0x700000052->0x700000000
+down=0x700000051->0x700000000
+left=0x700000050->0x700000000
+right=0x70000004f->0x700000000
+center=0x700000028->0x700000000
+back=0x7000000f1->0x700000000
+home=0x70000004a->0x700000000
+tv=0x700000035->0x700000000
+power=0x700000066->0x700000000
+voice=0x70000003e->0x700000000
+volume_up=0x700000080->0x700000000
+volume_down=0x700000081->0x700000000
+EOF
+"$ROOT/scripts/remote-mapping.sh" apply >/dev/null
+grep -q '^profile=xiaomi-remote-2-pro-2671$' \
+  "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+grep -q '^dpad_up=0x700000052->0x700000000$' \
+  "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+"$ROOT/scripts/remote-mapping.sh" restore >/dev/null
+
+echo expected > "$FAKE_HID_STATE"
 if "$ROOT/scripts/remote-mapping.sh" apply >/dev/null 2>&1; then
   echo "expected apply to reject an orphaned MI-AO mapping" >&2
   exit 1
@@ -249,7 +277,7 @@ power=0x700000066->0x700000070
 EOF
 "$ROOT/scripts/remote-mapping.sh" apply >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
-grep -q '^profile=custom-no-event-v4$' \
+grep -q '^profile=xiaomi-remote-2-pro-2671$' \
   "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
 "$ROOT/scripts/remote-mapping.sh" restore >/dev/null
 
@@ -272,7 +300,7 @@ power=0x700000066->0x700000000
 EOF
 "$ROOT/scripts/remote-mapping.sh" apply >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
-grep -q '^profile=custom-no-event-v4$' \
+grep -q '^profile=xiaomi-remote-2-pro-2671$' \
   "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
 "$ROOT/scripts/remote-mapping.sh" restore >/dev/null
 
@@ -297,7 +325,7 @@ voice=0x70000003e->0x700000000
 EOF
 "$ROOT/scripts/remote-mapping.sh" apply >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
-grep -q '^profile=custom-no-event-v4$' \
+grep -q '^profile=xiaomi-remote-2-pro-2671$' \
   "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
 grep -q '^volume_up=0x700000080->0x700000000$' \
   "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
@@ -321,6 +349,27 @@ cat > "$TEMP_ROOT/runner" <<'EOF'
 exit "${FAKE_RUN_EXIT:-0}"
 EOF
 chmod +x "$TEMP_ROOT/runner"
+
+cat > "$TEMP_ROOT/checker" <<'EOF'
+#!/bin/zsh
+if [[ "${1:-}" == "--emit-profile" ]]; then
+  cp "${MI_AO_TEST_ROOT}/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist" "$2"
+fi
+exit "${FAKE_CHECK_EXIT:-0}"
+EOF
+chmod +x "$TEMP_ROOT/checker"
+export MI_AO_BUTTON_CHECK_SCRIPT="$TEMP_ROOT/checker"
+export MI_AO_TEST_ROOT="$ROOT"
+
+echo empty > "$FAKE_HID_STATE"
+set +e
+FAKE_CHECK_EXIT=9 MI_AO_RUN_SCRIPT="$TEMP_ROOT/runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --name test >/dev/null 2>&1
+wrapper_status=$?
+set -e
+[[ "$wrapper_status" == "1" ]]
+[[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
+[[ ! -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
 
 echo empty > "$FAKE_HID_STATE"
 set +e

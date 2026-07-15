@@ -8,6 +8,7 @@ struct Configuration {
         case run
         case doctor
         case authorize
+        case checkButtons = "check-buttons"
         case learnButtons = "learn-buttons"
         case debugButtons = "debug-buttons"
     }
@@ -39,6 +40,7 @@ struct Configuration {
     var buttonID: String?
     var buttonPresetID = "pointer"
     var buttonProfilePath: String?
+    var resolvedProfilePath: String?
     var buttonsEnabled = true
     var buttonProfileDirectory = NSString(
         string: "~/Library/Application Support/mi-ao/button-profiles"
@@ -119,6 +121,11 @@ struct Configuration {
                     NSString(
                         string: try requireValue(for: flag)
                     ).expandingTildeInPath
+            case "--emit-profile":
+                config.resolvedProfilePath =
+                    NSString(
+                        string: try requireValue(for: flag)
+                    ).expandingTildeInPath
             case "--no-buttons":
                 config.buttonsEnabled = false
             case "--profile-dir":
@@ -173,6 +180,7 @@ struct Configuration {
           \(executableName) run [选项]
           \(executableName) doctor
           \(executableName) authorize
+          \(executableName) check-buttons [run 选项]
           \(executableName) learn-buttons [选项]
           \(executableName) debug-buttons [选项]
 
@@ -202,6 +210,7 @@ struct Configuration {
           --debug                    打印原始 GATT 数据和运行时 HID 按键映射
           --preset <标识>            按键映射套装，默认 pointer
           --button-profile <路径>    只使用指定的已确认校准档案
+          --emit-profile <路径>      check-buttons 输出合并后的硬件档案
           --no-buttons               禁用实体按键动作，只保留语音链路
 
         learn-buttons 选项：
@@ -214,6 +223,7 @@ struct Configuration {
           --profile-dir <目录>       脱敏按键报告保存目录
 
         debug-buttons 使用相同选项，但每个结果都必须人工确认；只预览当前预设动作，不实际执行米遥动作。
+        check-buttons 在修改系统映射前验证辅助功能权限和可用按键档案，不启动 BLE 或执行按键动作。
         校准期间原始 HID 键仍可能由 macOS 或前台 App 处理，请先聚焦到安全窗口。
         """
     }

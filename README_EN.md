@@ -35,7 +35,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Permissions | Bluetooth for the remote; Accessibility for safe submission and button actions |
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
-| Diagnostics and safety | Device-specific HID Usage calibration; twelve intercepted keys are neutralized only on the target remote and restored on exit; Menu keeps the native macOS right-click |
+| Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
 | Delivery | **Source-first alpha**; locally built, ad-hoc signed, and currently started from the terminal |
 
 The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
@@ -47,7 +47,7 @@ The first setup needs network access to install `whisper-cpp` and download the m
 - **Local speech processing.** ADPCM decoding and `whisper.cpp` transcription run on your Mac.
 - **Fail-safe submission.** MI-AO submits only when exactly one enabled Codex editor is found; otherwise it only copies the transcript.
 - **Evidence-driven compatibility.** A privacy-aware GATT capture mode makes new remote support reproducible.
-- **Confirmable button calibration.** HID events are filtered by exact Vendor/Product IDs. Debug mode shows the Usage and current preset action before saving only the physical mapping; it excludes the Mac keyboard and synthesizes no mouse or keyboard action.
+- **Works from a verified baseline and remains recalibratable.** The Xiaomi Remote 2 Pro uses a built-in hardware profile; debug mode can create local overrides without observing the Mac keyboard or synthesizing actions.
 
 ## Real end-to-end evidence
 
@@ -62,7 +62,7 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 ## One remote, multiple presets
 
-Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` changes only the D-pad between pointer movement and arrow keys. Center always sends Return and Back always sends Escape. Volume Up/Down selects the previous/next Codex task, Power launches or focuses Codex, HOME sends Page Down on one click or Page Up on a double-click, Menu keeps its native macOS right-click, and Voice remains hold-to-talk.
+A hardware profile identifies physical buttons; a preset decides what they do. Firmware 2671 starts from the built-in twelve-key profile, while local confirmed calibration can override it. In the default preset, `TV` changes only the D-pad between pointer movement and arrow keys. Center always sends Return and Back always sends Escape. Volume Up/Down selects the previous/next Codex task, Power launches or focuses Codex, HOME sends Page Down on one click or Page Up on a double-click, Menu keeps its native macOS right-click, and Voice remains hold-to-talk.
 
 > **Mode invariant:** `TV` changes only the D-pad between pointer movement and arrow keys. Center, Back, HOME, Volume, Voice, Power, and Menu behave identically in both modes.
 
@@ -106,7 +106,7 @@ For the verified Xiaomi Remote 2 Pro:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event` for this exact device while MI-AO reads their original IOHID Usages. Menu is excluded and continues to act as the native macOS right-click. `Control + C` stops MI-AO and restores the original mapping.
+The wrapper first runs `check-buttons`. If Accessibility permission or the button runtime is unavailable, it exits without changing the system. On success it generates the twelve-key HID `No Event` mapping from the same built-in hardware profile used by the runtime. Menu stays the native macOS right-click. `Control + C` stops MI-AO and restores the original mapping.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 

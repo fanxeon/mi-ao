@@ -12,6 +12,13 @@ do {
         if learner.exitStatus != 0 { exit(learner.exitStatus) }
         exit(0)
     }
+    if configuration.mode == .checkButtons {
+        try ButtonRuntimeFactory.validate(configuration: configuration)
+        if let path = configuration.resolvedProfilePath {
+            try ButtonRuntimeFactory.writeResolvedProfile(configuration: configuration, to: path)
+        }
+        exit(0)
+    }
     let bridge = BLEVoiceBridge(configuration: configuration)
     try bridge.start()
     var buttonController: HIDButtonController?

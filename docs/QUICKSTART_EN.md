@@ -56,9 +56,17 @@ During capture, test a short press, hold-to-talk and release, a second press, an
 
 Device identity is redacted by default, but raw `events.jsonl` payloads still require manual review before sharing. Follow the complete [hardware bring-up guide](HARDWARE_BRINGUP.md).
 
-## 4. Optional: calibrate the default pointer preset
+## 4. Enable the default pointer preset
 
-Verify voice first, stop MI-AO, then run:
+Xiaomi Remote 2 Pro firmware 2671 ships with a built-in twelve-key hardware profile, so a clean install needs no recalibration. Run:
+
+```bash
+./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+```
+
+The wrapper runs `check-buttons` first. It changes the system only after Accessibility permission and the button runtime are both ready, then generates neutralization from the same hardware profile.
+
+If the same model behaves differently, uses another firmware, or you are bringing up another remote, stop MI-AO and calibrate:
 
 ```bash
 ./scripts/debug-buttons.sh \
@@ -66,19 +74,11 @@ Verify voice first, stop MI-AO, then run:
   --preset pointer
 ```
 
-Confirm at least all four D-pad directions, Center, and Back. Restart the normal command afterward; MI-AO merges confirmed reports and attempts to enable the default `pointer` preset. A missing button or duplicate Usage disables pointer actions while voice remains available.
+Local confirmed results override the built-in baseline in time order. Explicit invalidation, a missing required button, or duplicate Usage makes `check-buttons` fail before any system mapping is changed.
 
-To use `TV` for pointer/directional switching or Power to launch Codex, calibrate them separately with `--button tv` and `--button power`. Verified Xiaomi Remote 2 Pro firmware 2671 values are `TV=0x07/0x35` and `Power=0x07/0x66`; an infrared-only button on another remote cannot be handled by the Mac.
+Use `--button tv` or `--button power` to retest one key. Verified Xiaomi Remote 2 Pro firmware 2671 values are `TV=0x07/0x35` and `Power=0x07/0x66`; an infrared-only button on another remote cannot be handled by the Mac.
 
-All six required buttons are calibrated on Xiaomi Remote 2 Pro firmware 2671, and all four directions passed direct cursor positioning with real-coordinate monitoring. The complete button mode remains an implementation preview until mode switching and Power complete acceptance. Add `--no-buttons` for an explicit voice-only run.
-
-After calibration, use the recommended one-command startup:
-
-```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
-```
-
-It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event`; Menu is excluded and keeps the native macOS right-click. HOME sends Page Down on one click or Page Up on a double-click within 350 ms. Volume Up/Down selects the previous/next Codex task. It restores on exit and refuses to overwrite an existing user `UserKeyMapping`.
+All four directions passed direct cursor positioning with real-coordinate monitoring. The complete button mode remains an implementation preview until mode switching and Power complete acceptance. Add `--no-buttons` for an explicit voice-only run. The wrapper restores on exit and refuses to overwrite an existing user `UserKeyMapping`.
 
 ## Useful options
 

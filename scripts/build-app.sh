@@ -13,6 +13,7 @@ rm -rf "$BUILD_APP"
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp "$BUILD_BIN" "$CONTENTS/MacOS/$EXECUTABLE_NAME"
 cp "$ROOT/Resources/Info.plist" "$CONTENTS/Info.plist"
+ditto "$ROOT/Resources/HardwareProfiles" "$CONTENTS/Resources/HardwareProfiles"
 
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $PROJECT_VERSION" "$CONTENTS/Info.plist"

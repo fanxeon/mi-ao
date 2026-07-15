@@ -5,8 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MAPPING_SCRIPT="$ROOT/scripts/remote-mapping.sh"
 RUN_SCRIPT="${MI_AO_RUN_SCRIPT:-$ROOT/scripts/run.sh}"
+BUTTON_CHECK_SCRIPT="${MI_AO_BUTTON_CHECK_SCRIPT:-$ROOT/scripts/check-buttons.sh}"
 mapping_active=false
 child_pid=""
+resolved_profile=""
 
 for argument in "$@"; do
   case "$argument" in
@@ -42,6 +44,9 @@ cleanup_session() {
       echo "  $MAPPING_SCRIPT restore" >&2
     }
   fi
+  if [[ -n "$resolved_profile" ]]; then
+    rm -f "$resolved_profile"
+  fi
 }
 
 handle_signal() {
@@ -59,6 +64,13 @@ trap 'handle_signal 130 INT' INT
 trap 'handle_signal 143 TERM' TERM
 trap 'handle_signal 129 HUP' HUP
 trap 'handle_signal 148 TSTP' TSTP
+
+resolved_profile="$(mktemp "${TMPDIR:-/tmp}/mi-ao-resolved-profile.XXXXXX")"
+if ! "$BUTTON_CHECK_SCRIPT" --emit-profile "$resolved_profile" "$@"; then
+  echo "错误：按键运行时未就绪，未修改系统映射。" >&2
+  exit 1
+fi
+export MI_AO_HARDWARE_PROFILE="$resolved_profile"
 
 mapping_active=true
 if ! "$MAPPING_SCRIPT" apply; then

@@ -6,25 +6,85 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
 
 HIDUTIL_BIN="${HIDUTIL_BIN:-/usr/bin/hidutil}"
-MATCHING='{"VendorID":10007,"ProductID":12984,"Product":"小米蓝牙语音遥控器","Transport":"Bluetooth Low Energy"}'
-MAPPING='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000052,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000051,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000050,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x70000004F,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000028,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x7000000F1,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x70000004A,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000035,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000066,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x70000003E,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000080,"HIDKeyboardModifierMappingDst":0x700000000},{"HIDKeyboardModifierMappingSrc":0x700000081,"HIDKeyboardModifierMappingDst":0x700000000}]}'
+PLIST_BUDDY="${PLIST_BUDDY:-/usr/libexec/PlistBuddy}"
+HARDWARE_PROFILE="${MI_AO_HARDWARE_PROFILE:-$ROOT/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist}"
+
+[[ -f "$HARDWARE_PROFILE" ]] || {
+  echo "错误：找不到硬件档案：$HARDWARE_PROFILE" >&2
+  exit 1
+}
+
+profile_value() {
+  "$PLIST_BUDDY" -c "Print :$1" "$HARDWARE_PROFILE"
+}
+
+PROFILE_ID="$(profile_value id)"
+PROFILE_VENDOR_ID="$(profile_value vendorID)"
+PROFILE_PRODUCT_ID="$(profile_value productID)"
+PROFILE_PRODUCT_NAME="$(profile_value productName)"
+PROFILE_TRANSPORT="$(profile_value transport)"
+PROFILE_STATE_FILE="$(profile_value stateFile)"
+PROFILE_VENDOR_HEX="$(printf '0x%x' "$PROFILE_VENDOR_ID")"
+PROFILE_PRODUCT_HEX="$(printf '0x%x' "$PROFILE_PRODUCT_ID")"
+
+typeset -a PROFILE_BUTTON_NAMES PROFILE_SOURCE_DECIMALS INTERCEPTED_BUTTON_NAMES INTERCEPTED_SOURCE_DECIMALS
+button_index=0
+while button_name="$(profile_value "buttons:${button_index}:button" 2>/dev/null)"; do
+  usage_page_value="$(profile_value "buttons:${button_index}:usagePage")"
+  usage_value="$(profile_value "buttons:${button_index}:usage")"
+  intercept="$(profile_value "buttons:${button_index}:intercept")"
+  source_decimal=$((usage_page_value * 4294967296 + usage_value))
+  PROFILE_BUTTON_NAMES+=("$button_name")
+  PROFILE_SOURCE_DECIMALS+=("$source_decimal")
+  if [[ "$intercept" == "true" ]]; then
+    INTERCEPTED_BUTTON_NAMES+=("$button_name")
+    INTERCEPTED_SOURCE_DECIMALS+=("$source_decimal")
+  fi
+  button_index=$((button_index + 1))
+done
+
+[[ "${#INTERCEPTED_SOURCE_DECIMALS[@]}" -gt 0 ]] || {
+  echo "错误：硬件档案没有可接管按键：$HARDWARE_PROFILE" >&2
+  exit 1
+}
+
+profile_source_for() {
+  local wanted="$1"
+  local index
+  for ((index = 1; index <= ${#PROFILE_BUTTON_NAMES[@]}; index++)); do
+    if [[ "${PROFILE_BUTTON_NAMES[$index]}" == "$wanted" ]]; then
+      echo "${PROFILE_SOURCE_DECIMALS[$index]}"
+      return 0
+    fi
+  done
+  echo "错误：硬件档案缺少按键 $wanted" >&2
+  exit 1
+}
+
+MATCHING="{\"VendorID\":$PROFILE_VENDOR_ID,\"ProductID\":$PROFILE_PRODUCT_ID,\"Product\":\"$PROFILE_PRODUCT_NAME\",\"Transport\":\"$PROFILE_TRANSPORT\"}"
+mapping_entries=""
+for source_decimal in "${INTERCEPTED_SOURCE_DECIMALS[@]}"; do
+  source_hex="$(printf '0x%X' "$source_decimal")"
+  mapping_entries+="{\"HIDKeyboardModifierMappingSrc\":$source_hex,\"HIDKeyboardModifierMappingDst\":0x700000000},"
+done
+MAPPING="{\"UserKeyMapping\":[${mapping_entries%,}]}"
 EMPTY_MAPPING='{"UserKeyMapping":[]}'
 STATE_DIR="$APP_DATA_DIR/system-mapping"
-STATE_FILE="$STATE_DIR/xiaomi-remote-2717-32b8.active"
+STATE_FILE="$STATE_DIR/$PROFILE_STATE_FILE"
 
 NO_EVENT_DECIMAL=30064771072
-UP_SOURCE_DECIMAL=30064771154
-DOWN_SOURCE_DECIMAL=30064771153
-LEFT_SOURCE_DECIMAL=30064771152
-RIGHT_SOURCE_DECIMAL=30064771151
-CENTER_SOURCE_DECIMAL=30064771112
-BACK_SOURCE_DECIMAL=30064771313
-HOME_SOURCE_DECIMAL=30064771146
-TV_SOURCE_DECIMAL=30064771125
-POWER_SOURCE_DECIMAL=30064771174
-VOICE_SOURCE_DECIMAL=30064771134
-VOLUME_UP_SOURCE_DECIMAL=30064771200
-VOLUME_DOWN_SOURCE_DECIMAL=30064771201
+UP_SOURCE_DECIMAL="$(profile_source_for dpad_up)"
+DOWN_SOURCE_DECIMAL="$(profile_source_for dpad_down)"
+LEFT_SOURCE_DECIMAL="$(profile_source_for dpad_left)"
+RIGHT_SOURCE_DECIMAL="$(profile_source_for dpad_right)"
+CENTER_SOURCE_DECIMAL="$(profile_source_for center)"
+BACK_SOURCE_DECIMAL="$(profile_source_for back)"
+HOME_SOURCE_DECIMAL="$(profile_source_for home)"
+TV_SOURCE_DECIMAL="$(profile_source_for tv)"
+POWER_SOURCE_DECIMAL="$(profile_source_for power)"
+VOICE_SOURCE_DECIMAL="$(profile_source_for voice)"
+VOLUME_UP_SOURCE_DECIMAL="$(profile_source_for volume_up)"
+VOLUME_DOWN_SOURCE_DECIMAL="$(profile_source_for volume_down)"
 
 LEGACY_TV_DESTINATION_DECIMAL=30064771183
 LEGACY_POWER_DESTINATION_DECIMAL=30064771184
@@ -33,7 +93,7 @@ usage() {
   cat <<'EOF'
 用法：scripts/remote-mapping.sh <apply|restore|status>
 
-  apply           中性化米遥接管的十二个按键；仅保留菜单原生行为
+  apply           按内置硬件档案中性化米遥接管键；菜单保留 macOS 原生右键
   restore         恢复脚本自己应用的映射
   restore --force 在状态文件丢失但映射与米遥完全一致时强制恢复
   status          只读显示设备、所有权与当前映射状态
@@ -67,20 +127,12 @@ mapping_is_expected() {
   local destination_count
   source_count="$(grep -c 'HIDKeyboardModifierMappingSrc' <<< "$output" || true)"
   destination_count="$(grep -c "HIDKeyboardModifierMappingDst = $NO_EVENT_DECIMAL" <<< "$output" || true)"
-  [[ "$source_count" == "12" ]] \
-    && [[ "$destination_count" == "12" ]] \
-    && grep -q "HIDKeyboardModifierMappingSrc = $UP_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $DOWN_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $LEFT_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $RIGHT_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $CENTER_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $BACK_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $HOME_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $TV_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $POWER_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $VOICE_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $VOLUME_UP_SOURCE_DECIMAL" <<< "$output" \
-    && grep -q "HIDKeyboardModifierMappingSrc = $VOLUME_DOWN_SOURCE_DECIMAL" <<< "$output"
+  [[ "$source_count" == "${#INTERCEPTED_SOURCE_DECIMALS[@]}" ]] || return 1
+  [[ "$destination_count" == "${#INTERCEPTED_SOURCE_DECIMALS[@]}" ]] || return 1
+  local source_decimal
+  for source_decimal in "${INTERCEPTED_SOURCE_DECIMALS[@]}"; do
+    grep -q "HIDKeyboardModifierMappingSrc = $source_decimal" <<< "$output" || return 1
+  done
 }
 
 mapping_is_v3() {
@@ -134,31 +186,41 @@ mapping_is_legacy() {
 
 write_state() {
   local temporary="$STATE_FILE.$$.tmp"
+  local index
   umask 077
   mkdir -p "$STATE_DIR"
   printf '%s\n' \
     'owner=mi-ao' \
     'baseline=empty' \
-    'vendor_id=0x2717' \
-    'product_id=0x32b8' \
-    'profile=custom-no-event-v4' \
-    'up=0x700000052->0x700000000' \
-    'down=0x700000051->0x700000000' \
-    'left=0x700000050->0x700000000' \
-    'right=0x70000004f->0x700000000' \
-    'center=0x700000028->0x700000000' \
-    'back=0x7000000f1->0x700000000' \
-    'home=0x70000004a->0x700000000' \
-    'tv=0x700000035->0x700000000' \
-    'power=0x700000066->0x700000000' \
-    'voice=0x70000003e->0x700000000' \
-    'volume_up=0x700000080->0x700000000' \
-    'volume_down=0x700000081->0x700000000' \
+    "vendor_id=$PROFILE_VENDOR_HEX" \
+    "product_id=$PROFILE_PRODUCT_HEX" \
+    "profile=$PROFILE_ID" \
     > "$temporary"
+  for ((index = 1; index <= ${#INTERCEPTED_BUTTON_NAMES[@]}; index++)); do
+    printf '%s=0x%x->0x700000000\n' \
+      "${INTERCEPTED_BUTTON_NAMES[$index]}" \
+      "${INTERCEPTED_SOURCE_DECIMALS[$index]}" \
+      >> "$temporary"
+  done
   mv "$temporary" "$STATE_FILE"
 }
 
 state_is_owned() {
+  [[ -f "$STATE_FILE" ]] || return 1
+  grep -qx 'owner=mi-ao' "$STATE_FILE" || return 1
+  grep -qx 'baseline=empty' "$STATE_FILE" || return 1
+  grep -qx "vendor_id=$PROFILE_VENDOR_HEX" "$STATE_FILE" || return 1
+  grep -qx "product_id=$PROFILE_PRODUCT_HEX" "$STATE_FILE" || return 1
+  grep -qx "profile=$PROFILE_ID" "$STATE_FILE" || return 1
+  local index
+  local expected
+  for ((index = 1; index <= ${#INTERCEPTED_BUTTON_NAMES[@]}; index++)); do
+    expected="${INTERCEPTED_BUTTON_NAMES[$index]}=$(printf '0x%x' "${INTERCEPTED_SOURCE_DECIMALS[$index]}")->0x700000000"
+    grep -qx "$expected" "$STATE_FILE" || return 1
+  done
+}
+
+v4_state_is_owned() {
   [[ -f "$STATE_FILE" ]] \
     && grep -qx 'owner=mi-ao' "$STATE_FILE" \
     && grep -qx 'baseline=empty' "$STATE_FILE" \
@@ -238,6 +300,11 @@ apply_mapping() {
       echo "遥控器中性映射已经由米遥启用。"
       return
     fi
+    if v4_state_is_owned; then
+      write_state
+      echo "已把米遥 v4 所有权状态迁移到硬件档案 $PROFILE_ID。"
+      return
+    fi
     echo "错误：发现与米遥相同但没有所有权状态文件的映射；为避免覆盖用户配置，已拒绝接管。" >&2
     echo "确认这是残留映射后运行：scripts/remote-mapping.sh restore --force" >&2
     exit 1
@@ -291,7 +358,7 @@ apply_mapping() {
     echo "错误：无法写入所有权状态文件，已尝试恢复为空。" >&2
     exit 1
   fi
-  echo "已启用设备专属中性映射：十二个米遥按键→No Event；仅菜单保持原生。"
+  echo "已启用硬件档案 $PROFILE_ID：${#INTERCEPTED_SOURCE_DECIMALS[@]} 个米遥按键→No Event；菜单保持 macOS 原生右键。"
 }
 
 restore_mapping() {
@@ -320,7 +387,7 @@ restore_mapping() {
     echo "错误：当前映射与米遥预期不一致；为避免删除用户配置，已拒绝恢复。" >&2
     exit 1
   fi
-  if ! state_is_owned && ! v3_state_is_owned && ! v2_state_is_owned \
+  if ! state_is_owned && ! v4_state_is_owned && ! v3_state_is_owned && ! v2_state_is_owned \
     && ! legacy_state_is_owned \
     && [[ "$force" != "--force" ]]; then
     echo "错误：缺少米遥所有权状态文件；未清除当前映射。" >&2
@@ -348,8 +415,10 @@ show_status() {
 
   local current
   current="$(read_mapping)"
-  echo "设备：已连接（Vendor 0x2717 / Product 0x32B8）"
-  if state_is_owned || v2_state_is_owned || legacy_state_is_owned; then
+  echo "设备：已连接（Vendor $PROFILE_VENDOR_HEX / Product $PROFILE_PRODUCT_HEX）"
+  echo "硬件档案：$PROFILE_ID"
+  if state_is_owned || v4_state_is_owned || v3_state_is_owned || v2_state_is_owned \
+    || legacy_state_is_owned; then
     echo "米遥状态文件：有效"
   elif [[ -f "$STATE_FILE" ]]; then
     echo "米遥状态文件：无效（不会据此恢复）"
@@ -359,7 +428,7 @@ show_status() {
   if mapping_is_empty "$current"; then
     echo "映射：原始状态（空）"
   elif mapping_is_expected "$current"; then
-    echo "映射：米遥中性映射（十二键→No Event；菜单原生）"
+    echo "映射：米遥中性映射（${#INTERCEPTED_SOURCE_DECIMALS[@]} 键→No Event；菜单为原生右键）"
   elif mapping_is_v3 "$current"; then
     echo "映射：米遥 v3 中性映射（十键→No Event；菜单/音量原生）"
   elif mapping_is_v2 "$current"; then

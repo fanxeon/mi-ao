@@ -1,5 +1,5 @@
 # Copyright (c) 2026 FanXeon@Poemcoder with Codex
-.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture learn-buttons debug-buttons run-mapped mapping-status mapping-restore check clean
+.PHONY: build release test format lint app install setup preflight verify authorize uninstall source-release doctor scan capture learn-buttons debug-buttons check-buttons run-mapped mapping-status mapping-restore check clean
 
 build:
 	swift build
@@ -55,6 +55,9 @@ learn-buttons:
 debug-buttons:
 	./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器"
 
+check-buttons:
+	./scripts/check-buttons.sh --name "小米蓝牙语音遥控器"
+
 run-mapped:
 	./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 
@@ -69,7 +72,7 @@ check:
 	swift test
 	zsh Tests/Shell/RemoteMappingTests.sh
 	zsh Tests/Shell/KeyboardIsolationTests.sh
-	swift build -c release
+	zsh Tests/Shell/AppBundleTests.sh
 	plutil -lint Resources/Info.plist
 	git diff --check
 

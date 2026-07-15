@@ -25,7 +25,7 @@ jobs:
         run: zsh Tests/Shell/RemoteMappingTests.sh
       - name: Keyboard isolation contract
         run: zsh Tests/Shell/KeyboardIsolationTests.sh
-      - name: Release build
-        run: swift build -c release
+      - name: App bundle and built-in hardware profile
+        run: zsh Tests/Shell/AppBundleTests.sh
       - name: Validate app metadata
         run: plutil -lint Resources/Info.plist

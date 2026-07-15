@@ -4,7 +4,7 @@
 
 [English](BUTTON_PRESETS_EN.md) · [返回使用说明](USAGE.md) · [路线图](ROADMAP.md)
 
-米遥把硬件识别和用户偏好分成两层：校准档案只回答“这个 HID Usage 是哪个实体按钮”，预设套装再决定“这个按钮现在做什么”。更换套装不需要重新校准遥控器。
+米遥把硬件识别和用户偏好分成两层：内置真机档案或本地校准只回答“这个 HID Usage 是哪个实体按钮”，预设套装再决定“这个按钮现在做什么”。更换套装不需要重新校准遥控器。
 
 > 当前状态：`pointer` 默认套装、校准合并、冲突拒绝和鼠标执行器已经实现并通过自动测试；小米 2 Pro 固件 2671 的十二个接管键已完成新格式真机校准，四个方向已验证直接光标定位与真实坐标变化，音量加减已完成 Codex 会话双向切换验收。HOME 单/双击、模式切换和电源动作仍需逐项验收。
 
@@ -12,7 +12,7 @@
 
 ```mermaid
 flowchart LR
-    A["遥控器 HID 事件"] --> B["人工确认校准档案"]
+    A["遥控器 HID 事件"] --> B["内置真机档案<br/>+ 本地校准覆盖"]
     B --> C["实体按钮 ID<br/>dpad_up / back / center"]
     C --> D{"选择预设套装"}
     D --> E["pointer 默认套装"]
@@ -33,9 +33,9 @@ flowchart LR
 | 实体按钮 | 默认动作 | 当前门禁 |
 | --- | --- | --- |
 | 语音键 | `voice.push_to_talk` | 继续使用已验证 ATVV 语音链路 |
-| 方向上 / 下 / 左 / 右 | 鼠标：`pointer.move_*`；方向键：`keyboard.arrow_*` | 四项都必须人工确认 |
-| 中间确认键 | 固定 `keyboard.return` | 必须人工确认 |
-| 返回键 | 固定 `keyboard.escape` | 物理 Usage `0x07/0xF1` 已确认；需按新档案格式再确认 |
+| 方向上 / 下 / 左 / 右 | 鼠标：`pointer.move_*`；方向键：`keyboard.arrow_*` | 固件 2671 内置已确认 Usage |
+| 中间确认键 | 固定 `keyboard.return` | 固件 2671 内置已确认 Usage |
+| 返回键 | 固定 `keyboard.escape` | 固件 2671 内置 `0x07/0xF1` |
 | 音量加 / 减 | `codex.previous_task/next_task` | `0x07/0x80`、`0x07/0x81` 已确认并完成双向动作验收 |
 | `TV` | `mode.toggle_pointer_directional` | `0x07/0x35` 已按新格式真机确认 |
 | `HOME` | 单击 `keyboard.page_down`；350 ms 内双击 `keyboard.page_up` | 等待双击时间窗结束后才执行单击，双击不会先触发 Page Down |
@@ -48,7 +48,11 @@ flowchart LR
 
 小米 2 Pro 固件 2671 的 `TV` 与电源键已经分别确认成 Keyboard Usage `0x35` 和 Keyboard Power `0x66`，不是纯红外键。音量加减确认成 `0x80` / `0x81`，分别通过 Accessibility 直接执行 Codex 的“Previous Task / Next Task”菜单项，不合成 `⌘⇧[` / `⌘⇧]` 或任何修饰键。Codex 已运行时电源动作只聚焦现有窗口，未运行时通过 bundle ID `com.openai.codex` 查找并启动已安装 App。其他遥控器仍必须独立校准，不能沿用这组 Usage。
 
-## 首次校准
+## 内置档案与可选校准
+
+小米 2 Pro 固件 2671 默认加载 `Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist`，干净安装无需先生成本地报告。该档案只包含真机确认的设备身份和实体 Usage，不包含鼠标或 Codex 动作。
+
+如果同型号结果不同、固件不同，或要接入其他遥控器，再运行：
 
 先停止正在运行的米遥，然后执行：
 
@@ -80,17 +84,17 @@ flowchart LR
 ./scripts/debug-buttons.sh --name "小米蓝牙语音遥控器" --button volume_down
 ```
 
-只有 `captureMode=confirmed_calibration` 的报告会进入运行时。自动学习报告、超时项、未观察到松手的项和两个按钮共用同一 Usage 的冲突档案都会被拒绝。
+只有 `captureMode=confirmed_calibration` 的本地报告会覆盖内置档案。自动学习报告、超时项、未观察到松手的项和两个按钮共用同一 Usage 的冲突档案都会被拒绝；显式未观察到的必需键会使运行前检查失败，不会悄悄退回内置值。
 
 ## 启动与回退
 
-`pointer` 是默认套装。完成校准后推荐使用一键安全启动：
+`pointer` 是默认套装。推荐使用一键安全启动：
 
 ```bash
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-这条命令按精确设备属性把方向六键、HOME、TV、电源、语音和音量加减共十二键映射为 HID `No Event`；菜单不进入映射并沿用 macOS 原生鼠标右键。写入会回读验证，退出和信号中断都会安全恢复。
+这条命令先执行 `check-buttons`，再从与 Swift 运行时相同的硬件档案生成十二键 HID `No Event`。权限、档案或运行时检查失败时不写入；菜单不进入映射并沿用 macOS 原生鼠标右键。写入会回读验证，退出和信号中断都会安全恢复。
 
 实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 
@@ -123,7 +127,8 @@ flowchart LR
 
 ## macOS 安全边界
 
-- 运行时只加载同 Vendor/Product 的人工确认档案；
+- 已验证设备从同 Vendor/Product 的内置真机档案启动，本地人工确认按时间覆盖；
+- 系统映射前必须通过 `check-buttons`，因此不会出现“按键已被拦截但运行时没有动作”的半启动状态；
 - 一键脚本只匹配 Vendor `0x2717` / Product `0x32B8` / 已验证产品名与 BLE transport；相同型号的第二支遥控器也可能被匹配；
 - 应用前只接受空映射，拒绝覆盖任何既有 `UserKeyMapping`；状态文件记录所有权，恢复时同样拒绝删除未知配置；
 - 指针动作需要辅助功能权限；权限缺失时拒绝启动按键动作；

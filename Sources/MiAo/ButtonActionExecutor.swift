@@ -37,12 +37,15 @@ struct HomeClickArbiter {
 }
 
 final class ButtonActionExecutor {
-    private let preset: ButtonPreset
+    private(set) var preset: ButtonPreset
+    private let catalog: ButtonPresetCatalog
     private let debug: Bool
     private let controlModeHandler: ((RemoteControlMode) -> Void)?
+    private let presetChangeHandler: ((ButtonPreset) -> Void)?
     private var timer: Timer?
     private var activeButton: RemoteButton?
     private var activeAction: ButtonAction?
+    private var activeShortcut: KeyboardShortcutSpec?
     private var pressedAt: Date?
     private var lastTickAt = Date()
     private var lastScrollAt = Date.distantPast
@@ -55,12 +58,16 @@ final class ButtonActionExecutor {
 
     init(
         preset: ButtonPreset,
+        catalog: ButtonPresetCatalog = .builtIn,
         debug: Bool = false,
-        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
     ) {
         self.preset = preset
+        self.catalog = catalog
         self.debug = debug
         self.controlModeHandler = controlModeHandler
+        self.presetChangeHandler = presetChangeHandler
     }
 
     func start() {
@@ -77,13 +84,32 @@ final class ButtonActionExecutor {
         if let activeAction, Self.isKeyboardAction(activeAction) {
             postKeyboard(action: activeAction, isDown: false)
         }
+        if let activeShortcut {
+            postKeyboardShortcut(activeShortcut, isDown: false)
+        }
         timer?.invalidate()
         timer = nil
         clearActiveAction()
     }
 
     func buttonDown(_ button: RemoteButton) {
-        let baseAction = preset.action(for: button)
+        switch preset.binding(for: button) {
+        case .presetSwitch(let targetPresetID):
+            switchPreset(to: targetPresetID)
+            return
+        case .keyboardShortcut(let shortcut):
+            activeButton = button
+            activeAction = nil
+            activeShortcut = shortcut
+            pressedAt = Date()
+            postKeyboardShortcut(shortcut, isDown: true)
+            return
+        case .action(let baseAction):
+            execute(action: baseAction, for: button)
+        }
+    }
+
+    private func execute(action baseAction: ButtonAction, for button: RemoteButton) {
         if baseAction == .modeTogglePointerDirectional {
             controlMode = controlMode == .pointer ? .directional : .pointer
             clearActiveAction()
@@ -99,6 +125,7 @@ final class ButtonActionExecutor {
         let action = Self.resolvedAction(baseAction, mode: controlMode)
         activeButton = button
         activeAction = action
+        activeShortcut = nil
         pressedAt = Date()
         switch action {
         case .pointerMoveUp, .pointerMoveDown, .pointerMoveLeft, .pointerMoveRight:
@@ -136,7 +163,7 @@ final class ButtonActionExecutor {
                     ? "Codex：下一个会话" : "Codex 未运行或找不到会话菜单，未切换"
             )
         case .presetCycle:
-            print("当前只有 \(preset.name)（\(preset.id)）套装")
+            print("旧版循环切换已停用；请在按键配置中为 TV 选择目标配置")
         case .voicePushToTalk, .modeTogglePointerDirectional, .unmapped:
             break
         }
@@ -144,6 +171,11 @@ final class ButtonActionExecutor {
 
     func buttonUp(_ button: RemoteButton) {
         guard button == activeButton else { return }
+        if let activeShortcut {
+            postKeyboardShortcut(activeShortcut, isDown: false)
+            clearActiveAction()
+            return
+        }
         if activeAction == .homePageNavigation {
             handleHomeClick()
             clearActiveAction()
@@ -213,7 +245,26 @@ final class ButtonActionExecutor {
     private func clearActiveAction() {
         activeButton = nil
         activeAction = nil
+        activeShortcut = nil
         pressedAt = nil
+    }
+
+    private func switchPreset(to targetPresetID: String) {
+        guard let target = try? catalog.preset(id: targetPresetID) else {
+            print("配置切换失败：找不到 \(targetPresetID)")
+            return
+        }
+        guard target.id != preset.id else {
+            print("配置切换已忽略：目标与当前配置相同")
+            return
+        }
+        preset = target
+        if controlMode != .pointer {
+            controlMode = .pointer
+            controlModeHandler?(controlMode)
+        }
+        presetChangeHandler?(target)
+        print("已切换按键配置：\(target.name)")
     }
 
     private func handleHomeClick() {
@@ -299,6 +350,30 @@ final class ButtonActionExecutor {
     private func postKeyboardStroke(action: ButtonAction) {
         postKeyboard(action: action, isDown: true)
         postKeyboard(action: action, isDown: false)
+    }
+
+    private func postKeyboardShortcut(_ shortcut: KeyboardShortcutSpec, isDown: Bool) {
+        let modifiers = ShortcutModifier.allCases.filter(shortcut.modifiers.contains)
+        if isDown {
+            for modifier in modifiers {
+                postRawKeyboard(keyCode: modifier.keyCode, isDown: true)
+            }
+            postRawKeyboard(keyCode: shortcut.keyCode, isDown: true)
+        } else {
+            postRawKeyboard(keyCode: shortcut.keyCode, isDown: false)
+            for modifier in modifiers.reversed() {
+                postRawKeyboard(keyCode: modifier.keyCode, isDown: false)
+            }
+        }
+    }
+
+    private func postRawKeyboard(keyCode: CGKeyCode, isDown: Bool) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        CGEvent(
+            keyboardEventSource: source,
+            virtualKey: keyCode,
+            keyDown: isDown
+        )?.post(tap: .cghidEventTap)
     }
 
     private static func keyCode(for action: ButtonAction) -> CGKeyCode? {

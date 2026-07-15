@@ -75,6 +75,9 @@ do {
                 configuration: configuration,
                 controlModeHandler: { [weak menuBarController] mode in
                     menuBarController?.update(controlMode: mode)
+                },
+                presetChangeHandler: { [weak menuBarController] preset in
+                    menuBarController?.update(preset: preset)
                 }
             )
             try buttonController?.start()

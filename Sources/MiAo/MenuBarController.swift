@@ -63,7 +63,9 @@ private final class MenuBarPanelViewController: NSViewController {
     private let statusIcon = NSImageView()
     private let statusLabel = NSTextField(wrappingLabelWithString: "")
     private let modeLabel = NSTextField(labelWithString: "方向环 · 鼠标指针")
+    private let presetLabel = NSTextField(labelWithString: "配置 · 默认 · 鼠标指针")
     private let versionLabel = NSTextField(labelWithString: "")
+    private var activePresetName = ButtonPreset.pointer.name
 
     override func loadView() {
         let effectView = NSVisualEffectView()
@@ -97,7 +99,10 @@ private final class MenuBarPanelViewController: NSViewController {
         modeTitle.font = .systemFont(ofSize: 11, weight: .medium)
         modeTitle.textColor = .secondaryLabelColor
         modeLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        let modeStack = NSStackView(views: [modeTitle, modeLabel])
+        presetLabel.font = .systemFont(ofSize: 11)
+        presetLabel.textColor = .secondaryLabelColor
+        presetLabel.stringValue = "配置 · \(activePresetName)"
+        let modeStack = NSStackView(views: [modeTitle, modeLabel, presetLabel])
         modeStack.orientation = .vertical
         modeStack.alignment = .leading
         modeStack.spacing = 3
@@ -187,6 +192,12 @@ private final class MenuBarPanelViewController: NSViewController {
             : "方向环 · 上下左右"
     }
 
+    func update(preset: ButtonPreset) {
+        activePresetName = preset.name
+        guard isViewLoaded else { return }
+        presetLabel.stringValue = "配置 · \(preset.name)"
+    }
+
     private func makeButton(title: String, symbol: String, action: Selector) -> NSButton {
         let button = NSButton(title: title, target: self, action: action)
         button.bezelStyle = .rounded
@@ -247,6 +258,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp])
         }
+        let catalog = ButtonPresetStore().load().catalog
+        let preset = (try? catalog.preset(id: configuration.buttonPresetID)) ?? .pointer
+        panel.update(preset: preset)
         update(status: .starting)
     }
 
@@ -276,6 +290,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             return
         }
         panel.update(controlMode: controlMode)
+    }
+
+    func update(preset: ButtonPreset) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.update(preset: preset) }
+            return
+        }
+        panel.update(preset: preset)
     }
 
     @objc private func togglePopover() {

@@ -33,7 +33,6 @@ final class HIDButtonController {
 
     private let configuration: Configuration
     private let map: CalibratedButtonMap
-    private let preset: ButtonPreset
     private let executor: ButtonActionExecutor
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
@@ -46,15 +45,18 @@ final class HIDButtonController {
         configuration: Configuration,
         map: CalibratedButtonMap,
         preset: ButtonPreset,
-        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+        catalog: ButtonPresetCatalog,
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
     ) {
         self.configuration = configuration
         self.map = map
-        self.preset = preset
         executor = ButtonActionExecutor(
             preset: preset,
+            catalog: catalog,
             debug: configuration.debug,
-            controlModeHandler: controlModeHandler
+            controlModeHandler: controlModeHandler,
+            presetChangeHandler: presetChangeHandler
         )
     }
 
@@ -90,7 +92,7 @@ final class HIDButtonController {
             )
         }
         executor.start()
-        print("按键套装：\(preset.name)（\(preset.id)），等待遥控器 HID…")
+        print("按键配置：\(executor.preset.name)（\(executor.preset.id)），等待遥控器 HID…")
     }
 
     func stop() {
@@ -114,7 +116,7 @@ final class HIDButtonController {
             return
         }
         matchedDevice = device
-        print("实体按键已就绪：\(name)，默认套装 \(preset.id)")
+        print("实体按键已就绪：\(name)")
     }
 
     fileprivate func valueReceived(_ value: IOHIDValue, result: IOReturn) {
@@ -152,11 +154,7 @@ final class HIDButtonController {
         if let activeButton { executor.buttonUp(activeButton) }
         activeKey = key
         activeElement = elementSignature
-        if let button = map.buttonsByUsage[key], preset.action(for: button) != .unmapped {
-            activeButton = button
-        } else {
-            activeButton = nil
-        }
+        activeButton = map.buttonsByUsage[key]
         if let activeButton {
             if configuration.debug {
                 print(
@@ -174,8 +172,34 @@ final class HIDButtonController {
 }
 
 enum ButtonRuntimeFactory {
-    private static func resolvedMap(configuration: Configuration) throws -> CalibratedButtonMap? {
-        let preset = try ButtonPreset.named(configuration.buttonPresetID)
+    private static func resolvedCatalog() throws -> ButtonPresetCatalog {
+        let snapshot = ButtonPresetStore().load()
+        if case .unsupportedVersion(let version) = snapshot.state {
+            throw ButtonPresetStoreError.unsupportedVersion(version)
+        }
+        return snapshot.catalog
+    }
+
+    private static func resolvedPreset(
+        configuration: Configuration,
+        catalog: ButtonPresetCatalog
+    ) throws -> ButtonPreset {
+        do {
+            return try catalog.preset(id: configuration.buttonPresetID)
+        } catch {
+            guard configuration.buttonPresetID != ButtonPreset.pointer.id else { throw error }
+            fputs(
+                "找不到已保存的按键配置 \(configuration.buttonPresetID)，已安全回退到官方默认\n",
+                stderr
+            )
+            return .pointer
+        }
+    }
+
+    private static func resolvedMap(
+        configuration: Configuration,
+        preset: ButtonPreset
+    ) throws -> CalibratedButtonMap? {
         if let path = configuration.buttonProfilePath {
             return try ButtonProfileStore.loadConfirmedMap(file: path, preset: preset)
         }
@@ -201,7 +225,9 @@ enum ButtonRuntimeFactory {
         guard AXIsProcessTrusted() else {
             throw BridgeError.configuration("实体按键动作需要辅助功能权限；请先运行 scripts/authorize.sh")
         }
-        guard try resolvedMap(configuration: configuration) != nil else {
+        let catalog = try resolvedCatalog()
+        let preset = try resolvedPreset(configuration: configuration, catalog: catalog)
+        guard try resolvedMap(configuration: configuration, preset: preset) != nil else {
             throw BridgeError.configuration("没有可用的按键硬件档案，未修改系统映射")
         }
         print("按键运行时检查通过：权限和硬件档案均已就绪")
@@ -216,7 +242,9 @@ enum ButtonRuntimeFactory {
         else {
             throw BridgeError.configuration("没有匹配的内置硬件档案，无法导出映射")
         }
-        guard let map = try resolvedMap(configuration: configuration) else {
+        let catalog = try resolvedCatalog()
+        let preset = try resolvedPreset(configuration: configuration, catalog: catalog)
+        guard let map = try resolvedMap(configuration: configuration, preset: preset) else {
             throw BridgeError.configuration("没有可用的按键硬件档案，无法导出映射")
         }
         try HardwareProfileStore.write(baseline.replacingUsages(with: map), to: path)
@@ -225,14 +253,16 @@ enum ButtonRuntimeFactory {
 
     static func make(
         configuration: Configuration,
-        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
     ) throws -> HIDButtonController? {
         guard configuration.buttonsEnabled else {
             print("实体按键动作：已通过 --no-buttons 禁用")
             return nil
         }
-        let preset = try ButtonPreset.named(configuration.buttonPresetID)
-        let map = try resolvedMap(configuration: configuration)
+        let catalog = try resolvedCatalog()
+        let preset = try resolvedPreset(configuration: configuration, catalog: catalog)
+        let map = try resolvedMap(configuration: configuration, preset: preset)
 
         guard let map else {
             let required = preset.requiredButtons.map(\.rawValue).sorted().joined(separator: ", ")
@@ -245,7 +275,24 @@ enum ButtonRuntimeFactory {
             configuration: configuration,
             map: map,
             preset: preset,
-            controlModeHandler: controlModeHandler
+            catalog: catalog,
+            controlModeHandler: controlModeHandler,
+            presetChangeHandler: { preset in
+                let preferencesStore = AppPreferencesStore()
+                let snapshot = preferencesStore.load()
+                guard case .unsupportedVersion = snapshot.state else {
+                    var preferences = snapshot.preferences
+                    preferences.selectedPresetID = preset.id
+                    do {
+                        try preferencesStore.save(preferences)
+                    } catch {
+                        fputs("当前配置未能保存：\(error.localizedDescription)\n", stderr)
+                    }
+                    presetChangeHandler?(preset)
+                    return
+                }
+                fputs("当前配置没有写入：偏好文件来自更新版本\n", stderr)
+            }
         )
     }
 }

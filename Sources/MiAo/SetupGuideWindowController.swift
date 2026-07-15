@@ -209,10 +209,285 @@ private final class SetupCheckRowView: NSView {
     }
 }
 
-final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
+private final class ShortcutRecorderView: NSView {
+    var recordedShortcut: KeyboardShortcutSpec?
+
+    private let prompt = NSTextField(wrappingLabelWithString: "")
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 12
+        layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.10).cgColor
+
+        prompt.translatesAutoresizingMaskIntoConstraints = false
+        prompt.font = .systemFont(ofSize: 13, weight: .medium)
+        prompt.alignment = .center
+        prompt.textColor = .secondaryLabelColor
+        prompt.stringValue = "请按下要发送的按键组合"
+        addSubview(prompt)
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 320),
+            heightAnchor.constraint(equalToConstant: 74),
+            prompt.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            prompt.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            prompt.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        var modifiers: Set<ShortcutModifier> = []
+        if event.modifierFlags.contains(.command) { modifiers.insert(.command) }
+        if event.modifierFlags.contains(.option) { modifiers.insert(.option) }
+        if event.modifierFlags.contains(.shift) { modifiers.insert(.shift) }
+        if event.modifierFlags.contains(.control) { modifiers.insert(.control) }
+        let keyLabel = event.charactersIgnoringModifiers?.uppercased() ?? "Key \(event.keyCode)"
+        do {
+            recordedShortcut = try KeyboardShortcutSpec(
+                keyCode: event.keyCode,
+                modifiers: modifiers,
+                keyLabel: keyLabel
+            )
+            prompt.stringValue = "已记录：\(recordedShortcut?.displayName ?? "")"
+            prompt.textColor = .controlAccentColor
+        } catch {
+            recordedShortcut = nil
+            prompt.stringValue = error.localizedDescription
+            prompt.textColor = .systemRed
+        }
+    }
+}
+
+private final class ButtonMappingRowView: NSView {
+    private enum Choice {
+        static let shortcut = "shortcut"
+        static let presetSwitch = "preset_switch"
+        static let actionPrefix = "action:"
+    }
+
+    let button: RemoteButton
+    var onBindingChanged: ((ButtonBinding) -> Void)?
+    var onShortcutRequested: (() -> Void)?
+
+    private let titleLabel = NSTextField(labelWithString: "")
+    private let detailLabel = NSTextField(wrappingLabelWithString: "")
+    private let actionPopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let targetLabel = NSTextField(labelWithString: "TV 切换至")
+    private let targetPopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let targetRow = NSStackView()
+    private var currentBinding: ButtonBinding = .action(.unmapped)
+
+    init(button: RemoteButton) {
+        self.button = button
+        super.init(frame: .zero)
+        SetupInterfaceStyle.applySurface(to: self, radius: 18)
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLabel.stringValue = button.displayName
+
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .systemFont(ofSize: 11)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+
+        actionPopup.translatesAutoresizingMaskIntoConstraints = false
+        actionPopup.target = self
+        actionPopup.action = #selector(actionChanged)
+        actionPopup.setAccessibilityLabel("\(button.displayName) 的动作")
+
+        targetLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        targetLabel.textColor = .secondaryLabelColor
+        targetPopup.target = self
+        targetPopup.action = #selector(targetChanged)
+        targetPopup.setAccessibilityLabel("TV 的目标配置")
+        targetRow.orientation = .horizontal
+        targetRow.alignment = .centerY
+        targetRow.spacing = 8
+        targetRow.translatesAutoresizingMaskIntoConstraints = false
+        targetRow.addArrangedSubview(targetLabel)
+        targetRow.addArrangedSubview(targetPopup)
+        targetRow.isHidden = true
+
+        addSubview(titleLabel)
+        addSubview(detailLabel)
+        addSubview(actionPopup)
+        addSubview(targetRow)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 76),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 15),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: actionPopup.leadingAnchor, constant: -14),
+            actionPopup.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            actionPopup.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            actionPopup.widthAnchor.constraint(equalToConstant: 248),
+            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
+            detailLabel.trailingAnchor.constraint(equalTo: actionPopup.trailingAnchor),
+            targetRow.leadingAnchor.constraint(equalTo: detailLabel.leadingAnchor),
+            targetRow.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 8),
+            targetRow.trailingAnchor.constraint(lessThanOrEqualTo: actionPopup.trailingAnchor),
+            targetRow.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -13),
+            detailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -13),
+            targetPopup.widthAnchor.constraint(equalToConstant: 200),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    func update(
+        binding: ButtonBinding,
+        targetPresets: [ButtonPreset],
+        editable: Bool
+    ) {
+        currentBinding = binding
+        actionPopup.removeAllItems()
+        for action in availableActions {
+            addActionItem(action)
+        }
+        if button.isUserEditable {
+            actionPopup.menu?.addItem(.separator())
+            addItem(title: "录制自定义快捷键…", identifier: Choice.shortcut)
+        }
+        if button == .tv {
+            actionPopup.menu?.addItem(.separator())
+            let switchItem = NSMenuItem(title: "切换到另一配置", action: nil, keyEquivalent: "")
+            switchItem.representedObject = Choice.presetSwitch
+            switchItem.isEnabled = !targetPresets.isEmpty
+            actionPopup.menu?.addItem(switchItem)
+        }
+
+        targetPopup.removeAllItems()
+        for target in targetPresets {
+            let item = NSMenuItem(title: target.name, action: nil, keyEquivalent: "")
+            item.representedObject = target.id
+            targetPopup.menu?.addItem(item)
+        }
+
+        let selectedIdentifier: String
+        switch binding {
+        case .action(let action):
+            selectedIdentifier = Choice.actionPrefix + action.rawValue
+            detailLabel.stringValue = action.displayName
+        case .keyboardShortcut(let shortcut):
+            selectedIdentifier = Choice.shortcut
+            detailLabel.stringValue = "将发送 \(shortcut.displayName)；再次选择“录制自定义快捷键”可更换。"
+        case .presetSwitch(let targetID):
+            selectedIdentifier = Choice.presetSwitch
+            detailLabel.stringValue = "按下 TV 会立即切换整个配置，其他按钮随之改变。"
+            selectTarget(id: targetID)
+        }
+        selectAction(identifier: selectedIdentifier)
+        targetRow.isHidden = button != .tv || selectedIdentifier != Choice.presetSwitch
+        actionPopup.isEnabled = editable
+        targetPopup.isEnabled = editable && !targetPresets.isEmpty
+        alphaValue = editable ? 1 : 0.72
+    }
+
+    private var availableActions: [ButtonAction] {
+        let common: [ButtonAction] = [
+            .keyboardReturn,
+            .keyboardEscape,
+            .keyboardPageUp,
+            .keyboardPageDown,
+            .codexFocus,
+            .codexLaunchOrFocus,
+            .codexPreviousTask,
+            .codexNextTask,
+            .unmapped,
+        ]
+        switch button {
+        case .dpadUp:
+            return [.pointerMoveUp, .keyboardArrowUp, .pointerScrollUp] + common
+        case .dpadDown:
+            return [.pointerMoveDown, .keyboardArrowDown, .pointerScrollDown] + common
+        case .dpadLeft:
+            return [.pointerMoveLeft, .keyboardArrowLeft] + common
+        case .dpadRight:
+            return [.pointerMoveRight, .keyboardArrowRight] + common
+        case .home:
+            return [.homePageNavigation] + common
+        case .tv:
+            return [.modeTogglePointerDirectional] + common
+        case .voice:
+            return [.voicePushToTalk]
+        case .menu:
+            return [.unmapped]
+        case .center, .back, .volumeUp, .volumeDown, .power:
+            return common
+        }
+    }
+
+    private func addActionItem(_ action: ButtonAction) {
+        addItem(title: action.displayName, identifier: Choice.actionPrefix + action.rawValue)
+    }
+
+    private func addItem(title: String, identifier: String) {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.representedObject = identifier
+        actionPopup.menu?.addItem(item)
+    }
+
+    private func selectAction(identifier: String) {
+        guard let menu = actionPopup.menu else { return }
+        let index = menu.items.firstIndex { ($0.representedObject as? String) == identifier }
+        actionPopup.selectItem(at: index ?? 0)
+    }
+
+    private func selectTarget(id: String) {
+        guard let menu = targetPopup.menu else { return }
+        let index = menu.items.firstIndex { ($0.representedObject as? String) == id }
+        targetPopup.selectItem(at: index ?? 0)
+    }
+
+    @objc private func actionChanged() {
+        guard let identifier = actionPopup.selectedItem?.representedObject as? String else { return }
+        if identifier == Choice.shortcut {
+            onShortcutRequested?()
+            return
+        }
+        if identifier == Choice.presetSwitch {
+            guard let targetID = targetPopup.selectedItem?.representedObject as? String else { return }
+            onBindingChanged?(.presetSwitch(targetID))
+            return
+        }
+        guard let rawValue = identifier.stripPrefix(Choice.actionPrefix),
+            let action = ButtonAction(rawValue: rawValue)
+        else { return }
+        onBindingChanged?(.action(action))
+    }
+
+    @objc private func targetChanged() {
+        guard case .presetSwitch = currentBinding,
+            let targetID = targetPopup.selectedItem?.representedObject as? String
+        else { return }
+        onBindingChanged?(.presetSwitch(targetID))
+    }
+}
+
+private extension String {
+    func stripPrefix(_ prefix: String) -> String? {
+        guard hasPrefix(prefix) else { return nil }
+        return String(dropFirst(prefix.count))
+    }
+}
+
+final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate {
     private let configuration: Configuration
     private let standalone: Bool
     private let preferencesStore: AppPreferencesStore
+    private let presetStore: ButtonPresetStore
     private let loginItemController: LoginItemController
     private let inspector = SetupEnvironmentInspector()
     private let rows = Dictionary(
@@ -228,26 +503,49 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
     private let refreshButton = NSButton(title: "重新检查", target: nil, action: nil)
     private let startButton = NSButton(title: "连接遥控器并开始", target: nil, action: nil)
     private let pageTabs = NSTabViewController()
+    private let presetPicker = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let presetNameField = NSTextField(string: "")
+    private let createPresetButton = NSButton(title: "新建", target: nil, action: nil)
+    private let duplicatePresetButton = NSButton(title: "复制", target: nil, action: nil)
+    private let deletePresetButton = NSButton(title: "删除", target: nil, action: nil)
+    private let savePresetButton = NSButton(title: "保存配置", target: nil, action: nil)
+    private let presetStateLabel = NSTextField(wrappingLabelWithString: "")
+    private var mappingRows: [RemoteButton: ButtonMappingRowView] = [:]
     private var report: SetupEnvironmentReport?
     private var bluetoothRequester: BluetoothAuthorizationRequester?
     private var process: Process?
     private var refreshTimer: Timer?
     private var preferences: AppPreferences
     private var preferencesLoadState: AppPreferencesLoadState
+    private var presetCatalog: ButtonPresetCatalog
+    private var presetCatalogLoadState: ButtonPresetCatalogLoadState
+    private var selectedPresetID: String
+    private var draftPreset: ButtonPreset
+    private var hasUnsavedPresetChanges = false
 
     init(
         configuration: Configuration,
         standalone: Bool,
         preferencesStore: AppPreferencesStore = AppPreferencesStore(),
+        presetStore: ButtonPresetStore = ButtonPresetStore(),
         loginItemController: LoginItemController = LoginItemController()
     ) {
         self.configuration = configuration
         self.standalone = standalone
         self.preferencesStore = preferencesStore
+        self.presetStore = presetStore
         self.loginItemController = loginItemController
         let snapshot = preferencesStore.load()
         preferences = snapshot.preferences
         preferencesLoadState = snapshot.state
+        let presetSnapshot = presetStore.load()
+        presetCatalog = presetSnapshot.catalog
+        presetCatalogLoadState = presetSnapshot.state
+        selectedPresetID = snapshot.preferences.selectedPresetID
+        if (try? presetSnapshot.catalog.preset(id: selectedPresetID)) == nil {
+            selectedPresetID = ButtonPreset.pointer.id
+        }
+        draftPreset = (try? presetSnapshot.catalog.preset(id: selectedPresetID)) ?? .pointer
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 760, height: 780),
             styleMask: [.titled, .closable, .miniaturizable],
@@ -309,6 +607,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         checksStack.spacing = 10
 
         let preferencesView = buildPreferencesView()
+        let buttonMappingsView = buildButtonMappingsView()
         let buttonGuideView = buildButtonGuideView()
 
         let checksHeader = buildSectionHeader(
@@ -328,6 +627,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         pageTabs.addChild(makeTabPage(title: "开始", content: overviewView))
         pageTabs.addChild(makeTabPage(title: "权限与连接", content: checksSection))
         pageTabs.addChild(makeTabPage(title: "控制偏好", content: preferencesView))
+        pageTabs.addChild(makeTabPage(title: "按键配置", content: buttonMappingsView))
         pageTabs.addChild(makeTabPage(title: "按键指南", content: buttonGuideView))
         pageTabs.view.translatesAutoresizingMaskIntoConstraints = false
         pageTabs.view.setAccessibilityLabel("米遥设置分类")
@@ -634,6 +934,409 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         }
 
         return stack
+    }
+
+    private func buildButtonMappingsView() -> NSView {
+        let sectionHeader = buildSectionHeader(
+            title: "按键配置",
+            detail: "创建自己的配置并保存。TV 可从当前配置跳转到另一套配置；语音键与菜单键为安全保留项。"
+        )
+
+        presetPicker.target = self
+        presetPicker.action = #selector(presetSelectionChanged)
+        presetPicker.setAccessibilityLabel("当前按键配置")
+
+        presetNameField.placeholderString = "配置名称"
+        presetNameField.font = .systemFont(ofSize: 13, weight: .medium)
+        presetNameField.delegate = self
+        presetNameField.setAccessibilityLabel("按键配置名称")
+
+        createPresetButton.target = self
+        createPresetButton.action = #selector(createPreset)
+        duplicatePresetButton.target = self
+        duplicatePresetButton.action = #selector(duplicatePreset)
+        deletePresetButton.target = self
+        deletePresetButton.action = #selector(deletePreset)
+        savePresetButton.target = self
+        savePresetButton.action = #selector(savePreset)
+        [createPresetButton, duplicatePresetButton, deletePresetButton, savePresetButton].forEach {
+            SetupInterfaceStyle.applyActionStyle(to: $0, primary: $0 === savePresetButton, compact: true)
+        }
+
+        let pickerTitle = NSTextField(labelWithString: "当前配置")
+        pickerTitle.font = .systemFont(ofSize: 13, weight: .semibold)
+        let pickerRow = NSStackView(views: [pickerTitle, presetPicker])
+        pickerRow.orientation = .horizontal
+        pickerRow.alignment = .centerY
+        pickerRow.spacing = 10
+        pickerTitle.widthAnchor.constraint(equalToConstant: 66).isActive = true
+        presetPicker.widthAnchor.constraint(equalToConstant: 260).isActive = true
+
+        let nameTitle = NSTextField(labelWithString: "名称")
+        nameTitle.font = .systemFont(ofSize: 13, weight: .semibold)
+        let nameRow = NSStackView(views: [nameTitle, presetNameField])
+        nameRow.orientation = .horizontal
+        nameRow.alignment = .centerY
+        nameRow.spacing = 10
+        nameTitle.widthAnchor.constraint(equalToConstant: 66).isActive = true
+        presetNameField.widthAnchor.constraint(equalToConstant: 260).isActive = true
+
+        let configurationCard = NSView()
+        SetupInterfaceStyle.applySurface(to: configurationCard, radius: 20, emphasized: true)
+        let buttonSpacer = NSView()
+        let buttonRow = NSStackView(
+            views: [createPresetButton, duplicatePresetButton, deletePresetButton, buttonSpacer, savePresetButton]
+        )
+        buttonRow.orientation = .horizontal
+        buttonRow.alignment = .centerY
+        buttonRow.spacing = 8
+        buttonSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1).isActive = true
+
+        presetStateLabel.font = .systemFont(ofSize: 11)
+        presetStateLabel.textColor = .secondaryLabelColor
+        presetStateLabel.maximumNumberOfLines = 2
+
+        let configurationStack = NSStackView(
+            views: [pickerRow, nameRow, buttonRow, presetStateLabel]
+        )
+        configurationStack.translatesAutoresizingMaskIntoConstraints = false
+        configurationStack.orientation = .vertical
+        configurationStack.alignment = .leading
+        configurationStack.spacing = 10
+        configurationCard.addSubview(configurationStack)
+        NSLayoutConstraint.activate([
+            configurationStack.leadingAnchor.constraint(equalTo: configurationCard.leadingAnchor, constant: 18),
+            configurationStack.trailingAnchor.constraint(equalTo: configurationCard.trailingAnchor, constant: -18),
+            configurationStack.topAnchor.constraint(equalTo: configurationCard.topAnchor, constant: 16),
+            configurationStack.bottomAnchor.constraint(equalTo: configurationCard.bottomAnchor, constant: -16),
+            pickerRow.widthAnchor.constraint(equalTo: configurationStack.widthAnchor),
+            nameRow.widthAnchor.constraint(equalTo: configurationStack.widthAnchor),
+            buttonRow.widthAnchor.constraint(equalTo: configurationStack.widthAnchor),
+            presetStateLabel.widthAnchor.constraint(equalTo: configurationStack.widthAnchor),
+        ])
+
+        let retainedLabel = NSTextField(
+            wrappingLabelWithString: "保留项：语音键始终用于按住说话；菜单键始终保留 macOS 原生鼠标右键。自定义快捷键只由已校准的目标遥控器触发。"
+        )
+        retainedLabel.font = .systemFont(ofSize: 11)
+        retainedLabel.textColor = .secondaryLabelColor
+        retainedLabel.maximumNumberOfLines = 3
+        let retainedCard = NSView()
+        SetupInterfaceStyle.applySurface(to: retainedCard, radius: 16)
+        retainedLabel.translatesAutoresizingMaskIntoConstraints = false
+        retainedCard.addSubview(retainedLabel)
+        NSLayoutConstraint.activate([
+            retainedLabel.leadingAnchor.constraint(equalTo: retainedCard.leadingAnchor, constant: 16),
+            retainedLabel.trailingAnchor.constraint(equalTo: retainedCard.trailingAnchor, constant: -16),
+            retainedLabel.topAnchor.constraint(equalTo: retainedCard.topAnchor, constant: 12),
+            retainedLabel.bottomAnchor.constraint(equalTo: retainedCard.bottomAnchor, constant: -12),
+        ])
+
+        let mappingsHeader = buildSectionHeader(
+            title: "按钮映射",
+            detail: "保存后，所选配置会用于下一次启动；运行中按 TV 切换时会同步记住目标配置。"
+        )
+        let mappingStack = NSStackView()
+        mappingStack.orientation = .vertical
+        mappingStack.alignment = .leading
+        mappingStack.spacing = 8
+        for button in RemoteButton.allCases where button.isUserEditable {
+            let row = ButtonMappingRowView(button: button)
+            row.onBindingChanged = { [weak self] binding in
+                self?.updateDraftBinding(binding, for: button)
+            }
+            row.onShortcutRequested = { [weak self] in
+                self?.recordShortcut(for: button)
+            }
+            mappingRows[button] = row
+            mappingStack.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: mappingStack.widthAnchor).isActive = true
+        }
+
+        let stack = NSStackView(
+            views: [sectionHeader, configurationCard, retainedCard, mappingsHeader, mappingStack]
+        )
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 12
+        [sectionHeader, configurationCard, retainedCard, mappingsHeader, mappingStack].forEach {
+            $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
+        refreshPresetEditor()
+        return stack
+    }
+
+    private func refreshPresetEditor() {
+        let allPresets = presetCatalog.allPresets
+        presetPicker.removeAllItems()
+        for preset in allPresets {
+            let item = NSMenuItem(title: preset.name, action: nil, keyEquivalent: "")
+            item.representedObject = preset.id
+            presetPicker.menu?.addItem(item)
+        }
+        if let selectedIndex = presetPicker.itemArray.firstIndex(where: {
+            ($0.representedObject as? String) == selectedPresetID
+        }) {
+            presetPicker.selectItem(at: selectedIndex)
+        }
+
+        let storageWritable: Bool
+        if case .unsupportedVersion = presetCatalogLoadState {
+            storageWritable = false
+        } else {
+            storageWritable = true
+        }
+        let editable = storageWritable && !draftPreset.isBuiltIn
+        presetNameField.stringValue = draftPreset.name
+        presetNameField.isEnabled = editable
+        duplicatePresetButton.isEnabled = storageWritable
+        createPresetButton.isEnabled = storageWritable
+        deletePresetButton.isEnabled = editable
+        savePresetButton.isEnabled = editable && hasUnsavedPresetChanges
+        presetPicker.isEnabled = storageWritable
+
+        let targets = allPresets.filter { $0.id != draftPreset.id }
+        for (button, row) in mappingRows {
+            row.update(
+                binding: draftPreset.binding(for: button),
+                targetPresets: targets,
+                editable: editable
+            )
+        }
+
+        switch presetCatalogLoadState {
+        case .defaults:
+            presetStateLabel.stringValue =
+                draftPreset.isBuiltIn
+                ? "官方默认配置为只读。点击“新建”或“复制”创建自己的配置。"
+                : "新配置尚未写入本地文件。"
+        case .loaded:
+            if draftPreset.isBuiltIn {
+                presetStateLabel.stringValue = "官方默认配置为只读。点击“新建”或“复制”创建自己的配置。"
+            } else if hasUnsavedPresetChanges {
+                presetStateLabel.stringValue = "有未保存修改。保存后才会用于下一次启动。"
+            } else {
+                presetStateLabel.stringValue = "已保存到本机私有配置。TV 的切换目标会在运行中立即生效。"
+            }
+        case .recoveredInvalid(let url):
+            presetStateLabel.stringValue = "已隔离损坏配置并恢复默认：\(url.lastPathComponent)"
+        case .unsupportedVersion(let version):
+            presetStateLabel.stringValue = "检测到较新的按键配置 schema v\(version)，为避免覆盖，当前只读。"
+        }
+    }
+
+    @objc private func presetSelectionChanged() {
+        guard let nextID = presetPicker.selectedItem?.representedObject as? String,
+            nextID != selectedPresetID
+        else { return }
+        if hasUnsavedPresetChanges {
+            let alert = NSAlert()
+            alert.messageText = "保存当前配置修改？"
+            alert.informativeText = "切换配置前，需要决定是否保存当前编辑内容。"
+            alert.addButton(withTitle: "保存并切换")
+            alert.addButton(withTitle: "放弃修改")
+            alert.addButton(withTitle: "取消")
+            switch alert.runModal() {
+            case .alertFirstButtonReturn:
+                guard persistDraft() else {
+                    refreshPresetEditor()
+                    return
+                }
+            case .alertSecondButtonReturn:
+                break
+            default:
+                refreshPresetEditor()
+                return
+            }
+        }
+        selectPreset(id: nextID)
+    }
+
+    @objc private func createPreset() {
+        guard prepareForNewPreset() else { return }
+        createUserPreset(from: .pointer, name: "新配置")
+    }
+
+    @objc private func duplicatePreset() {
+        guard prepareForNewPreset() else { return }
+        createUserPreset(from: draftPreset, name: "\(draftPreset.name) 副本")
+    }
+
+    @objc private func deletePreset() {
+        guard !draftPreset.isBuiltIn else { return }
+        let alert = NSAlert()
+        alert.messageText = "删除“\(draftPreset.name)”？"
+        alert.informativeText = "删除后不可恢复。若另一配置的 TV 正在跳转到它，删除会被安全拒绝。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "删除")
+        alert.addButton(withTitle: "取消")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let remaining = presetCatalog.userPresets.filter { $0.id != draftPreset.id }
+        let nextCatalog = ButtonPresetCatalog(userPresets: remaining)
+        do {
+            try nextCatalog.validate()
+            try presetStore.save(nextCatalog)
+            presetCatalog = nextCatalog
+            presetCatalogLoadState = .loaded
+            hasUnsavedPresetChanges = false
+            selectPreset(id: ButtonPreset.pointer.id)
+        } catch {
+            showError(title: "配置没有删除", message: error.localizedDescription)
+            refreshPresetEditor()
+        }
+    }
+
+    @objc private func savePreset() {
+        _ = persistDraft()
+    }
+
+    func controlTextDidChange(_ obj: Notification) {
+        guard obj.object as? NSTextField === presetNameField,
+            !draftPreset.isBuiltIn
+        else { return }
+        draftPreset = ButtonPreset(
+            id: draftPreset.id,
+            name: presetNameField.stringValue,
+            bindings: draftPreset.bindings,
+            requiredButtons: draftPreset.requiredButtons,
+            isBuiltIn: false
+        )
+        hasUnsavedPresetChanges = true
+        savePresetButton.isEnabled = true
+        presetStateLabel.stringValue = "有未保存修改。保存后才会用于下一次启动。"
+    }
+
+    private func updateDraftBinding(_ binding: ButtonBinding, for button: RemoteButton) {
+        guard !draftPreset.isBuiltIn else { return }
+        var bindings = draftPreset.bindings
+        bindings[button] = binding
+        draftPreset = ButtonPreset(
+            id: draftPreset.id,
+            name: presetNameField.stringValue,
+            bindings: bindings,
+            requiredButtons: draftPreset.requiredButtons,
+            isBuiltIn: false
+        )
+        hasUnsavedPresetChanges = true
+        refreshPresetEditor()
+    }
+
+    private func recordShortcut(for button: RemoteButton) {
+        guard !draftPreset.isBuiltIn, button.isUserEditable else { return }
+        let recorder = ShortcutRecorderView(frame: .zero)
+        let alert = NSAlert()
+        alert.messageText = "录制 \(button.displayName) 的快捷键"
+        alert.informativeText = "按下组合后点“使用快捷键”。米遥会在松手和异常退出时主动释放全部修饰键。"
+        alert.accessoryView = recorder
+        alert.addButton(withTitle: "使用快捷键")
+        alert.addButton(withTitle: "取消")
+        alert.window.initialFirstResponder = recorder
+        DispatchQueue.main.async { [weak recorder] in
+            recorder?.window?.makeFirstResponder(recorder)
+        }
+        guard alert.runModal() == .alertFirstButtonReturn, let shortcut = recorder.recordedShortcut else {
+            refreshPresetEditor()
+            return
+        }
+        updateDraftBinding(.keyboardShortcut(shortcut), for: button)
+    }
+
+    private func prepareForNewPreset() -> Bool {
+        guard !hasUnsavedPresetChanges else {
+            let alert = NSAlert()
+            alert.messageText = "请先保存当前配置"
+            alert.informativeText = "创建或复制前，先保存或切换并放弃当前修改。"
+            alert.addButton(withTitle: "保存")
+            alert.addButton(withTitle: "取消")
+            guard alert.runModal() == .alertFirstButtonReturn else { return false }
+            return persistDraft()
+        }
+        return true
+    }
+
+    private func createUserPreset(from source: ButtonPreset, name: String) {
+        let preset = ButtonPreset(
+            id: "user.\(UUID().uuidString.lowercased())",
+            name: name,
+            bindings: source.bindings,
+            requiredButtons: ButtonPreset.pointer.requiredButtons,
+            isBuiltIn: false
+        )
+        let nextCatalog = ButtonPresetCatalog(userPresets: presetCatalog.userPresets + [preset])
+        do {
+            try nextCatalog.validate()
+            try presetStore.save(nextCatalog)
+            presetCatalog = nextCatalog
+            presetCatalogLoadState = .loaded
+            selectedPresetID = preset.id
+            draftPreset = preset
+            hasUnsavedPresetChanges = false
+            try persistSelectedPresetID(preset.id)
+            refreshPresetEditor()
+        } catch {
+            showError(title: "配置没有创建", message: error.localizedDescription)
+        }
+    }
+
+    private func selectPreset(id: String) {
+        guard let preset = try? presetCatalog.preset(id: id) else {
+            refreshPresetEditor()
+            return
+        }
+        do {
+            try persistSelectedPresetID(id)
+            selectedPresetID = id
+            draftPreset = preset
+            hasUnsavedPresetChanges = false
+            refreshPresetEditor()
+        } catch {
+            showError(title: "当前配置没有保存", message: error.localizedDescription)
+            refreshPresetEditor()
+        }
+    }
+
+    private func persistDraft() -> Bool {
+        guard !draftPreset.isBuiltIn else { return true }
+        let name = presetNameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let savedPreset = ButtonPreset(
+            id: draftPreset.id,
+            name: name,
+            bindings: draftPreset.bindings,
+            requiredButtons: draftPreset.requiredButtons,
+            isBuiltIn: false
+        )
+        var userPresets = presetCatalog.userPresets
+        guard let index = userPresets.firstIndex(where: { $0.id == savedPreset.id }) else {
+            showError(title: "配置没有保存", message: "找不到要保存的配置")
+            return false
+        }
+        userPresets[index] = savedPreset
+        let nextCatalog = ButtonPresetCatalog(userPresets: userPresets)
+        do {
+            try nextCatalog.validate()
+            try presetStore.save(nextCatalog)
+            presetCatalog = nextCatalog
+            presetCatalogLoadState = .loaded
+            draftPreset = savedPreset
+            hasUnsavedPresetChanges = false
+            refreshPresetEditor()
+            return true
+        } catch {
+            showError(title: "配置没有保存", message: error.localizedDescription)
+            return false
+        }
+    }
+
+    private func persistSelectedPresetID(_ id: String) throws {
+        if case .unsupportedVersion(let version) = preferencesLoadState {
+            throw AppPreferencesError.unsupportedVersion(version)
+        }
+        var updated = preferences
+        updated.selectedPresetID = id
+        try preferencesStore.save(updated)
+        preferences = updated
+        preferencesLoadState = .loaded
     }
 
     private func buildHeroView() -> NSView {

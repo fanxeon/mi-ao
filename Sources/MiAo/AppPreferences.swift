@@ -7,7 +7,7 @@ enum SubmissionMode: String, Codable, CaseIterable {
 }
 
 struct AppPreferences: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion = currentSchemaVersion
     var hasCompletedSetup = false
@@ -17,6 +17,59 @@ struct AppPreferences: Codable, Equatable {
     var preferredPeripheralIdentifier: UUID?
 
     static let defaults = AppPreferences()
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case hasCompletedSetup
+        case submissionMode
+        case buttonControlEnabled
+        case selectedPresetID
+        case preferredPeripheralIdentifier
+    }
+
+    init(
+        schemaVersion: Int = currentSchemaVersion,
+        hasCompletedSetup: Bool = false,
+        submissionMode: SubmissionMode = .codex,
+        buttonControlEnabled: Bool = true,
+        selectedPresetID: String = "pointer",
+        preferredPeripheralIdentifier: UUID? = nil
+    ) {
+        self.schemaVersion = schemaVersion
+        self.hasCompletedSetup = hasCompletedSetup
+        self.submissionMode = submissionMode
+        self.buttonControlEnabled = buttonControlEnabled
+        self.selectedPresetID = selectedPresetID
+        self.preferredPeripheralIdentifier = preferredPeripheralIdentifier
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion =
+            try container.decodeIfPresent(Int.self, forKey: .schemaVersion)
+            ?? Self.currentSchemaVersion
+        hasCompletedSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedSetup) ?? false
+        submissionMode = try container.decodeIfPresent(SubmissionMode.self, forKey: .submissionMode) ?? .codex
+        buttonControlEnabled = try container.decodeIfPresent(Bool.self, forKey: .buttonControlEnabled) ?? true
+        selectedPresetID = try container.decodeIfPresent(String.self, forKey: .selectedPresetID) ?? "pointer"
+        preferredPeripheralIdentifier = try container.decodeIfPresent(
+            UUID.self,
+            forKey: .preferredPeripheralIdentifier
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(hasCompletedSetup, forKey: .hasCompletedSetup)
+        try container.encode(submissionMode, forKey: .submissionMode)
+        try container.encode(buttonControlEnabled, forKey: .buttonControlEnabled)
+        try container.encode(selectedPresetID, forKey: .selectedPresetID)
+        try container.encodeIfPresent(
+            preferredPeripheralIdentifier,
+            forKey: .preferredPeripheralIdentifier
+        )
+    }
 
     var requiresAccessibility: Bool {
         submissionMode == .codex || buttonControlEnabled

@@ -40,7 +40,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Local toolchain | Swift 6.0+, Xcode Command Line Tools, Homebrew, and `whisper.cpp` |
 | Permissions | Bluetooth is core-required; Accessibility is required only for submission or button control; Launch at Login is always optional |
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
-| Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
+| Button control | The default D-pad toggles between pointer movement and arrow keys; saved custom configurations can be selected and reached from TV |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
 | Delivery | **Source-first alpha**; one local build installs a self-contained daily runtime and a real-state menu-bar GUI |
 
@@ -74,6 +74,10 @@ A hardware profile identifies physical buttons; a preset decides what they do. F
 
 > **Mode invariant:** `TV` changes only the D-pad between pointer movement and arrow keys. Center, Back, HOME, Volume, Voice, Power, and Menu behave identically in both modes.
 
+The setup guide's **Button Configurations** page can create or copy a preset, map each supported button to a built-in action or recorded standard keyboard shortcut, then save and select it for the next launch. The default `pointer` preset stays read-only; Voice remains hold-to-talk and Menu remains native macOS right-click. In a custom preset, `TV` can explicitly target another saved preset: the whole mapping switches immediately and the target becomes the saved current preset for the next launch.
+
+Presets live in `~/Library/Application Support/mi-ao/button-presets.json` (directory `0700`, file `0600`). MI-AO rejects a TV transition without a valid target and dangerous shortcuts such as `Cmd-Q`, `Cmd-Option-Escape`, and `Cmd-Control-Q`; it actively releases injected modifiers on release and abnormal shutdown. See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the full contract.
+
 > **Status boundary:** new-format calibration confirms D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down on Xiaomi Remote 2 Pro firmware 2671. MI-AO takes over these twelve keys and blocks their native side effects. Menu is excluded from MI-AO mapping and keeps the native macOS right-click. Volume task navigation passed bidirectional hardware acceptance; HOME click arbitration, mode switching, and Power still require per-action acceptance.
 
 ![Default MI-AO button mapping on macOS](docs/assets/mi-ao-button-map.png)
@@ -100,7 +104,7 @@ The source-first alpha keeps secure ad-hoc signing. After a source update change
 
 ### 2. Follow the setup guide
 
-The guide has four pages: Start, Permissions & Connection, Control Preferences, and Button Guide. Choose automatic Codex submission, remote button control, and optional Launch at Login first; then resolve the required macOS, Whisper, MI-AO Accessibility, Bluetooth, Codex, and safe-launcher checks. The Button Guide includes the default mapping image. Only “Required” and “Required by enabled features” block startup; Accessibility and Codex become optional when submission and button control are both off. See [Permissions and optional features](docs/PERMISSIONS_EN.md).
+The guide has five pages: Start, Permissions & Connection, Control Preferences, Button Configurations, and Button Guide. Choose automatic Codex submission, remote button control, and optional Launch at Login first; then resolve the required macOS, Whisper, MI-AO Accessibility, Bluetooth, Codex, and safe-launcher checks. Button Configurations saves, selects, and edits custom presets; Button Guide includes the default mapping image. Only “Required” and “Required by enabled features” block startup; Accessibility and Codex become optional when submission and button control are both off. See [Permissions and optional features](docs/PERMISSIONS_EN.md).
 
 If a busy Codex process lacks the per-process compatibility argument, the guide explains the requirement and does not restart it. A restart occurs only after explicit confirmation. The argument changes no Codex preference, opens no debugging port and expires when Codex quits. See the [complete pairing and first connection guide](docs/PAIRING_EN.md).
 

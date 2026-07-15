@@ -124,7 +124,7 @@ final class ButtonLearner {
     }
 
     func start() throws {
-        selectedPreset = try ButtonPreset.named(configuration.buttonPresetID)
+        selectedPreset = try ButtonPresetStore().load().catalog.preset(id: configuration.buttonPresetID)
         if let buttonID = configuration.buttonID,
             !Self.allSteps.contains(where: { $0.id == buttonID })
         {

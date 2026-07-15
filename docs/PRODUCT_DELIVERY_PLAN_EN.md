@@ -102,24 +102,26 @@ KeyboardShortcutSpec
 - [x] Brand assets copied into the app bundle and verified by build tests.
 - [ ] Install the rebuilt icon in a planned batch update so the current Accessibility authorization is not disrupted mid-work.
 
-### P1 · Preferences v1 and daily startup
+### P1 · Preferences v2 and daily startup
 
 - [x] Add schema-versioned `AppPreferences` with atomic save, private permissions, corrupted-state quarantine, and future-schema preservation.
 - [x] Add a real `SMAppService.mainApp` Launch at Login toggle with enabled, requires-approval, disabled, and unavailable states.
 - [x] Persist automatic Codex submission versus transcription-only mode and the remote-button-control switch.
 - [ ] Complete installed-app enable, relogin launch, disable, and ad-hoc update re-registration acceptance.
 
-### P2 · Custom-action core
+### P2 · Custom-action core (in progress)
 
-- [ ] Extend the fixed `ButtonAction` contract with versioned `KeyboardShortcutSpec`.
-- [ ] Add the user-preset store, import/export, migration, and reset.
-- [ ] Extend the executor with guaranteed modifier cleanup and interruption handling.
-- [ ] Add conflict, reserved-shortcut, and malicious-import tests.
+- [x] Extend the fixed `ButtonAction` contract with versioned `KeyboardShortcutSpec` and an explicit TV preset target.
+- [x] Add a private user-preset store with atomic save, corruption quarantine, schema protection, and official-default fallback.
+- [x] Extend the executor with guaranteed modifier cleanup and interruption handling.
+- [x] Add TV-target, reserved-shortcut, and safe-preset tests.
+- [ ] Add import/export and cross-version migration.
 
-### P3 · Buttons & Shortcuts GUI
+### P3 · Buttons & Shortcuts GUI (in progress)
 
-- [ ] Add the diagram/list editor with real-button highlight, shortcut recording, one-shot testing, warnings, and hot reload.
-- [ ] Support duplicate, rename, delete, import, export, and reset.
+- [x] Add a Button Configurations tab with an accessible text list and separate button-map guide.
+- [x] Support create, duplicate, rename, delete, action selection, shortcut recording, save/select, and TV target selection.
+- [ ] Add real-button highlight, one-shot testing, import/export, reset, and cross-app hot reload.
 - [ ] Complete Chinese/English copy, VoiceOver, keyboard navigation, high contrast, and 390 px narrow-window acceptance.
 
 ### P4 · Device management and resilient connection
@@ -147,8 +149,8 @@ KeyboardShortcutSpec
 ## Immediate next work
 
 1. Complete the installed-app `SMAppService` acceptance cycle, including an ad-hoc update.
-2. Implement the versioned `KeyboardShortcutSpec`, user-preset store, and modifier cleanup.
-3. Pass core and import-safety tests before building the shortcut GUI.
+2. Complete real-device acceptance for a two-preset TV transition and shortcut release/interruption cleanup.
+3. Add import/export, one-shot testing, and cross-app hot reload.
 
 MI-AO is “fully user-ready” only when daily use requires no terminal, every success comes from real system/device evidence, failure paths remain actionable, and custom shortcuts never affect the Mac keyboard or leave modifier keys held.
 

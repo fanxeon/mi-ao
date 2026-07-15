@@ -48,6 +48,30 @@ Startup defaults to pointer mode. A calibrated `TV` press switches to directiona
 
 On Xiaomi Remote 2 Pro firmware 2671, `TV` and Power are confirmed as Keyboard Usage `0x35` and Keyboard Power `0x66`; neither is infrared-only. Volume Up/Down are confirmed as `0x80` / `0x81` and invoke Codex's Previous Task / Next Task menu items directly through Accessibility. MI-AO does not synthesize `Cmd+Shift+[` / `Cmd+Shift+]` or any modifier for these actions. Power activates an existing Codex process or locates the installed `com.openai.codex` app and requests launch. Other remotes still require independent calibration and must not reuse these Usage values blindly.
 
+## Custom button configurations
+
+Open **Settings & Diagnostics → Button Configurations** in the app. The official `Default · Pointer` preset is always read-only so a safe baseline remains available; use **New** to start from it or **Duplicate** to start from the selected preset. User presets can be renamed and assign supported D-pad, Center, Back, HOME, Volume, TV, and Power buttons to built-in actions or a recorded standard keyboard shortcut.
+
+Saved presets are written to:
+
+```text
+~/Library/Application Support/mi-ao/button-presets.json
+```
+
+MI-AO writes the document atomically with directory mode `0700` and file mode `0600`. A damaged document is quarantined as `button-presets.invalid-<UTC>.json` and the official default is loaded; a newer schema remains untouched and read-only in the GUI rather than being overwritten by an older app.
+
+### TV preset transitions
+
+TV in the default `pointer` preset still changes only the D-pad mode. A custom preset may select **Switch to another configuration** for TV and then choose a different saved target. A TV press switches to that target immediately, resets the D-pad to pointer mode, and persists that target as the current preset for the next launch. MI-AO refuses self-references, deleting a target still used by another preset, and saving a missing target.
+
+### Shortcut safety boundary
+
+- Voice remains hold-to-talk and Menu remains native macOS right-click; neither is customizable.
+- A shortcut is triggered only through the calibrated, exact remote HID service. Physical Mac keyboard events never enter the MI-AO button path.
+- `Cmd-Q`, `Cmd-Option-Escape`, and `Cmd-Control-Q` are rejected to avoid an accidental quit, force-quit panel, or lock screen.
+- MI-AO presses modifiers before the target key and releases them in reverse order on release, safe exit, BLE-session stop, and runtime interruption so Option, Control, Command, and Shift cannot remain down.
+- This first version does not yet include import/export, cross-app hot reload, or test recording. A saved selection applies to the next safe launch; a runtime TV transition requires no restart.
+
 ## Built-in profile and optional calibration
 
 Xiaomi Remote 2 Pro firmware 2671 loads `Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist` by default, so a clean install does not need a local report. The profile contains only verified device identity and physical Usages—never mouse or Codex actions.

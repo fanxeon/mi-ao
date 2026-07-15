@@ -77,8 +77,26 @@ import Testing
 
     let snapshot = AppPreferencesStore(fileURL: fileURL).load()
     #expect(snapshot.preferences == .defaults)
-    #expect(snapshot.state == .unsupportedVersion(2))
+    #expect(snapshot.state == .unsupportedVersion(AppPreferences.currentSchemaVersion + 1))
     #expect(FileManager.default.fileExists(atPath: fileURL.path))
+}
+
+@Test func appPreferencesMigrateV1WithoutPresetSelection() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mi-ao-preferences-v1-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let fileURL = root.appendingPathComponent("preferences.json")
+    try Data(
+        """
+        {"schemaVersion":1,"hasCompletedSetup":true,"submissionMode":"codex","buttonControlEnabled":true}
+        """.utf8
+    ).write(to: fileURL)
+
+    let snapshot = AppPreferencesStore(fileURL: fileURL).load()
+    #expect(snapshot.state == .loaded)
+    #expect(snapshot.preferences.selectedPresetID == "pointer")
+    #expect(snapshot.preferences.hasCompletedSetup)
 }
 
 private func permissions(at url: URL) throws -> Int {

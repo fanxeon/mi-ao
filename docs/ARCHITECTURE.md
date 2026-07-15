@@ -24,12 +24,12 @@ flowchart LR
     REMOTE --> NEUTRAL["remote-mapping.sh<br/>十二键→No Event<br/>菜单原生右键"]
     NEUTRAL --> MACOS["macOS 前台事件<br/>无原生箭头/按键副作用"]
     HID --> CAL["confirmed_calibration<br/>Usage → RemoteButton"]
-    CAL --> PRESET["ButtonPreset<br/>RemoteButton → ButtonAction"]
-    PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 方向键 / Codex"]
-    PRESET --> FUTURE["未来 Codex / 演示执行器"]
+    CAL --> PRESET["ButtonPresetCatalog<br/>RemoteButton → Binding"]
+    PRESET --> STORE["button-presets.json<br/>0700 / 0600 / 原子写入"]
+    PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 快捷键 / Codex / TV 跳转"]
 ```
 
-硬件档案与动作预设是两个独立合同。`ButtonProfileStore` 只合并人工确认且与设备 Vendor/Product 一致的物理映射；`ButtonPreset` 决定当前动作。默认 `pointer` 缺少方向四键、确认或返回中任一必需项，或发现两个按钮共用同一 Usage 时，运行时拒绝启动实体按键动作，语音桥接不受影响。
+硬件档案与动作预设是两个独立合同。`ButtonProfileStore` 只合并人工确认且与设备 Vendor/Product 一致的物理映射；`ButtonPresetCatalog` 决定当前动作。默认 `pointer` 缺少方向四键、确认或返回中任一必需项，或发现两个按钮共用同一 Usage 时，运行时拒绝启动实体按键动作，语音桥接不受影响。用户方案存于 `button-presets.json`；默认方案只读，用户方案通过 `ButtonBinding` 表达内置动作、标准键盘快捷键或 TV 到另一方案的显式跳转。
 
 ## 模块边界
 
@@ -44,10 +44,10 @@ flowchart LR
 - `SetupEnvironment.swift` / `SetupGuideWindowController.swift`：首次设置的六项真实环境检查、系统授权入口、安装来源合同，以及通过既有启动门禁开始运行；不自行伪造授权、配对或连接成功。
 - `MenuBarController.swift`：状态图标与轻量 popover GUI；显示连接、录音、处理、提交和错误状态，并提供聚焦 Codex、打开记录、设置诊断和安全退出入口。
 - `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
-- `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
+- `ButtonPreset.swift` / `ButtonPresetStore.swift`：与硬件无关的映射套装、`KeyboardShortcutSpec`、TV 跳转规则和私有方案库；内置默认 `pointer` 永远只读，损坏配置隔离后安全回退。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
-- `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
-- `ButtonActionExecutor.swift`：鼠标移动、方向键/Return/Escape、模式切换，以及 Codex 启动、聚焦和上/下一个会话。
+- `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发，并将 TV 方案切换持久化为当前选择。
+- `ButtonActionExecutor.swift`：鼠标移动、方向键/Return/Escape、受控快捷键按下/释放、模式切换、TV 方案跳转，以及 Codex 启动、聚焦和上/下一个会话。
 - `remote-mapping.sh` / `run-with-mapping.sh`：十二个接管键到 HID `No Event` 的设备专属中性化；菜单不进入映射并沿用 macOS 原生鼠标右键。包含 v1/v2/v3 迁移、单实例锁、所有权状态、回读验证和退出恢复。
 - `start.sh` / `stop.sh`：日常后台启停；运行锁记录真实 App PID，菜单退出、命令停止和外层包装器都会触发同一所有权校验恢复。即使启动终端或包装器意外消失，App 的正常退出路径仍会恢复映射。
 - `Configuration.swift`：CLI 模式和安全选项；显式 `setup` 或双击 App 进入向导，显式 `run` 才进入桥接运行时。

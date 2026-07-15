@@ -41,6 +41,7 @@ BUILT_RUNTIME="$BUILD_APP/Contents/Resources/Runtime"
 [[ -x "$BUILT_RUNTIME/scripts/run-with-mapping.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/repair-runtime.sh" ]]
 "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" --help | grep -q "setup"
+otool -L "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" | grep -q "ServiceManagement.framework"
 MI_AO_APP_BUNDLE="$BUILD_APP" "$BUILT_RUNTIME/scripts/run.sh" --help | grep -q "setup"
 
 RELOCATED_APP="$TEMP_ROOT/Relocated/米遥.app"

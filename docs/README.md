@@ -11,6 +11,7 @@
 | [遥控器配对与首次连接](PAIRING.md) / [Remote pairing and first connection](PAIRING_EN.md) | 菜单键 + HOME 配对、macOS 连接、权限、首次语音测试与重连 |
 | [快速开始](QUICKSTART.md) / [Quick start](QUICKSTART_EN.md) | 从安装、配对到第一次语音提交 |
 | [完整使用说明](USAGE.md) / [Usage guide](USAGE_EN.md) | 日常启动、操作模式、成功日志、更新和数据管理 |
+| [权限与可选功能](PERMISSIONS.md) / [Permissions](PERMISSIONS_EN.md) | 必须、按功能必需、可选权限和登录时启动边界 |
 | [按键预设与默认指针模式](BUTTON_PRESETS.md) / [Button presets](BUTTON_PRESETS_EN.md) | 两层映射、默认按键表、校准、启动和安全回退 |
 | [默认按键示意图](assets/mi-ao-button-map.png) | 小米 2 Pro 在 macOS 上的完整按钮功能图 |
 | [兼容性矩阵](COMPATIBILITY.md) | 真实验证的遥控器、固件和协议证据 |

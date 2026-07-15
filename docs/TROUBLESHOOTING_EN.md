@@ -66,6 +66,13 @@ This is an identity change after rebuilding the source-first ad-hoc app, not a m
 
 The guide's “修复权限” action opens the correct pane and reveals the current app in Finder. `./scripts/authorize.sh` now opens that real app guide instead of reporting the potentially misleading state of a Terminal-launched child process.
 
+## Launch at Login is unavailable or requires approval
+
+- “Requires approval” means the optional request still needs approval in System Settings → General → Login Items & Extensions.
+- “Unavailable” usually means the app is running from `dist` or `.build`, or its installation/signature cannot be registered. Reinstall to `~/Applications/米遥.app`.
+- An ad-hoc update may require the old login item to be disabled and the current app registered again.
+- Manual launch remains available. MI-AO reports the real `SMAppService` state and never substitutes a local success flag. See [Permissions](PERMISSIONS_EN.md).
+
 ## Voice works but pointer mode does not start
 
 This is a safe fallback, not a voice failure. Follow the specific terminal diagnostic:

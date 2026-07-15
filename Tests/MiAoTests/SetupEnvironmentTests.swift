@@ -28,6 +28,43 @@ import Testing
         actionTitle: "request"
     )
     #expect(!SetupEnvironmentReport(checks: incompleteChecks, runtimeActive: false).canStart)
+
+    incompleteChecks[2] = SetupCheck(
+        id: .accessibility,
+        title: "accessibility",
+        detail: "optional",
+        state: .actionRequired,
+        action: .requestAccessibility,
+        actionTitle: "request",
+        requirement: .optional
+    )
+    #expect(SetupEnvironmentReport(checks: incompleteChecks, runtimeActive: false).canStart)
+}
+
+@Test func setupRequirementsFollowEnabledFeatures() {
+    let inspector = SetupEnvironmentInspector()
+    var minimal = AppPreferences.defaults
+    minimal.submissionMode = .transcriptionOnly
+    minimal.buttonControlEnabled = false
+    let minimalReport = inspector.inspect(configuration: Configuration(), preferences: minimal)
+    #expect(minimalReport.check(.accessibility)?.requirement == .optional)
+    #expect(minimalReport.check(.codex)?.requirement == .optional)
+
+    let defaultReport = inspector.inspect(
+        configuration: Configuration(),
+        preferences: .defaults
+    )
+    #expect(defaultReport.check(.accessibility)?.requirement == .featureRequired)
+    #expect(defaultReport.check(.codex)?.requirement == .featureRequired)
+
+    var buttonsOnly = AppPreferences.defaults
+    buttonsOnly.submissionMode = .transcriptionOnly
+    buttonsOnly.buttonControlEnabled = true
+    let buttonsOnlyReport = inspector.inspect(
+        configuration: Configuration(),
+        preferences: buttonsOnly
+    )
+    #expect(buttonsOnlyReport.check(.codex)?.requirement == .featureRequired)
 }
 
 @Test func parsesSetupGuideModeExplicitly() throws {

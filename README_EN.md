@@ -12,7 +12,7 @@
 
 Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
-[English](README_EN.md) · [中文](README.md) · [Development status](docs/DEVELOPMENT_STATUS.md) · [Pair and connect](docs/PAIRING_EN.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Button presets](docs/BUTTON_PRESETS_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
+[English](README_EN.md) · [中文](README.md) · [Development status](docs/DEVELOPMENT_STATUS.md) · [Permissions](docs/PERMISSIONS_EN.md) · [Pair and connect](docs/PAIRING_EN.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Button presets](docs/BUTTON_PRESETS_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -36,7 +36,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Verified hardware | Xiaomi Bluetooth Remote Control 2 Pro, firmware 2671, connected over Bluetooth Low Energy |
 | Target app | Codex for macOS, bundle ID `com.openai.codex` |
 | Local toolchain | Swift 6.0+, Xcode Command Line Tools, Homebrew, and `whisper.cpp` |
-| Permissions | Bluetooth for the remote; Accessibility to verify the Codex composer and run button actions |
+| Permissions | Bluetooth is core-required; Accessibility is required only for submission or button control; Launch at Login is always optional |
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
@@ -98,7 +98,7 @@ The source-first alpha keeps secure ad-hoc signing. After a source update change
 
 ### 2. Follow the setup guide
 
-The guide checks macOS, Whisper and its model, MI-AO Accessibility, Bluetooth, the Codex composer and the safe launcher. Use the card actions to grant system permissions. Choose “配对遥控器”, hold Menu + `HOME` on the Xiaomi Remote 2 Pro, then click Connect in macOS Bluetooth settings.
+The guide first lets you choose automatic Codex submission, remote button control, and optional Launch at Login. It then checks macOS, Whisper, MI-AO Accessibility, Bluetooth, Codex, and the safe launcher. Only “Required” and “Required by enabled features” block startup; Accessibility and Codex become optional when submission and button control are both off. See [Permissions and optional features](docs/PERMISSIONS_EN.md).
 
 If a busy Codex process lacks the per-process compatibility argument, the guide explains the requirement and does not restart it. A restart occurs only after explicit confirmation. The argument changes no Codex preference, opens no debugging port and expires when Codex quits. See the [complete pairing and first connection guide](docs/PAIRING_EN.md).
 
@@ -116,7 +116,7 @@ Daily startup never interrupts a busy Codex process. If Codex is closed, MI-AO l
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 
-Double-click `~/Applications/米遥.app` at any time to reopen the guide. Its Start button still uses the real launch gate and never bypasses button checks. See the [complete usage guide](docs/USAGE_EN.md) for the menu-bar GUI, consecutive speech, transcription-only mode, project vocabulary, updates and cleanup.
+Before setup is completed, double-clicking `~/Applications/米遥.app` opens the guide. After the first successful start, both a manual app launch and optional login launch read the same preferences and execute the same guarded startup path; failure reopens the guide.
 
 ## Compatibility
 
@@ -159,11 +159,11 @@ Read the complete policy in [SECURITY_EN.md](SECURITY_EN.md).
 
 The verified core path is working. MI-AO is currently a **source-first alpha**: it builds and ad-hoc signs the app on the user's own Mac. Until a Developer ID distribution channel exists, the project will not present an unnotarized DMG as a frictionless trusted install.
 
-The current milestone is **P0 complete, with P1 Preferences v1 and Launch at Login next**. See the [development status snapshot](docs/DEVELOPMENT_STATUS.md) for evidence-backed completed, partial, and not-yet-delivered capabilities.
+The current milestone is **P1 partially complete**: Preferences v1, feature-dependent permission gates, transcription/button switches, and the `SMAppService` login-item flow are implemented. The installed-app login-start path still needs one real system acceptance run.
 
 MI-AO now includes menu-bar state, safe background start/stop, duplicate-instance prevention, a non-blocking speech queue, and clipboard concurrency protection. The next milestones are:
 
-- device selection, persisted configuration, and reconnect;
+- device selection, persisted device identity, and complete reconnect feedback;
 - versioned user presets with recorded, tested, importable and exportable custom keyboard shortcuts;
 - mode switching, Power, event-suppression timing, and multi-display acceptance runs;
 - a second Codex-session navigation preset;
@@ -178,7 +178,7 @@ The highest-value contribution is reproducible evidence from new hardware. You c
 
 - contributing a redacted GATT capture for another voice remote;
 - improving ATVV / ADPCM adapters and fixtures;
-- improving device selection, reconnect feedback and login start;
+- improving device selection, reconnect feedback, and installed-app login-start acceptance;
 - improving documentation, diagnostics, and privacy review.
 
 Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims without real hardware evidence are not merged.
@@ -198,6 +198,7 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 - [Roadmap](docs/ROADMAP.md)
 - [Development status snapshot](docs/DEVELOPMENT_STATUS.md)
 - [Product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md)
+- [Permissions and optional features](docs/PERMISSIONS_EN.md)
 
 ## Author, acknowledgments and license
 

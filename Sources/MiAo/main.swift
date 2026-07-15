@@ -6,6 +6,23 @@ import Foundation
 var runtimeSessionNeedsCleanup = false
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
+    if configuration.mode == .launch {
+        let snapshot = AppPreferencesStore().load()
+        do {
+            let message = try AppRuntimeLauncher().start(preferences: snapshot.preferences)
+            if !message.isEmpty { print(message) }
+            exit(0)
+        } catch {
+            fputs("自动启动失败：\(error.localizedDescription)\n", stderr)
+            let setupWindowController = SetupGuideWindowController(
+                configuration: configuration,
+                standalone: true
+            )
+            setupWindowController.showWindow(nil)
+            NSApplication.shared.run()
+            exit(1)
+        }
+    }
     if configuration.mode == .setup {
         let setupWindowController = SetupGuideWindowController(
             configuration: configuration,

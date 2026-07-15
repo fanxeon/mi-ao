@@ -160,7 +160,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 if self.peripheral == nil {
                     self.fatal("没有发现匹配的遥控器。先运行 scan，或用 --name/--identifier 指定设备。")
                 }
-            case .setup, .doctor, .authorize, .checkButtons, .learnButtons, .debugButtons:
+            case .launch, .setup, .doctor, .authorize, .checkButtons, .learnButtons,
+                .debugButtons:
                 break
             }
         }

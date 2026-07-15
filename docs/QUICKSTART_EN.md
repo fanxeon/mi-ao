@@ -29,15 +29,19 @@ MI-AO currently uses a local source build and ad-hoc signing. Do not download un
 
 Complete the Bluetooth card in the setup guide and choose “配对遥控器”. On the Xiaomi Bluetooth Remote Control 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect and wait for the Connected status. Pairing shortcuts for other remotes may differ; see the device manual and the [complete pairing guide](PAIRING_EN.md).
 
-## 3. Complete the six real checks
+## 3. Choose features and complete the real checks
 
-The guide checks macOS, the local speech engine, MI-AO Accessibility, Bluetooth, the Codex composer and the safe launcher. Use each card action until every check is green.
+First choose automatic Codex submission, remote button control, and optional Launch at Login. The guide labels macOS, the local engine, Accessibility, Bluetooth, Codex, and the bundled launcher as Required, Required by enabled features, or Optional.
 
-Grant Accessibility to the installed MI-AO app, not a temporary binary inside `.build`. A closed Codex app is launched with its built-in Chromium accessibility argument. If a busy process lacks the argument, the guide reports it and waits for explicit restart confirmation. The argument affects only that process, changes no preferences and opens no debugging port.
+In the default full mode, Accessibility and Codex are feature-required. Turn off both submission and button control and they immediately become optional. Launch at Login is always optional. See [Permissions and optional features](PERMISSIONS_EN.md).
+
+When Accessibility is required, grant it to the installed MI-AO app, not a temporary binary inside `.build`. Only automatic submission needs Codex composer compatibility. A busy process is never restarted without explicit confirmation.
 
 ## 4A. Start the verified Xiaomi Remote 2 Pro
 
 Choose “连接遥控器并开始”. The guide calls the app-bundled copy of the same real launch gate as `./scripts/start.sh`, closes after success and leaves MI-AO in the menu bar.
+
+The first successful start saves the feature choices to `preferences.json`. Later manual app launches and optional login launches use the same preferences and the same guarded startup path; failure reopens the guide.
 
 Click the menu-bar icon and wait for the ready state. Then hold the remote's voice button, speak and release. The panel also provides Codex focus, recordings, setup diagnostics and safe exit.
 

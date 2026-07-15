@@ -16,6 +16,7 @@ let package = Package(
                 .linkedFramework("ApplicationServices"),
                 .linkedFramework("CoreBluetooth"),
                 .linkedFramework("IOKit"),
+                .linkedFramework("ServiceManagement"),
             ]
         ),
         .testTarget(

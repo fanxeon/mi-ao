@@ -20,6 +20,24 @@ enum SetupCheckState: Equatable {
     case blocked
 }
 
+enum SetupRequirement: Equatable {
+    case required
+    case featureRequired
+    case optional
+
+    var title: String {
+        switch self {
+        case .required: return "必须"
+        case .featureRequired: return "当前功能必需"
+        case .optional: return "可选"
+        }
+    }
+
+    var blocksStart: Bool {
+        self != .optional
+    }
+}
+
 enum SetupCheckAction: Equatable {
     case requestAccessibility
     case requestBluetooth
@@ -37,6 +55,25 @@ struct SetupCheck: Equatable {
     let state: SetupCheckState
     let action: SetupCheckAction?
     let actionTitle: String?
+    let requirement: SetupRequirement
+
+    init(
+        id: SetupCheckID,
+        title: String,
+        detail: String,
+        state: SetupCheckState,
+        action: SetupCheckAction?,
+        actionTitle: String?,
+        requirement: SetupRequirement = .required
+    ) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.state = state
+        self.action = action
+        self.actionTitle = actionTitle
+        self.requirement = requirement
+    }
 }
 
 struct SetupEnvironmentReport: Equatable {
@@ -44,7 +81,8 @@ struct SetupEnvironmentReport: Equatable {
     let runtimeActive: Bool
 
     var canStart: Bool {
-        !runtimeActive && checks.allSatisfy { $0.state == .ready }
+        !runtimeActive
+            && checks.allSatisfy { !$0.requirement.blocksStart || $0.state == .ready }
     }
 
     func check(_ id: SetupCheckID) -> SetupCheck? {
@@ -161,14 +199,20 @@ struct SetupEnvironmentInspector {
         self.fileManager = fileManager
     }
 
-    func inspect(configuration: Configuration) -> SetupEnvironmentReport {
+    func inspect(
+        configuration: Configuration,
+        preferences: AppPreferences = .defaults
+    ) -> SetupEnvironmentReport {
         SetupEnvironmentReport(
             checks: [
                 systemCheck(),
                 speechEngineCheck(configuration: configuration),
-                accessibilityCheck(),
+                accessibilityCheck(required: preferences.requiresAccessibility),
                 bluetoothCheck(),
-                codexCheck(),
+                codexCheck(
+                    required: preferences.requiresCodex,
+                    compatibilityRequired: preferences.requiresCodexCompatibility
+                ),
                 sourceCheck(),
             ],
             runtimeActive: isRuntimeActive
@@ -266,8 +310,21 @@ struct SetupEnvironmentInspector {
         )
     }
 
-    private func accessibilityCheck() -> SetupCheck {
+    private func accessibilityCheck(required: Bool) -> SetupCheck {
         let trusted = AXIsProcessTrusted()
+        if !required {
+            return SetupCheck(
+                id: .accessibility,
+                title: "米遥辅助功能",
+                detail: trusted
+                    ? "已授权；当前仅转写且按键控制关闭时不会使用"
+                    : "仅转写且关闭按键控制时无需授权；以后启用增强功能再授权",
+                state: .ready,
+                action: trusted ? nil : .requestAccessibility,
+                actionTitle: trusted ? nil : "授权增强功能",
+                requirement: .optional
+            )
+        }
         return SetupCheck(
             id: .accessibility,
             title: "米遥辅助功能",
@@ -276,7 +333,8 @@ struct SetupEnvironmentInspector {
                 : "当前 App 未获授权；若系统已显示开启，请移除旧“米遥”后重新添加",
             state: trusted ? .ready : .actionRequired,
             action: trusted ? nil : .requestAccessibility,
-            actionTitle: trusted ? nil : "修复权限"
+            actionTitle: trusted ? nil : "修复权限",
+            requirement: .featureRequired
         )
     }
 
@@ -330,7 +388,18 @@ struct SetupEnvironmentInspector {
         }
     }
 
-    private func codexCheck() -> SetupCheck {
+    private func codexCheck(required: Bool, compatibilityRequired: Bool) -> SetupCheck {
+        guard required else {
+            return SetupCheck(
+                id: .codex,
+                title: "Codex 输入区",
+                detail: "当前选择仅转写，不要求安装、登录或重启 Codex",
+                state: .ready,
+                action: nil,
+                actionTitle: nil,
+                requirement: .optional
+            )
+        }
         let snapshot = codexSnapshot()
         guard snapshot.isInstalled else {
             return SetupCheck(
@@ -339,7 +408,19 @@ struct SetupEnvironmentInspector {
                 detail: "没有找到 Codex App，请先安装并登录",
                 state: .blocked,
                 action: nil,
-                actionTitle: nil
+                actionTitle: nil,
+                requirement: .featureRequired
+            )
+        }
+        if !compatibilityRequired {
+            return SetupCheck(
+                id: .codex,
+                title: "Codex",
+                detail: "Codex 已安装；按键导航可用，只有自动发送需要输入区兼容",
+                state: .ready,
+                action: nil,
+                actionTitle: nil,
+                requirement: .featureRequired
             )
         }
         if !snapshot.isRunning {
@@ -349,7 +430,8 @@ struct SetupEnvironmentInspector {
                 detail: "Codex 已安装；启动米遥时会带本次进程兼容参数打开",
                 state: .ready,
                 action: nil,
-                actionTitle: nil
+                actionTitle: nil,
+                requirement: .featureRequired
             )
         }
         if snapshot.compatibilityEnabled {
@@ -359,7 +441,8 @@ struct SetupEnvironmentInspector {
                 detail: "当前 Codex 进程已开启辅助功能兼容",
                 state: .ready,
                 action: nil,
-                actionTitle: nil
+                actionTitle: nil,
+                requirement: .featureRequired
             )
         }
         return SetupCheck(
@@ -368,7 +451,8 @@ struct SetupEnvironmentInspector {
             detail: "Codex 正在工作；需要在空闲时由你确认重启一次",
             state: .actionRequired,
             action: .prepareCodex,
-            actionTitle: "准备 Codex"
+            actionTitle: "准备 Codex",
+            requirement: .featureRequired
         )
     }
 

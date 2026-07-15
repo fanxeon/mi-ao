@@ -8,12 +8,12 @@
 
 ## 当前结论
 
-米遥已经完成“小米蓝牙遥控器 2 Pro → 本地语音转写 → Codex”的真实核心闭环，并具备首次设置向导、菜单栏状态、自包含 App 运行组件、设备专属按键接管和安全恢复。当前仍不是面向普通用户的免配置正式版：配置持久化、登录启动、设备选择和自定义快捷键尚未交付。
+米遥已经完成核心闭环，并交付 Preferences v1、按功能分级的权限门禁、仅转写/按键开关和 `SMAppService` 登录启动实现。当前仍不是免配置正式版：登录启动尚缺安装版系统验收，设备选择和自定义快捷键尚未交付。
 
 | 阶段 | 状态 | 真实边界 |
 | --- | --- | --- |
 | P0 · 发布基线与品牌资产 | ✅ 完成 | 真机语音链路、自包含 App、设置向导、菜单栏、06 品牌资产和公开文档已落库 |
-| P1 · Preferences 与日常启动 | ⏭️ 下一阶段 | 数据合同已设计；持久化、迁移、损坏回退和 `SMAppService` 尚未实现 |
+| P1 · Preferences 与日常启动 | 🟡 部分完成 | v1 持久化、损坏回退、权限分级和 `SMAppService` 已实现；安装版登录启动验收待完成 |
 | P2 · 自定义动作内核 | 📝 已设计 | `KeyboardShortcutSpec`、安全边界和验收合同已写入文档，代码尚未实现 |
 | P3 · 按键与快捷键 GUI | 📝 已设计 | 用户动线已确定，编辑器、录制器和热重载尚未实现 |
 | P4 · 设备管理与稳定连接 | 🟡 部分具备 | 运行中断连会重新扫描；可视化设备选择、持久化和多设备分支尚未实现 |
@@ -45,14 +45,15 @@
 - 菜单栏显示搜索、连接、就绪、录音、处理、发送和错误等真实状态。
 - 06「中心连接」Logo 已保存为 SVG、PNG、单色模板和 AppIcon；九款原始概念图完整归档。
 - 中英文 README、快速开始、配对、使用、排错、安全、贡献和产品交付文档已经建立。
+- Preferences v1 使用原子写入、`0700/0600`、损坏隔离和未来 schema 保护；登录启动只读取系统真实状态。
 
 ## 当前未交付
 
 以下内容不能在 README、Release 或演示中描述为已经可用：
 
 - 用户自定义快捷键与按键预设编辑器。
-- 配置持久化、预设迁移、损坏隔离和运行中热重载。
-- 「登录时启动」系统开关。
+- 用户自定义预设的迁移、导入导出和运行中热重载。
+- 「登录时启动」在安装版完成重新登录与 ad-hoc 更新验收。
 - GUI 设备选择、多设备仲裁和完整重连反馈。
 - 自动更新、Developer ID 签名、公证和免源码二进制分发。
 - 第二类真实遥控器兼容证明与完整多显示器/长时间压力测试。
@@ -61,19 +62,15 @@
 
 下一批代码严格按以下顺序推进：
 
-1. **AppPreferences v1**
-   - schema version、原子写入、权限、默认值和 Codable 合同；
-   - 旧配置迁移、损坏文件隔离和上一份有效配置回退；
-   - 保存提交模式、当前预设和后续目标设备标识。
-2. **登录时启动**
-   - 使用 macOS `SMAppService`；
-   - 区分已启用、已关闭、等待系统确认和失败，不显示假成功；
-   - 与设置向导和菜单栏使用同一个后端状态。
-3. **自定义快捷键内核**
+1. **P1 安装版验收**
+   - 在 `~/Applications/米遥.app` 启用登录项；
+   - 验证重新登录后使用已保存偏好启动、关闭后不再启动；
+   - 验证 ad-hoc 更新后真实提示重新注册，不继承假状态。
+2. **自定义快捷键内核**
    - 内置动作与 `KeyboardShortcutSpec` 的版本化联合类型；
    - 用户预设 store、导入/导出、恢复默认和运行中重载；
    - 修饰键按下/释放对称、异常中断清理和高风险组合拒绝。
-4. **按键与快捷键 GUI**
+3. **按键与快捷键 GUI**
    - 实体按键高亮、动作选择、快捷键录制和一次性测试；
    - 冲突警告、保存失败回退、复制/重命名/删除/导入/导出；
    - 中英文、VoiceOver、键盘导航和窄窗口验收。
@@ -92,8 +89,8 @@ P1 与 P2 只有同时满足以下条件才可标记完成：
 
 ## English snapshot
 
-MI-AO `0.1.0` has a verified Xiaomi Remote 2 Pro firmware 2671 voice-to-Codex path, a self-contained source-built app, setup guidance, menu-bar runtime state, device-specific button interception, and safe restoration. It is still a source-first alpha. Persisted preferences, Launch at Login, visual device selection, and user-defined keyboard shortcuts are designed but not implemented.
+MI-AO `0.1.0` now includes Preferences v1, feature-dependent permission gates, transcription/button switches, and a truthful `SMAppService` login-item flow. Installed-app login-start acceptance, visual device selection, and user-defined shortcuts remain incomplete.
 
-The active sequence is: **AppPreferences v1 → SMAppService login start → versioned custom-shortcut core → Buttons & Shortcuts GUI**. A feature moves to “complete” only after real persistence, failure recovery, keyboard-isolation tests, documentation, and CI all pass.
+The active sequence is: **installed-app login-start acceptance → versioned custom-shortcut core → Buttons & Shortcuts GUI**.
 
 作者与维护 / Created and maintained by **FanXeon@Poemcoder with Codex**.

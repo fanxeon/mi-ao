@@ -12,7 +12,7 @@
 
 由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。“是的我只手写了这一行代码，出现任何bug我宣布有codex负责”
 
-[中文](README.md) · [English](README_EN.md) · [开发进度](docs/DEVELOPMENT_STATUS.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
+[中文](README.md) · [English](README_EN.md) · [开发进度](docs/DEVELOPMENT_STATUS.md) · [权限与可选项](docs/PERMISSIONS.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -36,7 +36,7 @@
 | 已验证硬件 | 小米蓝牙遥控器 2 Pro，固件 2671，通过 Bluetooth Low Energy 连接 |
 | 目标应用 | Codex macOS App（bundle ID `com.openai.codex`） |
 | 本地工具链 | Swift 6.0+、Xcode Command Line Tools、Homebrew、`whisper.cpp` |
-| 系统权限 | 蓝牙用于读取遥控器；辅助功能用于验证 Codex 输入区并执行按键动作 |
+| 系统权限 | 蓝牙是核心必需；辅助功能只在自动发送或按键控制开启时必需；登录时启动永远可选 |
 | 语音链路 | ATVV v0.4 / v1.0 → ADPCM 解码 → 本地 Whisper 转写 → Codex |
 | 按键控制 | 方向环可切换“移动指针 / 上下左右”，确认固定 Return，返回固定 Escape |
 | 调试与安全 | 内置固件 2671 真机档案，本地校准可安全覆盖；接管前先验证权限与运行时，退出时自动恢复 |
@@ -110,7 +110,7 @@ cd mi-ao
 
 ### 2. 跟随设置向导
 
-向导会逐项检查 macOS、Whisper 与模型、米遥辅助功能、蓝牙、Codex 输入区和安全启动组件。按卡片按钮完成系统授权；点击“配对遥控器”后，在小米蓝牙遥控器 2 Pro 上**同时长按菜单键 + `HOME`**，在系统蓝牙中点击“连接”。
+向导先让你选择“自动发送到 Codex”“启用遥控器按键控制”和可选的“登录时启动”，再检查 macOS、Whisper 与模型、米遥辅助功能、蓝牙、Codex 和安全启动组件。只有“必须”和“当前功能必需”会阻止启动；关闭自动发送与按键控制后，辅助功能和 Codex 会变为可选。完整矩阵见 [权限与可选功能](docs/PERMISSIONS.md)。
 
 如果 Codex 正在工作但没有本次进程兼容参数，向导只会提示“准备 Codex”，不会擅自重启；只有你明确确认后才重启一次。该参数不修改 Codex 偏好设置、不开放调试端口，退出 Codex 后即失效。完整流程见 [遥控器配对与首次连接指南](docs/PAIRING.md)。
 
@@ -134,7 +134,7 @@ cd mi-ao
 
 其他遥控器请先按 [快速开始](docs/QUICKSTART.md) 采集脱敏协议证据，不要盲猜 UUID。
 
-安装完成后可随时双击 `~/Applications/米遥.app` 重新打开设置向导；真正启动仍必须通过向导的检查按钮，因此不会绕过按键门禁。菜单栏 GUI、连续语音、仅转写模式、项目术语、更新和数据清理见 [完整使用说明](docs/USAGE.md)。
+首次安装或尚未完成设置时，双击 `~/Applications/米遥.app` 打开向导。第一次成功启动后，双击 App 或可选的登录启动会读取同一份偏好并执行同一条安全门禁；失败时重新打开向导。运行中仍可从菜单栏进入设置与诊断。
 
 ## 兼容性
 
@@ -177,11 +177,11 @@ BLE 遥控器
 
 核心真机链路已打通，当前是 **source-first alpha**：用户在自己的 Mac 上构建并使用 ad-hoc 签名 App。没有 Apple Developer ID 时，项目不会把未公证 DMG 包装成“一键安装”。
 
-当前里程碑为 **P0 已完成，P1 Preferences v1 与登录启动待实现**。已完成、部分具备和未交付功能的逐项证据见 [开发进度快照](docs/DEVELOPMENT_STATUS.md)。
+当前里程碑为 **P1 部分完成**：Preferences v1、按功能分级的权限门禁、仅转写/按键开关和 `SMAppService` 登录启动已经实现；登录启动仍需在安装版完成一次真机系统验收。逐项证据见 [开发进度快照](docs/DEVELOPMENT_STATUS.md)。
 
 已经补齐首次设置向导、菜单栏 GUI、安全后台启停、重复实例门禁、非阻塞转写队列和剪贴板并发保护。下一阶段聚焦：
 
-- 设备选择、配置持久化与自动重连；
+- 设备选择、持久化设备标识与完整重连反馈；
 - 可复制、测试、导入/导出的用户按键预设和自定义快捷键；
 - 默认 pointer 套装的模式切换、电源动作和多显示器定位体验验收；
 - Codex 会话导航等第二套映射；
@@ -196,7 +196,7 @@ BLE 遥控器
 
 - 提交一份脱敏 GATT 采集，帮助兼容新遥控器；
 - 改进 ADPCM / ATVV 协议适配与测试 fixture；
-- 完善设备选择、自动重连反馈和开机自启；
+- 完善设备选择、自动重连反馈和登录启动真机验收；
 - 改进中英文文档、排错和隐私审查。
 
 请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。没有真机证据的兼容性声明不会合并。
@@ -216,6 +216,7 @@ BLE 遥控器
 - [路线图](docs/ROADMAP.md)
 - [开发进度快照](docs/DEVELOPMENT_STATUS.md)
 - [完整产品交付计划](docs/PRODUCT_DELIVERY_PLAN.md)
+- [权限与可选功能](docs/PERMISSIONS.md)
 
 ## 作者、致谢与许可证
 

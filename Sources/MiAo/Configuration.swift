@@ -6,6 +6,7 @@ struct Configuration {
         case scan
         case capture
         case run
+        case launch
         case setup
         case doctor
         case authorize
@@ -52,7 +53,8 @@ struct Configuration {
         var index = 1
 
         if arguments.count == 1, Bundle.main.bundleURL.pathExtension == "app" {
-            config.mode = .setup
+            let snapshot = AppPreferencesStore().load()
+            config.mode = snapshot.preferences.hasCompletedSetup ? .launch : .setup
         }
 
         if index < arguments.count, let mode = Mode(rawValue: arguments[index]) {

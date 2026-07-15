@@ -104,9 +104,10 @@ KeyboardShortcutSpec
 
 ### P1 · Preferences v1 and daily startup
 
-- [ ] Add a schema-versioned `AppPreferences` with atomic save, migration, and corrupted-state fallback.
-- [ ] Add a real `SMAppService` Launch at Login toggle with registered, requires-approval, disabled, and failed states.
-- [ ] Persist automatic Codex submission versus transcription-and-copy-only mode.
+- [x] Add schema-versioned `AppPreferences` with atomic save, private permissions, corrupted-state quarantine, and future-schema preservation.
+- [x] Add a real `SMAppService.mainApp` Launch at Login toggle with enabled, requires-approval, disabled, and unavailable states.
+- [x] Persist automatic Codex submission versus transcription-only mode and the remote-button-control switch.
+- [ ] Complete installed-app enable, relogin launch, disable, and ad-hoc update re-registration acceptance.
 
 ### P2 · Custom-action core
 
@@ -145,9 +146,9 @@ KeyboardShortcutSpec
 
 ## Immediate next work
 
-1. Implement `AppPreferences v1` and its migration/corruption tests as the shared persistence foundation.
-2. Add Launch at Login with `SMAppService` and truthful system states.
-3. Move directly into the versioned shortcut core and safety tests before building the GUI.
+1. Complete the installed-app `SMAppService` acceptance cycle, including an ad-hoc update.
+2. Implement the versioned `KeyboardShortcutSpec`, user-preset store, and modifier cleanup.
+3. Pass core and import-safety tests before building the shortcut GUI.
 
 MI-AO is “fully user-ready” only when daily use requires no terminal, every success comes from real system/device evidence, failure paths remain actionable, and custom shortcuts never affect the Mac keyboard or leave modifier keys held.
 

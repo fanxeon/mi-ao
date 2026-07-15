@@ -99,7 +99,7 @@
 
 ## 指针动作和前台 App 同时响应
 
-立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十二个接管键均映射为 `No Event`，仅菜单不在映射内。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
+立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十二个接管键均映射为 `No Event`，菜单不在映射内并继续作为 macOS 原生鼠标右键。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
 
 米遥不建立全局 Quartz 键盘事件 tap。若 Mac 实体键盘出现按键丢失或修饰键卡住，应立即停止米遥并提交脱敏日志，这是安全缺陷而不是可接受的已知限制。
 

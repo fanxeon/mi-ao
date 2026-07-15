@@ -32,7 +32,7 @@ cd /path/to/mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down to HID `No Event`; only Menu remains native. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
+The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event`; Menu is excluded and keeps the native macOS right-click. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
 
 Wait for:
 
@@ -190,7 +190,7 @@ After every release, the terminal shows “physical button → HID Usage → cur
 - `s` to mark the current button skipped;
 - `q` to stop and save only previously confirmed entries.
 
-For example, Back displays Usage Page `0x07` / Usage `0xF1`, previewed as `pointer.right_click` under the default `pointer` preset. Confirmation stores only that the Usage is the physical `back` button; it does not store right-click semantics.
+For example, Back displays Usage Page `0x07` / Usage `0xF1`, previewed as `keyboard.escape` under the default `pointer` preset. Confirmation stores only that the Usage is the physical `back` button; it does not store Escape action semantics.
 
 Valid IDs are `voice`, `dpad_up`, `dpad_down`, `dpad_left`, `dpad_right`, `center`, `back`, `home`, `menu`, `volume_up`, `volume_down`, `tv`, and `power`.
 
@@ -219,11 +219,13 @@ Inspect or recover the mapping with:
 ./scripts/remote-mapping.sh restore
 ```
 
+One `HOME` click sends Page Down after a 350 ms double-click window. A second click inside that window cancels the pending Page Down and emits one Page Up, so a double-click never moves down before moving up.
+
 Use `restore --force` only when the ownership state file was lost and `status` shows the exact MI-AO mapping. Any other existing user mapping is left untouched.
 
-Startup defaults to pointer mode. A calibrated `TV` key switches the D-pad to arrows, Center to Return, and Back to Escape; press it again to restore pointer mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
+Startup defaults to pointer mode. A calibrated `TV` key changes only the D-pad to arrow keys; press it again to restore pointer movement. Center always sends Return, Back always sends Escape, and no other button changes with the mode. A calibrated Power key launches Codex or focuses an existing process. Xiaomi Remote 2 Pro firmware 2671 now has complete press/release evidence for `TV=0x07/0x35` and `Power=0x07/0x66`; other remotes still require independent calibration.
 
-See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. All six required buttons are hardware-calibrated and all four directions passed direct positioning with real-coordinate monitoring; clicks, mode switching, and Power remain an implementation preview.
+See [Button presets and the default pointer mode](BUTTON_PRESETS_EN.md) for the two-layer diagram, complete mapping, and safety boundary. All six required buttons are hardware-calibrated and all four directions passed direct positioning with real-coordinate monitoring; mode switching and Power remain an implementation preview.
 
 ## Local data
 

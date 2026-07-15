@@ -12,6 +12,7 @@
 | [快速开始](QUICKSTART.md) / [Quick start](QUICKSTART_EN.md) | 从安装、配对到第一次语音提交 |
 | [完整使用说明](USAGE.md) / [Usage guide](USAGE_EN.md) | 日常启动、操作模式、成功日志、更新和数据管理 |
 | [按键预设与默认指针模式](BUTTON_PRESETS.md) / [Button presets](BUTTON_PRESETS_EN.md) | 两层映射、默认按键表、校准、启动和安全回退 |
+| [默认按键示意图](assets/mi-ao-button-map.png) | 小米 2 Pro 在 macOS 上的完整按钮功能图 |
 | [兼容性矩阵](COMPATIBILITY.md) | 真实验证的遥控器、固件和协议证据 |
 | [故障排查](TROUBLESHOOTING.md) / [Troubleshooting](TROUBLESHOOTING_EN.md) | 启动、蓝牙、转写、焦点与重连问题 |
 | [源码优先分发](DISTRIBUTION.md) | ad-hoc 签名、安装、验证与卸载边界 |

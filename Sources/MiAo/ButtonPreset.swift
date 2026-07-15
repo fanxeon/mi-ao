@@ -17,14 +17,12 @@ enum RemoteButton: String, CaseIterable, Codable {
     case power
 }
 
-enum ButtonAction: String, Codable {
+enum ButtonAction: String, CaseIterable, Codable {
     case voicePushToTalk = "voice.push_to_talk"
     case pointerMoveUp = "pointer.move_up"
     case pointerMoveDown = "pointer.move_down"
     case pointerMoveLeft = "pointer.move_left"
     case pointerMoveRight = "pointer.move_right"
-    case pointerLeftClick = "pointer.left_click"
-    case pointerRightClick = "pointer.right_click"
     case pointerScrollUp = "pointer.scroll_up"
     case pointerScrollDown = "pointer.scroll_down"
     case keyboardArrowUp = "keyboard.arrow_up"
@@ -33,6 +31,9 @@ enum ButtonAction: String, Codable {
     case keyboardArrowRight = "keyboard.arrow_right"
     case keyboardReturn = "keyboard.return"
     case keyboardEscape = "keyboard.escape"
+    case keyboardPageUp = "keyboard.page_up"
+    case keyboardPageDown = "keyboard.page_down"
+    case homePageNavigation = "home.page_navigation"
     case modeTogglePointerDirectional = "mode.toggle_pointer_directional"
     case codexFocus = "codex.focus"
     case codexLaunchOrFocus = "codex.launch_or_focus"
@@ -68,10 +69,10 @@ struct ButtonPreset: Equatable {
             .dpadDown: .pointerMoveDown,
             .dpadLeft: .pointerMoveLeft,
             .dpadRight: .pointerMoveRight,
-            .center: .pointerLeftClick,
-            .back: .pointerRightClick,
-            .home: .codexFocus,
-            .menu: .presetCycle,
+            .center: .keyboardReturn,
+            .back: .keyboardEscape,
+            .home: .homePageNavigation,
+            .menu: .unmapped,
             .volumeUp: .codexPreviousTask,
             .volumeDown: .codexNextTask,
             .tv: .modeTogglePointerDirectional,

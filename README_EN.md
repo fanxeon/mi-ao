@@ -24,6 +24,22 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 
 > **Verified hardware:** Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 has completed a real hold-to-talk → local Whisper → Codex submission test.
 
+## Runtime environment and included capabilities
+
+| Area | Current requirement / included capability |
+| --- | --- |
+| Operating system | **macOS 14+**; Windows and Linux are not currently supported |
+| Verified hardware | Xiaomi Bluetooth Remote Control 2 Pro, firmware 2671, connected over Bluetooth Low Energy |
+| Target app | Codex for macOS, bundle ID `com.openai.codex` |
+| Local toolchain | Swift 6.0+, Xcode Command Line Tools, Homebrew, and `whisper.cpp` |
+| Permissions | Bluetooth for the remote; Accessibility for safe submission and button actions |
+| Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
+| Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
+| Diagnostics and safety | Device-specific HID Usage calibration; twelve intercepted keys are neutralized only on the target remote and restored on exit; Menu keeps the native macOS right-click |
+| Delivery | **Source-first alpha**; locally built, ad-hoc signed, and currently started from the terminal |
+
+The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
+
 ## Why it feels like a real magic wand
 
 - **One physical action.** Hold to speak, release to submit.
@@ -46,9 +62,17 @@ See the [compatibility matrix](docs/COMPATIBILITY.md) and [hardware bring-up rec
 
 ## One remote, multiple presets
 
-Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` switches between pointer mode (D-pad movement, Center left-click, Back right-click) and directional mode (arrow keys, Return, Escape). Volume Up/Down selects the previous/next Codex task, Power launches or focuses Codex, `HOME` focuses it, Menu cycles presets, and Voice remains hold-to-talk.
+Calibration identifies physical buttons; a preset decides what they do. In the default preset, `TV` changes only the D-pad between pointer movement and arrow keys. Center always sends Return and Back always sends Escape. Volume Up/Down selects the previous/next Codex task, Power launches or focuses Codex, HOME sends Page Down on one click or Page Up on a double-click, Menu keeps its native macOS right-click, and Voice remains hold-to-talk.
 
-> **Status boundary:** new-format calibration confirms D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down on Xiaomi Remote 2 Pro firmware 2671. MI-AO takes over these twelve keys and blocks their native side effects; only Menu remains native. Volume task navigation passed bidirectional hardware acceptance; clicks, mode switching, and Power still require per-action acceptance.
+> **Mode invariant:** `TV` changes only the D-pad between pointer movement and arrow keys. Center, Back, HOME, Volume, Voice, Power, and Menu behave identically in both modes.
+
+> **Status boundary:** new-format calibration confirms D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down on Xiaomi Remote 2 Pro firmware 2671. MI-AO takes over these twelve keys and blocks their native side effects. Menu is excluded from MI-AO mapping and keeps the native macOS right-click. Volume task navigation passed bidirectional hardware acceptance; HOME click arbitration, mode switching, and Power still require per-action acceptance.
+
+![Default MI-AO button mapping on macOS](docs/assets/mi-ao-button-map.png)
+
+<p align="center"><sub>MI-AO default button map · FanXeon@Poemcoder with Codex</sub></p>
+
+> The image is in Chinese. Its “Menu = mouse right-click” label describes native macOS behavior; MI-AO neither remaps nor intercepts Menu.
 
 See [Button presets and the default pointer mode](docs/BUTTON_PRESETS_EN.md) for the diagram, calibration flow, safety fallback, and extension contract.
 
@@ -82,7 +106,7 @@ For the verified Xiaomi Remote 2 Pro:
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-The wrapper maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down to HID `No Event` for this exact device while MI-AO reads their original IOHID Usages. Only Menu remains native. `Control + C` stops MI-AO and restores the original mapping.
+The wrapper maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event` for this exact device while MI-AO reads their original IOHID Usages. Menu is excluded and continues to act as the native macOS right-click. `Control + C` stops MI-AO and restores the original mapping.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 
@@ -130,7 +154,7 @@ The next milestones are:
 
 - menu bar status and recording feedback;
 - device selection, persisted configuration, and reconnect;
-- remaining pointer actions, mode switching, Power, event-suppression timing, and multi-display acceptance runs;
+- mode switching, Power, event-suppression timing, and multi-display acceptance runs;
 - a second Codex-session navigation preset;
 - a broader real-hardware compatibility matrix;
 - configurable output targets without weakening the default safety contract.

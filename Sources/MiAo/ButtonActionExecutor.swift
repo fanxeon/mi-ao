@@ -8,6 +8,34 @@ enum RemoteControlMode: String, Equatable {
     case directional
 }
 
+enum HomeClickDecision: Equatable {
+    case waitForSecondClick
+    case pageUp
+}
+
+struct HomeClickArbiter {
+    private(set) var isWaitingForSecondClick = false
+
+    mutating func registerClick() -> HomeClickDecision {
+        if isWaitingForSecondClick {
+            isWaitingForSecondClick = false
+            return .pageUp
+        }
+        isWaitingForSecondClick = true
+        return .waitForSecondClick
+    }
+
+    mutating func commitSingleClick() -> Bool {
+        guard isWaitingForSecondClick else { return false }
+        isWaitingForSecondClick = false
+        return true
+    }
+
+    mutating func reset() {
+        isWaitingForSecondClick = false
+    }
+}
+
 final class ButtonActionExecutor {
     private let preset: ButtonPreset
     private let debug: Bool
@@ -18,7 +46,11 @@ final class ButtonActionExecutor {
     private var lastTickAt = Date()
     private var lastScrollAt = Date.distantPast
     private var lastKeyRepeatAt = Date.distantPast
+    private var homeClickArbiter = HomeClickArbiter()
+    private var pendingHomeSingle: DispatchWorkItem?
     private(set) var controlMode: RemoteControlMode = .pointer
+
+    static let homeDoubleClickInterval: TimeInterval = 0.35
 
     init(preset: ButtonPreset, debug: Bool = false) {
         self.preset = preset
@@ -33,6 +65,9 @@ final class ButtonActionExecutor {
     }
 
     func stop() {
+        pendingHomeSingle?.cancel()
+        pendingHomeSingle = nil
+        homeClickArbiter.reset()
         if let activeAction, Self.isKeyboardAction(activeAction) {
             postKeyboard(action: activeAction, isDown: false)
         }
@@ -48,8 +83,8 @@ final class ButtonActionExecutor {
             clearActiveAction()
             print(
                 controlMode == .pointer
-                    ? "控制模式：鼠标指针（方向移动，确认左击，返回右击）"
-                    : "控制模式：方向键（上下左右，确认 Return，返回 Escape）"
+                    ? "控制模式：鼠标指针（仅方向环移动指针）"
+                    : "控制模式：方向键（仅方向环发送上下左右）"
             )
             return
         }
@@ -62,10 +97,6 @@ final class ButtonActionExecutor {
         case .pointerMoveUp, .pointerMoveDown, .pointerMoveLeft, .pointerMoveRight:
             _ = CGDisplayShowCursor(CGMainDisplayID())
             movePointer(action: action, distance: 32, verify: debug)
-        case .pointerLeftClick:
-            postClick(button: .left)
-        case .pointerRightClick:
-            postClick(button: .right)
         case .pointerScrollUp:
             postScroll(lines: 2)
             lastScrollAt = Date()
@@ -73,9 +104,12 @@ final class ButtonActionExecutor {
             postScroll(lines: -2)
             lastScrollAt = Date()
         case .keyboardArrowUp, .keyboardArrowDown, .keyboardArrowLeft,
-            .keyboardArrowRight, .keyboardReturn, .keyboardEscape:
+            .keyboardArrowRight, .keyboardReturn, .keyboardEscape,
+            .keyboardPageUp, .keyboardPageDown:
             postKeyboard(action: action, isDown: true)
             lastKeyRepeatAt = Date()
+        case .homePageNavigation:
+            break
         case .codexFocus:
             print(CodexSubmitter().activateCodex() ? "已聚焦 Codex" : "Codex 未运行")
         case .codexLaunchOrFocus:
@@ -103,6 +137,11 @@ final class ButtonActionExecutor {
 
     func buttonUp(_ button: RemoteButton) {
         guard button == activeButton else { return }
+        if activeAction == .homePageNavigation {
+            handleHomeClick()
+            clearActiveAction()
+            return
+        }
         if let activeAction, Self.isKeyboardAction(activeAction) {
             postKeyboard(action: activeAction, isDown: false)
         }
@@ -119,8 +158,6 @@ final class ButtonActionExecutor {
         case .pointerMoveDown: return .keyboardArrowDown
         case .pointerMoveLeft: return .keyboardArrowLeft
         case .pointerMoveRight: return .keyboardArrowRight
-        case .pointerLeftClick: return .keyboardReturn
-        case .pointerRightClick: return .keyboardEscape
         default: return baseAction
         }
     }
@@ -158,7 +195,8 @@ final class ButtonActionExecutor {
     private static func isKeyboardAction(_ action: ButtonAction) -> Bool {
         switch action {
         case .keyboardArrowUp, .keyboardArrowDown, .keyboardArrowLeft,
-            .keyboardArrowRight, .keyboardReturn, .keyboardEscape:
+            .keyboardArrowRight, .keyboardReturn, .keyboardEscape,
+            .keyboardPageUp, .keyboardPageDown:
             return true
         default:
             return false
@@ -169,6 +207,28 @@ final class ButtonActionExecutor {
         activeButton = nil
         activeAction = nil
         pressedAt = nil
+    }
+
+    private func handleHomeClick() {
+        switch homeClickArbiter.registerClick() {
+        case .waitForSecondClick:
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self, self.homeClickArbiter.commitSingleClick() else { return }
+                self.pendingHomeSingle = nil
+                self.postKeyboardStroke(action: .keyboardPageDown)
+                print("HOME 单击：Page Down")
+            }
+            pendingHomeSingle = workItem
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + Self.homeDoubleClickInterval,
+                execute: workItem
+            )
+        case .pageUp:
+            pendingHomeSingle?.cancel()
+            pendingHomeSingle = nil
+            postKeyboardStroke(action: .keyboardPageUp)
+            print("HOME 双击：Page Up")
+        }
     }
 
     private func movePointer(
@@ -204,25 +264,6 @@ final class ButtonActionExecutor {
         }
     }
 
-    private func postClick(button: CGMouseButton) {
-        guard let position = CGEvent(source: nil)?.location else { return }
-        let source = CGEventSource(stateID: .hidSystemState)
-        let downType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
-        let upType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
-        CGEvent(
-            mouseEventSource: source,
-            mouseType: downType,
-            mouseCursorPosition: position,
-            mouseButton: button
-        )?.post(tap: .cghidEventTap)
-        CGEvent(
-            mouseEventSource: source,
-            mouseType: upType,
-            mouseCursorPosition: position,
-            mouseButton: button
-        )?.post(tap: .cghidEventTap)
-    }
-
     private func postScroll(lines: Int32) {
         let source = CGEventSource(stateID: .hidSystemState)
         CGEvent(
@@ -248,6 +289,11 @@ final class ButtonActionExecutor {
         event.post(tap: .cghidEventTap)
     }
 
+    private func postKeyboardStroke(action: ButtonAction) {
+        postKeyboard(action: action, isDown: true)
+        postKeyboard(action: action, isDown: false)
+    }
+
     private static func keyCode(for action: ButtonAction) -> CGKeyCode? {
         switch action {
         case .keyboardArrowUp: return 126
@@ -256,6 +302,8 @@ final class ButtonActionExecutor {
         case .keyboardArrowRight: return 124
         case .keyboardReturn: return 36
         case .keyboardEscape: return 53
+        case .keyboardPageUp: return 116
+        case .keyboardPageDown: return 121
         default: return nil
         }
     }

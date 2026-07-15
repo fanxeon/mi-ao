@@ -207,12 +207,30 @@ import Testing
     let preset = try ButtonPreset.named("pointer")
     #expect(preset.id == "pointer")
     #expect(preset.action(for: .dpadUp) == .pointerMoveUp)
-    #expect(preset.action(for: .center) == .pointerLeftClick)
-    #expect(preset.action(for: .back) == .pointerRightClick)
+    #expect(preset.action(for: .center) == .keyboardReturn)
+    #expect(preset.action(for: .back) == .keyboardEscape)
+    #expect(preset.action(for: .menu) == .unmapped)
     #expect(preset.action(for: .volumeUp) == .codexPreviousTask)
     #expect(preset.action(for: .volumeDown) == .codexNextTask)
+    #expect(preset.action(for: .home) == .homePageNavigation)
     #expect(preset.action(for: .tv) == .modeTogglePointerDirectional)
     #expect(preset.action(for: .power) == .codexLaunchOrFocus)
+}
+
+@Test func homeClickArbiterDistinguishesSingleAndDoubleClicks() {
+    var arbiter = HomeClickArbiter()
+    #expect(arbiter.registerClick() == .waitForSecondClick)
+    #expect(arbiter.isWaitingForSecondClick)
+    #expect(arbiter.registerClick() == .pageUp)
+    #expect(!arbiter.isWaitingForSecondClick)
+    let staleSingle = arbiter.commitSingleClick()
+    #expect(!staleSingle)
+
+    #expect(arbiter.registerClick() == .waitForSecondClick)
+    let committedSingle = arbiter.commitSingleClick()
+    #expect(committedSingle)
+    #expect(!arbiter.isWaitingForSecondClick)
+    #expect(ButtonActionExecutor.homeDoubleClickInterval == 0.35)
 }
 
 @Test func codexTaskNavigationTargetsAppMenuItems() {
@@ -285,7 +303,7 @@ import Testing
     #expect(ButtonActionExecutor.pointerSpeed(heldSeconds: 2) == 1_000)
 }
 
-@Test func directionalModeResolvesDpadCenterAndBackToKeyboard() {
+@Test func controlModeChangesOnlyDpadActions() {
     let executor = ButtonActionExecutor(preset: .pointer)
     #expect(executor.controlMode == .pointer)
     executor.buttonDown(.tv)
@@ -293,30 +311,29 @@ import Testing
     executor.buttonDown(.tv)
     #expect(executor.controlMode == .pointer)
 
-    #expect(
-        ButtonActionExecutor.resolvedAction(
-            .pointerMoveUp,
-            mode: .directional
-        ) == .keyboardArrowUp
-    )
-    #expect(
-        ButtonActionExecutor.resolvedAction(
-            .pointerLeftClick,
-            mode: .directional
-        ) == .keyboardReturn
-    )
-    #expect(
-        ButtonActionExecutor.resolvedAction(
-            .pointerRightClick,
-            mode: .directional
-        ) == .keyboardEscape
-    )
-    #expect(
-        ButtonActionExecutor.resolvedAction(
-            .pointerMoveUp,
-            mode: .pointer
-        ) == .pointerMoveUp
-    )
+    let dpadChanges: [ButtonAction: ButtonAction] = [
+        .pointerMoveUp: .keyboardArrowUp,
+        .pointerMoveDown: .keyboardArrowDown,
+        .pointerMoveLeft: .keyboardArrowLeft,
+        .pointerMoveRight: .keyboardArrowRight,
+    ]
+    for (pointerAction, directionalAction) in dpadChanges {
+        #expect(
+            ButtonActionExecutor.resolvedAction(pointerAction, mode: .pointer)
+                == pointerAction
+        )
+        #expect(
+            ButtonActionExecutor.resolvedAction(pointerAction, mode: .directional)
+                == directionalAction
+        )
+    }
+
+    for action in ButtonAction.allCases where dpadChanges[action] == nil {
+        #expect(
+            ButtonActionExecutor.resolvedAction(action, mode: .pointer)
+                == ButtonActionExecutor.resolvedAction(action, mode: .directional)
+        )
+    }
 }
 
 @Test func newestCalibrationResultCanInvalidateAnOlderButton() throws {

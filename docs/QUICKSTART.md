@@ -100,7 +100,7 @@ cd mi-ao
 
 需要用 `TV` 切换“鼠标 / 方向键”或用电源键启动 Codex 时，再分别执行 `--button tv` 和 `--button power` 单键校准。小米 2 Pro 固件 2671 的已验证值是 `TV=0x07/0x35`、电源 `0x07/0x66`；其他遥控器若没有 HID 事件、只发红外信号，则无法由 Mac 映射。
 
-小米 2 Pro 固件 2671 的六键校准已经完成，四个方向已验证直接光标定位与真实坐标移动；点击、模式切换和电源动作逐项验收完成前，整套按键模式仍是 implementation preview。需要完全禁用实体按键动作时增加 `--no-buttons`。完整映射表和 macOS 事件过滤边界见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
+小米 2 Pro 固件 2671 的六键校准已经完成，四个方向已验证直接光标定位与真实坐标移动；模式切换和电源动作逐项验收完成前，整套按键模式仍是 implementation preview。需要完全禁用实体按键动作时增加 `--no-buttons`。完整映射表和 macOS 事件过滤边界见 [按键预设与默认指针模式](BUTTON_PRESETS.md)。
 
 完成校准后的推荐一键启动：
 
@@ -108,7 +108,7 @@ cd mi-ao
 ./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
 ```
 
-脚本会为目标遥控器把方向键、确认、返回、HOME、TV、电源、语音和音量加减映射为 HID `No Event`；仅菜单保持原生。音量 `+/-` 分别切换 Codex 上一个/下一个会话。退出时自动恢复，且不会覆盖已有的用户级 `UserKeyMapping`。
+脚本会为目标遥控器把方向键、确认、返回、HOME、TV、电源、语音和音量加减共十二键映射为 HID `No Event`；菜单不进入映射并沿用 macOS 原生鼠标右键。HOME 单击是 Page Down，350 ms 内双击是 Page Up；音量 `+/-` 分别切换 Codex 上一个/下一个会话。退出时自动恢复，且不会覆盖已有的用户级 `UserKeyMapping`。
 
 ## 常用选项
 

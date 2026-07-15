@@ -37,16 +37,16 @@ MI-AO marks a device compatible only when reproducible evidence exists from real
 - HID 设备身份：Vendor `0x2717` / Product `0x32B8`；
 - `learn-buttons` 会按该 Vendor/Product 精确过滤设备，不记录 Mac 键盘事件；
 - 返回键已在独立 20 秒窗口中重复采集，Keyboard Usage Page `0x07` / Usage `0xF1`，按下与松手均已观察；
-- 返回键物理 Usage 已通过旧格式 `debug-buttons` 人工确认；硬件档案只记录 `back`，默认 `pointer` 预设将其映射为右击；正式运行前仍需生成带 `confirmed_calibration` 标记的新格式档案；
+- 返回键已通过新格式 `confirmed_calibration` 人工确认；硬件档案只记录 `back`，默认 `pointer` 预设将其映射为 Escape；
 - `TV` 键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x35`，按下与松手完整；
 - 电源键已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x66`（Keyboard Power），按下与松手完整；
 - 音量加减已通过新格式 `confirmed_calibration` 确认：Keyboard Usage Page `0x07` / Usage `0x80`、`0x81`，按下与松手完整；
 - 音量加减已完成动作层真机验收：分别执行 Codex 上一个/下一个会话，系统音量不变化，菜单直调实现未观察到 Command、Shift、Option 或 Control 状态残留；
-- 接管边界：方向六键、HOME `0x4A`、TV、电源、语音 HID `0x3E` 和音量加减共十二键进入 `No Event`；仅菜单保持原生；
+- 接管边界：方向六键、HOME `0x4A`、TV、电源、语音 HID `0x3E` 和音量加减共十二键进入 `No Event`；菜单不进入米遥映射并沿用 macOS 原生鼠标右键；
 - 六个必需按钮已完成新格式确认：上 `0x52`、下 `0x51`、左 `0x50`、右 `0x4F`、确认 `0x28`、返回 `0xF1`，均含按下和松手；
 - 四个方向均完成真机坐标监测：`CGWarpMouseCursorPosition` 返回成功，系统鼠标对应 X/Y 坐标按方向变化；未发现全局快捷键或第三方重映射冲突；
-- 全键首轮扫描曾观察到 12/13 项事件，但存在操作提示错位，因此除返回键外暂不把首轮标签写入正式键码表；
-- 主页、菜单和语音键仍需按产品计划分别完成动作层验收。
+- 全键首轮扫描曾观察到 12/13 项事件，但存在操作提示错位；正式键码表只采用后来逐键取得的新格式确认结果；
+- 音量加减动作已经完成真机验收；HOME 单/双击、`TV` 模式切换和电源启动/聚焦仍需逐项动作层验收。菜单键明确沿用 macOS 原生鼠标右键，不属于米遥动作验收范围。
 
 不公开真机 MAC、CoreBluetooth peripheral UUID 或设备序列信息。
 

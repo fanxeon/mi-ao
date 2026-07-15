@@ -82,7 +82,7 @@ Confirm Codex is running and its View menu contains `Previous Task` / `Next Task
 
 ## Pointer movement and the foreground app both react
 
-Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all twelve intercepted keys mapped to `No Event` for the current device, while only Menu is absent. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
+Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all twelve intercepted keys mapped to `No Event` for the current device, while Menu is absent and keeps the native macOS right-click. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
 
 MI-AO installs no global Quartz keyboard event tap. If the physical Mac keyboard loses keystrokes or leaves a modifier stuck, stop MI-AO immediately and submit a redacted log; that is a safety defect, not an accepted limitation.
 

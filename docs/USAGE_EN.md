@@ -10,7 +10,7 @@ This guide starts after installation and covers daily startup, hold-to-talk beha
 
 MI-AO is currently a **source-first alpha**. After installation, double-click `~/Applications/米遥.app` in Finder.
 
-Double-clicking opens the setup guide instead of immediately taking over remote keys. After all six checks pass, “连接遥控器并开始” invokes the real launch gate. The guide closes after success and MI-AO remains in the menu bar. Login start is not implemented.
+Double-clicking opens the setup guide instead of immediately taking over remote keys. After all six checks pass, “连接遥控器并开始” invokes the app-bundled real launch gate. The guide closes after success and MI-AO remains in the menu bar. Daily startup no longer depends on the source directory location. Login start is not implemented.
 
 Startup checks Codex first: a closed app is launched compatibly, while a running process without the argument causes a safe refusal before the remote mapping changes. MI-AO never restarts a busy Codex process automatically. Safe `--no-submit` transcription skips this check.
 
@@ -27,7 +27,7 @@ The background log is stored at `~/Library/Application Support/mi-ao/logs/mi-ao.
 
 ### 2. Start MI-AO
 
-Double-click `~/Applications/米遥.app`, wait until every check is green, then choose “连接遥控器并开始”. `./scripts/start.sh` remains the terminal fallback.
+Double-click `~/Applications/米遥.app`, wait until every check is green, then choose “连接遥控器并开始”. Normal users no longer need to return to the repository; `./scripts/start.sh` remains the developer terminal fallback.
 
 The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event`; Menu is excluded and keeps the native macOS right-click. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
 
@@ -284,7 +284,7 @@ Uninstall restores any neutral mapping owned by MI-AO before removing the app or
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
 - Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and all four directions have completed their mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
-- Menu-bar state, safe background start/stop, and duplicate-instance prevention are implemented; login start is not.
+- The self-contained daily runtime, menu-bar state, safe background start/stop, and duplicate-instance prevention are implemented; login start is not.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.
 

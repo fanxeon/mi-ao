@@ -53,27 +53,76 @@ struct SetupEnvironmentReport: Equatable {
 }
 
 struct MiAoInstallationContext: Codable, Equatable {
-    let repositoryRoot: String
+    let repositoryRoot: String?
+    let runtimeRoot: String?
     let version: String
     let installedAt: String
     let codeHash: String?
 
-    var repositoryURL: URL { URL(fileURLWithPath: repositoryRoot, isDirectory: true) }
+    private static var bundledRuntimeURL: URL? {
+        guard let resources = Bundle.main.resourceURL else { return nil }
+        let candidate = resources.appendingPathComponent("Runtime", isDirectory: true)
+        return runtimeIsValid(candidate) ? candidate : nil
+    }
+
+    private static func runtimeIsValid(_ root: URL) -> Bool {
+        let requiredPaths = [
+            "VERSION",
+            "Resources/Info.plist",
+            "Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist",
+            "scripts/start.sh",
+            "scripts/stop.sh",
+            "scripts/run.sh",
+            "scripts/run-with-mapping.sh",
+            "scripts/check-buttons.sh",
+            "scripts/remote-mapping.sh",
+            "scripts/codex-accessibility.sh",
+            "scripts/lib/project.sh",
+        ]
+        let baseIsValid = requiredPaths.allSatisfy {
+            FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+        }
+        let hasRepair = FileManager.default.fileExists(
+            atPath: root.appendingPathComponent("scripts/repair-runtime.sh").path
+        )
+        let hasLegacySetup = FileManager.default.fileExists(
+            atPath: root.appendingPathComponent("scripts/setup.sh").path
+        )
+        return baseIsValid && (hasRepair || hasLegacySetup)
+    }
+
+    var runtimeURL: URL {
+        if let bundled = Self.bundledRuntimeURL { return bundled }
+        if let runtimeRoot, !runtimeRoot.isEmpty {
+            return URL(fileURLWithPath: runtimeRoot, isDirectory: true)
+        }
+        if let repositoryRoot, !repositoryRoot.isEmpty {
+            return URL(fileURLWithPath: repositoryRoot, isDirectory: true)
+        }
+        return URL(fileURLWithPath: "/__mi_ao_missing_runtime__", isDirectory: true)
+    }
+
+    var isSelfContained: Bool {
+        Self.bundledRuntimeURL != nil || (runtimeRoot?.isEmpty == false)
+    }
 
     var startScriptURL: URL {
-        repositoryURL.appendingPathComponent("scripts/start.sh")
+        runtimeURL.appendingPathComponent("scripts/start.sh")
     }
 
     var setupScriptURL: URL {
-        repositoryURL.appendingPathComponent("scripts/setup.sh")
+        let repair = runtimeURL.appendingPathComponent("scripts/repair-runtime.sh")
+        if FileManager.default.isExecutableFile(atPath: repair.path) { return repair }
+        return runtimeURL.appendingPathComponent("scripts/setup.sh")
     }
 
     var codexAccessibilityScriptURL: URL {
-        repositoryURL.appendingPathComponent("scripts/codex-accessibility.sh")
+        runtimeURL.appendingPathComponent("scripts/codex-accessibility.sh")
     }
 
     var isValid: Bool {
-        FileManager.default.isExecutableFile(atPath: startScriptURL.path)
+        Self.runtimeIsValid(runtimeURL)
+            && FileManager.default.isExecutableFile(atPath: startScriptURL.path)
             && FileManager.default.isExecutableFile(atPath: setupScriptURL.path)
             && FileManager.default.isExecutableFile(atPath: codexAccessibilityScriptURL.path)
     }
@@ -328,7 +377,7 @@ struct SetupEnvironmentInspector {
             return SetupCheck(
                 id: .source,
                 title: "安装来源",
-                detail: "找不到本地项目脚本，请从项目目录重新运行 setup.sh",
+                detail: "App 内置启动组件缺失或损坏，请从项目目录重新运行 setup.sh",
                 state: .blocked,
                 action: nil,
                 actionTitle: nil
@@ -337,10 +386,12 @@ struct SetupEnvironmentInspector {
         return SetupCheck(
             id: .source,
             title: "启动组件",
-            detail: "米遥 \(context.version) · 安全门禁与恢复脚本可用",
+            detail: context.isSelfContained
+                ? "米遥 \(context.version) · App 内置门禁与恢复组件可用"
+                : "米遥 \(context.version) · 兼容使用本地项目组件",
             state: .ready,
             action: .revealSource,
-            actionTitle: "查看目录"
+            actionTitle: context.isSelfContained ? "显示 App" : "查看目录"
         )
     }
 

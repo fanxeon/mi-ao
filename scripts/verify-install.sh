@@ -23,7 +23,12 @@ if [[ ! -f "$CONTEXT_FILE" ]]; then
   exit 1
 fi
 plutil -extract repositoryRoot raw -o - "$CONTEXT_FILE" | grep -Fxq "$ROOT"
-echo "设置向导启动来源：已验证"
+RUNTIME_ROOT="$INSTALL_APP/Contents/Resources/Runtime"
+plutil -extract runtimeRoot raw -o - "$CONTEXT_FILE" | grep -Fxq "$RUNTIME_ROOT"
+[[ -x "$RUNTIME_ROOT/scripts/start.sh" ]]
+[[ -x "$RUNTIME_ROOT/scripts/repair-runtime.sh" ]]
+[[ -x "$RUNTIME_ROOT/scripts/codex-accessibility.sh" ]]
+echo "App 内置运行组件：已验证"
 stored_code_hash="$(plutil -extract codeHash raw -o - "$CONTEXT_FILE")"
 installed_code_hash="$(codesign -dv --verbose=4 "$INSTALL_APP" 2>&1 | sed -n 's/^CDHash=//p' | head -n 1)"
 [[ "$stored_code_hash" == "$installed_code_hash" ]] \
@@ -35,6 +40,6 @@ runtime_pid=""
 if [[ "$runtime_pid" == <-> ]] && kill -0 "$runtime_pid" 2>/dev/null; then
   echo "运行状态：米遥正在后台运行（进程 $runtime_pid）"
 else
-  echo "运行状态：未启动；运行 $ROOT/scripts/start.sh"
+  echo "运行状态：未启动；打开 $INSTALL_APP 即可从设置向导启动"
 fi
 echo "安装验证通过：$INSTALL_APP"

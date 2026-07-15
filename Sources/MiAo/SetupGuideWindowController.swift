@@ -273,9 +273,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         case .runSetup:
             runSetupRepair()
         case .revealSource:
-            if let context = MiAoInstallationContext.load() {
-                NSWorkspace.shared.activateFileViewerSelecting([context.repositoryURL])
-            }
+            NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
         }
     }
 
@@ -358,12 +356,12 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
 
     private func runSetupRepair() {
         guard let context = MiAoInstallationContext.load(), context.isValid else {
-            showError(title: "找不到项目目录", message: "请重新下载项目，并在项目目录运行 ./scripts/setup.sh。")
+            showError(title: "启动组件损坏", message: "请从项目目录重新运行 ./scripts/setup.sh 恢复 App。")
             return
         }
         let alert = NSAlert()
-        alert.messageText = "修复本地安装"
-        alert.informativeText = "将重新检查依赖、下载缺失模型并覆盖安装米遥 App，不会删除录音或配置。"
+        alert.messageText = "修复本地语音引擎"
+        alert.informativeText = "将使用 App 内置组件安装缺失的 whisper.cpp 或语音模型，不会覆盖 App，也不会删除录音和配置。"
         alert.addButton(withTitle: "开始修复")
         alert.addButton(withTitle: "取消")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -398,6 +396,9 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate {
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = [scriptURL.path] + arguments
         process.currentDirectoryURL = scriptURL.deletingLastPathComponent().deletingLastPathComponent()
+        var environment = ProcessInfo.processInfo.environment
+        environment["MI_AO_APP_BUNDLE"] = Bundle.main.bundleURL.path
+        process.environment = environment
         process.standardOutput = logHandle
         process.standardError = logHandle
         self.process = process

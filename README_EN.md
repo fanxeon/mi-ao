@@ -40,7 +40,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
-| Delivery | **Source-first alpha**; one local build command opens a guided setup, followed by a real-state menu-bar GUI |
+| Delivery | **Source-first alpha**; one local build installs a self-contained daily runtime and a real-state menu-bar GUI |
 
 The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
 
@@ -92,7 +92,7 @@ cd mi-ao
 ./scripts/setup.sh
 ```
 
-The setup script installs `whisper-cpp`, downloads the multilingual base model, builds and installs `~/Applications/米遥.app`, then opens the setup guide. This is the only project command required for a first install.
+The setup script installs `whisper-cpp`, downloads the multilingual base model, builds and installs `~/Applications/米遥.app`, then opens the setup guide. This is the only project command required for a first install. The installed app contains its signed start, stop, button-gate, mapping-recovery, and speech-engine repair runtime, so daily use no longer depends on the repository remaining at its original path.
 
 The source-first alpha keeps secure ad-hoc signing. After a source update changes the binary, macOS may leave an older “米遥” row switched on even though the current build is not authorized. The guide explains how to remove the stale row, re-add the current app, and refreshes automatically. MI-AO does not weaken TCC with a bundle-ID-only designated requirement.
 
@@ -104,7 +104,7 @@ If a busy Codex process lacks the per-process compatibility argument, the guide 
 
 ### 3. Run
 
-When all checks pass, choose “连接遥控器并开始”. The equivalent terminal fallback is:
+When all checks pass, choose “连接遥控器并开始”. The guide uses the app's bundled safe runtime. Developers can still use the equivalent repository command:
 
 ```bash
 ./scripts/start.sh

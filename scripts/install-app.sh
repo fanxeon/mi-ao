@@ -20,9 +20,11 @@ CURRENT_CODE_HASH="$(codesign -dv --verbose=4 "$INSTALL_APP" 2>&1 | sed -n 's/^C
 mkdir -p "$APP_DATA_DIR"
 CONTEXT_FILE="$APP_DATA_DIR/install-context.plist"
 CONTEXT_TEMP="$CONTEXT_FILE.tmp"
+RUNTIME_ROOT="$INSTALL_APP/Contents/Resources/Runtime"
 rm -f "$CONTEXT_TEMP"
 plutil -create xml1 "$CONTEXT_TEMP"
 plutil -insert repositoryRoot -string "$ROOT" "$CONTEXT_TEMP"
+plutil -insert runtimeRoot -string "$RUNTIME_ROOT" "$CONTEXT_TEMP"
 plutil -insert version -string "$PROJECT_VERSION" "$CONTEXT_TEMP"
 plutil -insert installedAt -string "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$CONTEXT_TEMP"
 plutil -insert codeHash -string "$CURRENT_CODE_HASH" "$CONTEXT_TEMP"
@@ -30,7 +32,8 @@ mv "$CONTEXT_TEMP" "$CONTEXT_FILE"
 chmod 0600 "$CONTEXT_FILE"
 
 echo "已安装：$INSTALL_APP"
-echo "已记录安全启动来源：$ROOT"
+echo "已封装 App 内置运行组件：$RUNTIME_ROOT"
+echo "已记录可选维护源码：$ROOT"
 if [[ -n "$PREVIOUS_CODE_HASH" && "$PREVIOUS_CODE_HASH" != "$CURRENT_CODE_HASH" ]]; then
   echo "提示：本次源码更新改变了本地签名。macOS 辅助功能中的旧“米遥”授权需要移除并重新添加一次。"
 fi

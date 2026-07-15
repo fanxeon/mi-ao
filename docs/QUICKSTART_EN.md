@@ -21,7 +21,7 @@ cd mi-ao
 ./scripts/setup.sh
 ```
 
-The app is installed to `~/Applications/米遥.app`, the model to `~/.cache/mi-ao`, and recordings to `~/Library/Application Support/mi-ao/recordings`. The setup guide opens automatically when installation finishes.
+The app is installed to `~/Applications/米遥.app`, the model to `~/.cache/mi-ao`, and recordings to `~/Library/Application Support/mi-ao/recordings`. The setup guide opens automatically when installation finishes. The app bundles the signed daily start, safe stop, button gate, mapping recovery, and speech-engine repair runtime. After first install, normal Finder-based use does not depend on the repository remaining at its original path; updates, reinstalls, and developer diagnostics still use the source tree.
 
 MI-AO currently uses a local source build and ad-hoc signing. Do not download unofficial "unsigned" or "quarantine-free" DMGs.
 
@@ -37,7 +37,7 @@ Grant Accessibility to the installed MI-AO app, not a temporary binary inside `.
 
 ## 4A. Start the verified Xiaomi Remote 2 Pro
 
-Choose “连接遥控器并开始”. The guide calls the same real launch gate as `./scripts/start.sh`, closes after success and leaves MI-AO in the menu bar.
+Choose “连接遥控器并开始”. The guide calls the app-bundled copy of the same real launch gate as `./scripts/start.sh`, closes after success and leaves MI-AO in the menu bar.
 
 Click the menu-bar icon and wait for the ready state. Then hold the remote's voice button, speak and release. The panel also provides Codex focus, recordings, setup diagnostics and safe exit.
 

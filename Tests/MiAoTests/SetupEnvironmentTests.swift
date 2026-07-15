@@ -50,5 +50,27 @@ import Testing
         from: Data(plist.utf8)
     )
     #expect(context.repositoryRoot == "/tmp/mi-ao")
+    #expect(context.runtimeRoot == nil)
     #expect(context.codeHash == nil)
+}
+
+@Test func installationContextReadsSelfContainedRuntimeRoot() throws {
+    let plist = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0"><dict>
+          <key>repositoryRoot</key><string>/tmp/mi-ao-source</string>
+          <key>runtimeRoot</key><string>/Applications/米遥.app/Contents/Resources/Runtime</string>
+          <key>version</key><string>0.1.0</string>
+          <key>installedAt</key><string>2026-07-15T00:00:00Z</string>
+          <key>codeHash</key><string>example</string>
+        </dict></plist>
+        """
+    let context = try PropertyListDecoder().decode(
+        MiAoInstallationContext.self,
+        from: Data(plist.utf8)
+    )
+    #expect(context.repositoryRoot == "/tmp/mi-ao-source")
+    #expect(context.runtimeRoot == "/Applications/米遥.app/Contents/Resources/Runtime")
+    #expect(context.isSelfContained)
 }

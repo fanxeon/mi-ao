@@ -52,7 +52,9 @@ flowchart LR
 - `start.sh` / `stop.sh`：日常后台启停；运行锁记录真实 App PID，菜单退出、命令停止和外层包装器都会触发同一所有权校验恢复。即使启动终端或包装器意外消失，App 的正常退出路径仍会恢复映射。
 - `Configuration.swift`：CLI 模式和安全选项；显式 `setup` 或双击 App 进入向导，显式 `run` 才进入桥接运行时。
 
-`setup.sh` 在安装时写入权限为 `0600` 的 `install-context.plist`，只记录当前源码目录、版本和安装时间。GUI 只从该目录拼接固定脚本路径并检查可执行性，不接受任意命令文本，也不依赖 PATH 猜测项目脚本。GUI 的开始按钮与命令行共用 `run-with-mapping.sh`、`check-buttons`、单实例锁和退出恢复合同。
+`build-app.sh` 会把最小日常运行根封装到 `Contents/Resources/Runtime`：固定白名单启停脚本、Codex 兼容门禁、按键检查与映射恢复、语音引擎修复、版本以及硬件档案。这些文件随 App 一起参与代码签名，GUI 只调用当前 Bundle 内的固定脚本，不接受任意命令文本。
+
+`setup.sh` 安装时以 `0600` 写入 `install-context.plist`，记录 `runtimeRoot`、版本、签名指纹与可选 `repositoryRoot`。新版 App 优先从 `Bundle.main` 定位内置 Runtime，所以 App 或源码目录移动后日常运行仍不会落回任意外部路径；旧版仅含 `repositoryRoot` 的上下文仍可解析。GUI 和命令行继续共用 `run-with-mapping.sh`、`check-buttons`、单实例锁和退出恢复合同。
 
 米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十二键 `No Event` 映射隔离。HOME 的单/双击仲裁只在已确认的遥控器 HOME 事件上运行。
 

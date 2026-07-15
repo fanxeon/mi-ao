@@ -2,6 +2,10 @@
 
 # 米遥 MI-AO
 
+<p align="center">
+  <img src="docs/assets/mi-ao-logo.png" width="180" alt="米遥 MI-AO 魔杖 Logo">
+</p>
+
 **在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成 Mac 上一根真正握在手里的 Codex 魔法仙女棒。**
 
 **仅适用于 macOS 14 或更高版本，当前不支持 Windows / Linux。** 按住说话，松手发送。本地 Whisper 完成转写，Codex 立即开工。

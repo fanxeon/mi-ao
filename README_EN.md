@@ -2,6 +2,10 @@
 
 # MI-AO 米遥
 
+<p align="center">
+  <img src="docs/assets/mi-ao-logo.png" width="180" alt="MI-AO magic-wand logo">
+</p>
+
 **In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex on Mac.**
 
 **macOS 14 or later only; Windows and Linux are not currently supported.** Hold to talk. Release to send. Transcribed locally with Whisper. Delivered safely to Codex.

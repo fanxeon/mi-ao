@@ -8,8 +8,10 @@ source "$ROOT/scripts/lib/project.sh"
 [[ -x "$ROOT/scripts/start.sh" ]]
 [[ -x "$ROOT/scripts/stop.sh" ]]
 [[ -x "$ROOT/scripts/codex-accessibility.sh" ]]
+[[ -x "$ROOT/scripts/build-icon.sh" ]]
 zsh -n \
   "$ROOT/scripts/authorize.sh" \
+  "$ROOT/scripts/build-icon.sh" \
   "$ROOT/scripts/install-app.sh" \
   "$ROOT/scripts/run.sh" \
   "$ROOT/scripts/run-with-mapping.sh" \
@@ -20,11 +22,15 @@ zsh -n \
 "$ROOT/scripts/build-app.sh" >/dev/null
 
 BUILT_PROFILE="$BUILD_APP/Contents/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist"
+BUILT_ICON="$BUILD_APP/Contents/Resources/AppIcon.icns"
 [[ -x "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" ]]
 [[ -f "$BUILT_PROFILE" ]]
+[[ -s "$BUILT_ICON" ]]
 "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" --help | grep -q "setup"
 cmp "$ROOT/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist" "$BUILT_PROFILE"
 plutil -lint "$BUILD_APP/Contents/Info.plist" "$BUILT_PROFILE" >/dev/null
+[[ "$(plutil -extract CFBundleIconFile raw "$BUILD_APP/Contents/Info.plist")" == "AppIcon" ]]
+/usr/bin/sips -g format "$BUILT_ICON" | grep -q "icns"
 codesign --verify --deep --strict "$BUILD_APP"
 
 echo "App bundle tests: OK"

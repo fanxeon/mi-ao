@@ -14,6 +14,7 @@ mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp "$BUILD_BIN" "$CONTENTS/MacOS/$EXECUTABLE_NAME"
 cp "$ROOT/Resources/Info.plist" "$CONTENTS/Info.plist"
 ditto "$ROOT/Resources/HardwareProfiles" "$CONTENTS/Resources/HardwareProfiles"
+"$ROOT/scripts/build-icon.sh" "$CONTENTS/Resources/AppIcon.icns" >/dev/null
 
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $PROJECT_VERSION" "$CONTENTS/Info.plist"

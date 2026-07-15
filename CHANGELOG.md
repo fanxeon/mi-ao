@@ -8,6 +8,7 @@
 
 ### Added
 
+- 米遥 VI 正式接入：从主视觉精确提取蓝紫魔杖 Logo，生成透明品牌资产和白色圆角 macOS AppIcon；构建时使用系统工具生成完整 `.icns` 并纳入 App Bundle 校验。
 - CoreBluetooth 扫描、连接和完整 GATT 枚举。
 - ATVV v0.4/v1.0 能力协商与语音会话。
 - IMA/DVI ADPCM 解码、增益、重采样和 WAV 输出。

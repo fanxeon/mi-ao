@@ -14,6 +14,14 @@
 - 核心硬件：小米蓝牙遥控器 2 Pro，固件 2671
 - 核心动作：按住说话，松手发送
 
+## 视觉识别
+
+- 主标识：蓝紫渐变魔杖与星芒，对应“Codex 魔法棒”的产品隐喻。
+- 品牌色：蓝色 `#1473FF`，紫色 `#7B61FF`。
+- 透明 Logo：`docs/assets/mi-ao-logo.png`，不带文字，保留 VI 原始渐变和星芒比例。
+- macOS App 图标：`Resources/AppIcon/AppIcon-1024.png`，使用 VI 的白色圆角方形方案，不把中英文名称塞进小尺寸图标。
+- 所有官方视觉资产统一署名 `FanXeon@Poemcoder with Codex`；不混入小米、OpenAI 或 Codex 官方 Logo。
+
 ## 首页主文案
 
 **中文 Hero**

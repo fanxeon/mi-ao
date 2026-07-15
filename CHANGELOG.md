@@ -10,6 +10,7 @@
 
 - 米遥 VI 正式定稿为 06「中心连接」：归档九款原始概念，生成蓝紫渐变 SVG/PNG、macOS 单色 Template Image 和白色圆角 AppIcon；品牌资产随 App Bundle 打包并纳入构建校验，原魔法棒图形改为传播插画。
 - 新增从 source-first alpha 到无终端日常使用的完整产品交付计划，定义自定义快捷键的版本化数据模型、GUI 动线、安全边界、迁移与真机验收门禁。
+- 新增双语开发进度快照，按 P0-P6 明确已完成、部分具备、仅设计和未交付状态，并固定下一批 Preferences、登录启动、自定义快捷键内核与 GUI 的完成门禁。
 - CoreBluetooth 扫描、连接和完整 GATT 枚举。
 - ATVV v0.4/v1.0 能力协商与语音会话。
 - IMA/DVI ADPCM 解码、增益、重采样和 WAV 输出。

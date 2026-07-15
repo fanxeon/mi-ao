@@ -12,7 +12,7 @@
 
 Created, hardware-validated and maintained by **FanXeon@Poemcoder with Codex**.
 
-[English](README_EN.md) · [中文](README.md) · [Pair and connect](docs/PAIRING_EN.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Button presets](docs/BUTTON_PRESETS_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
+[English](README_EN.md) · [中文](README.md) · [Development status](docs/DEVELOPMENT_STATUS.md) · [Pair and connect](docs/PAIRING_EN.md) · [3-minute quick start](docs/QUICKSTART_EN.md) · [Button presets](docs/BUTTON_PRESETS_EN.md) · [Usage](docs/USAGE_EN.md) · [Compatibility](docs/COMPATIBILITY.md) · [Contributing](CONTRIBUTING_EN.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -159,6 +159,8 @@ Read the complete policy in [SECURITY_EN.md](SECURITY_EN.md).
 
 The verified core path is working. MI-AO is currently a **source-first alpha**: it builds and ad-hoc signs the app on the user's own Mac. Until a Developer ID distribution channel exists, the project will not present an unnotarized DMG as a frictionless trusted install.
 
+The current milestone is **P0 complete, with P1 Preferences v1 and Launch at Login next**. See the [development status snapshot](docs/DEVELOPMENT_STATUS.md) for evidence-backed completed, partial, and not-yet-delivered capabilities.
+
 MI-AO now includes menu-bar state, safe background start/stop, duplicate-instance prevention, a non-blocking speech queue, and clipboard concurrency protection. The next milestones are:
 
 - device selection, persisted configuration, and reconnect;
@@ -194,6 +196,7 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 - [ATVV protocol notes](docs/PROTOCOL.md)
 - [Hardware bring-up](docs/HARDWARE_BRINGUP.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Development status snapshot](docs/DEVELOPMENT_STATUS.md)
 - [Product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md)
 
 ## Author, acknowledgments and license

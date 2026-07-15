@@ -4,6 +4,8 @@
 
 This plan defines the path from MI-AO's current source-first alpha to a product that a non-developer can use every day. A milestone is complete only when the real device, system permissions, persisted state, failure recovery, and public documentation form an end-to-end user path.
 
+See the bilingual [development status snapshot](DEVELOPMENT_STATUS.md) for the currently verified baseline, active phase, and explicit not-yet-delivered boundary.
+
 ## Final delivery definition
 
 A user without Swift experience must be able to:

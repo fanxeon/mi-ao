@@ -12,7 +12,7 @@
 
 由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。“是的我只手写了这一行代码，出现任何bug我宣布有codex负责”
 
-[中文](README.md) · [English](README_EN.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
+[中文](README.md) · [English](README_EN.md) · [开发进度](docs/DEVELOPMENT_STATUS.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -177,6 +177,8 @@ BLE 遥控器
 
 核心真机链路已打通，当前是 **source-first alpha**：用户在自己的 Mac 上构建并使用 ad-hoc 签名 App。没有 Apple Developer ID 时，项目不会把未公证 DMG 包装成“一键安装”。
 
+当前里程碑为 **P0 已完成，P1 Preferences v1 与登录启动待实现**。已完成、部分具备和未交付功能的逐项证据见 [开发进度快照](docs/DEVELOPMENT_STATUS.md)。
+
 已经补齐首次设置向导、菜单栏 GUI、安全后台启停、重复实例门禁、非阻塞转写队列和剪贴板并发保护。下一阶段聚焦：
 
 - 设备选择、配置持久化与自动重连；
@@ -212,6 +214,7 @@ BLE 遥控器
 - [ATVV 协议说明](docs/PROTOCOL.md)
 - [真机 Bring-up](docs/HARDWARE_BRINGUP.md)
 - [路线图](docs/ROADMAP.md)
+- [开发进度快照](docs/DEVELOPMENT_STATUS.md)
 - [完整产品交付计划](docs/PRODUCT_DELIVERY_PLAN.md)
 
 ## 作者、致谢与许可证

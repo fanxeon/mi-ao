@@ -4,6 +4,8 @@
 
 [完整产品交付计划](PRODUCT_DELIVERY_PLAN.md) 定义从当前 alpha 到普通用户可交付版本的分阶段工作、自定义快捷键合同和验收门禁；本文保留简明功能清单。
 
+**当前阶段：P0 已完成，P1 Preferences v1 与登录启动待实现。** 最新真实进度见 [开发进度快照](DEVELOPMENT_STATUS.md)。
+
 ## 0.1 硬件打通
 
 - [x] macOS CoreBluetooth 扫描和 GATT 枚举

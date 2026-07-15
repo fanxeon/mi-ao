@@ -35,6 +35,7 @@
 | [GitHub 首发方案](GITHUB_LAUNCH.md) | 仓库描述、topics、社交预览和 Release 节奏 |
 | [品牌与发布文案](BRAND_COPY.md) | README、About、发布帖、作者署名和传播边界 |
 | [开源发布检查表](OPEN_SOURCE_CHECKLIST.md) | 从本地仓库到 public release 的门禁 |
+| [开发进度 / Development status](DEVELOPMENT_STATUS.md) | 当前完成、下一阶段、未交付边界与验收门禁 |
 | [路线图](ROADMAP.md) | 当前交付状态与后续里程碑 |
 | [完整产品交付计划](PRODUCT_DELIVERY_PLAN.md) / [Product delivery plan](PRODUCT_DELIVERY_PLAN_EN.md) | 从 alpha 到无终端用户交付，包含自定义快捷键合同与验收 |
 | [名称与产品身份](NAMING.md) | 中英文名、CLI、Bundle ID 和非官方声明 |

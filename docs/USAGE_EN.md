@@ -12,10 +12,12 @@ MI-AO is currently a **source-first alpha**. Start it from the cloned repository
 
 ```bash
 cd /path/to/mi-ao
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
-Keep the terminal open while MI-AO is running. The current version has no menu bar, login item or visible recording overlay. Do not rely on double-clicking `米遥.app` for daily use because connection, transcript and failure messages would be hidden.
+The command returns while MI-AO continues in the background. Its menu bar item shows search, connection, ready, recording, background transcription, submission and error states. Double-clicking `米遥.app` bypasses the button preflight and is still not a supported daily entry point. Login start is not implemented.
+
+The background log is stored at `~/Library/Application Support/mi-ao/logs/mi-ao.log`. It is unnecessary for daily use; inspect it only for troubleshooting or a redacted issue report.
 
 ## Daily use in four actions
 
@@ -29,15 +31,15 @@ Keep the terminal open while MI-AO is running. The current version has no menu b
 
 ```bash
 cd /path/to/mi-ao
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
 The wrapper matches only Vendor `0x2717` / Product `0x32B8`. It maps D-pad, Center, Back, HOME, TV, Power, Voice, and Volume Up/Down—twelve keys total—to HID `No Event`; Menu is excluded and keeps the native macOS right-click. Volume Up/Down selects the previous/next Codex task. It restores the original mapping on exit.
 
-Wait for:
+Wait for the launcher to confirm startup, or check the menu bar for:
 
 ```text
-桥接已就绪：按遥控器语音键开始说话
+状态：已就绪 · 按住语音键说话
 ```
 
 Do not start speaking before the ready message appears.
@@ -47,7 +49,7 @@ Do not start speaking before the ready message appears.
 1. Hold the voice button in the top-right corner of the remote.
 2. Keep holding while speaking the complete instruction.
 3. Release only after the sentence is finished.
-4. Wait for local Whisper transcription and safe Codex submission.
+4. The recording moves to local Whisper transcription and safe Codex submission in the background. Buttons remain responsive and another utterance can be recorded immediately.
 
 A normal session produces logs similar to:
 
@@ -55,16 +57,16 @@ A normal session produces logs similar to:
 AUDIO_START ADPCM 16 kHz
 AUDIO_STOP reason=0x00
 录音完成 reason=remote-release
+录音结束 reason=remote-release，已进入后台转写队列（待处理 1）
 转写：检查当前项目并告诉我下一步
 已发送到 Codex
-桥接已就绪：按遥控器语音键继续
 ```
 
-Start the next instruction only after the bridge is ready again. A very short tap is discarded and never submits an empty message.
+The queue holds at most one active and one waiting job. You can therefore record one more instruction while the previous one is transcribing. A third instruction that outruns the Mac is explicitly rejected instead of creating an unbounded backlog. A very short tap is discarded and never submits an empty message.
 
 ### 4. Stop
 
-Press `Control + C` in the terminal running MI-AO. This stops the current bridge without deleting the app, model, recordings or permissions.
+Choose “安全退出并恢复遥控器” from the menu bar, or run `./scripts/stop.sh`. Safe exit finishes accepted speech work, stops the bridge, and restores the remote's system mapping without deleting the app, model, recordings or permissions. Foreground debug sessions still support `Control + C`.
 
 ## How submission works
 
@@ -74,9 +76,9 @@ In default mode MI-AO:
 2. verifies that Codex is running;
 3. finds exactly one usable editor in the active Codex window;
 4. temporarily uses the clipboard to paste and press Return;
-5. restores the previous clipboard contents after a successful submission.
+5. restores the previous clipboard only when the clipboard still contains MI-AO's injected data.
 
-If Codex is missing, Accessibility is not authorized, or a unique editor cannot be proven, MI-AO does not press Return blindly. It leaves the transcript on the clipboard and explains the reason in the terminal so it can be reviewed and pasted manually.
+If you copy something new during submission, MI-AO keeps the new clipboard content instead of overwriting it with an old snapshot. If Codex is missing, Accessibility is not authorized, or a unique editor cannot be proven, MI-AO does not press Return blindly. It leaves the transcript on the clipboard and explains the reason in the menu bar and log so it can be reviewed and pasted manually.
 
 ## Effective spoken instructions
 
@@ -97,7 +99,7 @@ Keep one primary task per utterance. Speak filenames, function names and acronym
 ### Default: submit on release
 
 ```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
 ### Safe test: transcribe without submitting
@@ -242,6 +244,7 @@ Each valid utterance keeps:
 - `voice-*.whisper.txt`: raw Whisper text output.
 
 These files can contain private speech, project names and code vocabulary. They are not uploaded automatically and must not be committed to Git or attached to public issues without review.
+The directory uses mode `0700`; speech and transcript files use `0600`, so they are readable only by the current macOS user by default.
 
 Use another output directory with:
 
@@ -253,7 +256,7 @@ Use another output directory with:
 
 ## Update MI-AO
 
-Stop the running bridge, then:
+Use safe exit in the menu bar, or run `./scripts/stop.sh`, then:
 
 ```bash
 cd /path/to/mi-ao
@@ -286,7 +289,7 @@ Uninstall restores any neutral mapping owned by MI-AO before removing the app or
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
 - Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and all four directions have completed their mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
-- The terminal must remain open; menu bar, background service and login start are not implemented yet.
+- Menu-bar state, safe background start/stop, and duplicate-instance prevention are implemented; login start is not.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.
 

@@ -79,21 +79,21 @@ ATVV v1.0，codec=…
 桥接已就绪：按遥控器语音键开始说话
 ```
 
-The bridge is ready only after the final message appears. The current release has no second in-app pairing screen; the foreground script opens the daily connection, so keep its terminal open.
+The bridge is ready only after the final message appears. The current release has no second in-app pairing screen. The first `--no-submit` run is a foreground diagnostic; daily use starts in the background with `start.sh` and exposes connection state in the menu bar.
 
 ## 5. Run the first voice test
 
 1. After the ready message, hold the voice button in the top-right corner.
 2. Keep holding while saying a short test sentence.
 3. Release after speaking.
-4. Wait for a `转写：…` line and the next ready message.
+4. Wait for a `转写：…` line. The bridge becomes ready again as soon as the recording enters the background queue.
 
 `--no-submit` performs the real Bluetooth capture and local transcription but never sends text to Codex. After it succeeds, stop with `Control + C`.
 
 Open the Codex macOS app, enter the task that should receive the instruction, and run normal mode:
 
 ```bash
-./scripts/run.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
 Speak one short instruction. First-time setup is complete only when the terminal reports `已发送到 Codex` and the active Codex task receives the same text.
@@ -104,8 +104,8 @@ You normally do not repeat Menu + `HOME` after pairing:
 
 1. Confirm the remote is connected in System Settings → Bluetooth; press a button once if it is sleeping.
 2. Open Codex and select the target task.
-3. Run `./scripts/run.sh --name "小米蓝牙语音遥控器"` from the repository.
-4. Wait for the ready message before holding the voice button.
+3. Run `./scripts/start.sh` from the repository.
+4. Wait for the ready state in the menu bar before holding the voice button.
 
 ## Pairing and connection failures
 

@@ -36,7 +36,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The D-pad toggles between pointer movement and arrow keys; Center is always Return and Back is always Escape |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
-| Delivery | **Source-first alpha**; locally built, ad-hoc signed, and currently started from the terminal |
+| Delivery | **Source-first alpha**; locally built and ad-hoc signed, with one-command background launch and a visible menu bar |
 
 The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
 
@@ -45,7 +45,9 @@ The first setup needs network access to install `whisper-cpp` and download the m
 - **One physical action.** Hold to speak, release to submit.
 - **A real hardware microphone.** Audio comes from the remote, not a disguised MacBook microphone path.
 - **Local speech processing.** ADPCM decoding and `whisper.cpp` transcription run on your Mac.
+- **Ready for the next instruction.** Transcription and submission run on a serial background queue instead of blocking BLE, buttons, or the next recording.
 - **Fail-safe submission.** MI-AO submits only when exactly one enabled Codex editor is found; otherwise it only copies the transcript.
+- **Visible state and safe exit.** The menu bar shows search, connection, recording, background processing, submission and error states.
 - **Evidence-driven compatibility.** A privacy-aware GATT capture mode makes new remote support reproducible.
 - **Works from a verified baseline and remains recalibratable.** The Xiaomi Remote 2 Pro uses a built-in hardware profile; debug mode can create local overrides without observing the Mac keyboard or synthesizing actions.
 
@@ -103,14 +105,14 @@ Open System Settings → Bluetooth. On the Xiaomi Remote 2 Pro, **press and hold
 For the verified Xiaomi Remote 2 Pro:
 
 ```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
-The wrapper first runs `check-buttons`. If Accessibility permission or the button runtime is unavailable, it exits without changing the system. On success it generates the twelve-key HID `No Event` mapping from the same built-in hardware profile used by the runtime. Menu stays the native macOS right-click. `Control + C` stops MI-AO and restores the original mapping.
+The background launcher first runs `check-buttons`. If Accessibility permission or the button runtime is unavailable, it exits without changing the system. On success it generates the twelve-key HID `No Event` mapping from the same built-in hardware profile used by the runtime. Menu stays the native macOS right-click. Choose “安全退出并恢复遥控器” in the menu bar, or run `./scripts/stop.sh`, to finish accepted speech work and restore the original mapping.
 
 For any other remote, follow the [detailed quick start](docs/QUICKSTART_EN.md) and capture redacted protocol evidence before assuming a UUID.
 
-See the [complete usage guide](docs/USAGE_EN.md) for daily startup, success logs, transcription-only mode, project vocabulary, updates and local data cleanup. Keep the terminal open in the current release; double-clicking the app is not the recommended entry point.
+See the [complete usage guide](docs/USAGE_EN.md) for menu-bar state, consecutive speech, transcription-only mode, project vocabulary, updates and local data cleanup. Double-clicking the app bypasses the button preflight and is not the recommended entry point.
 
 ## Compatibility
 
@@ -141,6 +143,8 @@ Physical buttons use a separate path: `HID Usage → confirmed physical button �
 
 - Speech transcription runs locally and does not require a speech cloud API.
 - WAV files and transcripts stay under `~/Library/Application Support/mi-ao/recordings` for user review.
+- The recordings directory is user-only and speech artifacts use mode `0600`; they are never uploaded automatically.
+- If the user copies something new during submission, MI-AO detects the clipboard change and never overwrites it with an older snapshot.
 - Empty transcripts, a missing Codex process, missing permission, or an ambiguous editor never trigger automatic submission.
 - Capture reports hash peripheral UUIDs and hide device names by default. Raw GATT payload still requires manual review before sharing.
 
@@ -150,9 +154,8 @@ Read the complete policy in [SECURITY_EN.md](SECURITY_EN.md).
 
 The verified core path is working. MI-AO is currently a **source-first alpha**: it builds and ad-hoc signs the app on the user's own Mac. Until a Developer ID distribution channel exists, the project will not present an unnotarized DMG as a frictionless trusted install.
 
-The next milestones are:
+MI-AO now includes menu-bar state, safe background start/stop, duplicate-instance prevention, a non-blocking speech queue, and clipboard concurrency protection. The next milestones are:
 
-- menu bar status and recording feedback;
 - device selection, persisted configuration, and reconnect;
 - mode switching, Power, event-suppression timing, and multi-display acceptance runs;
 - a second Codex-session navigation preset;
@@ -167,7 +170,7 @@ The highest-value contribution is reproducible evidence from new hardware. You c
 
 - contributing a redacted GATT capture for another voice remote;
 - improving ATVV / ADPCM adapters and fixtures;
-- building the menu bar and reconnect experience;
+- improving the menu bar and reconnect experience;
 - improving documentation, diagnostics, and privacy review.
 
 Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims without real hardware evidence are not merged.

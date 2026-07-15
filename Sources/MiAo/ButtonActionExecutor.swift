@@ -39,6 +39,7 @@ struct HomeClickArbiter {
 final class ButtonActionExecutor {
     private let preset: ButtonPreset
     private let debug: Bool
+    private let controlModeHandler: ((RemoteControlMode) -> Void)?
     private var timer: Timer?
     private var activeButton: RemoteButton?
     private var activeAction: ButtonAction?
@@ -52,9 +53,14 @@ final class ButtonActionExecutor {
 
     static let homeDoubleClickInterval: TimeInterval = 0.35
 
-    init(preset: ButtonPreset, debug: Bool = false) {
+    init(
+        preset: ButtonPreset,
+        debug: Bool = false,
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+    ) {
         self.preset = preset
         self.debug = debug
+        self.controlModeHandler = controlModeHandler
     }
 
     func start() {
@@ -86,6 +92,7 @@ final class ButtonActionExecutor {
                     ? "控制模式：鼠标指针（仅方向环移动指针）"
                     : "控制模式：方向键（仅方向环发送上下左右）"
             )
+            controlModeHandler?(controlMode)
             return
         }
 

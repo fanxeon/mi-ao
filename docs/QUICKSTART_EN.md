@@ -61,7 +61,7 @@ Device identity is redacted by default, but raw `events.jsonl` payloads still re
 Xiaomi Remote 2 Pro firmware 2671 ships with a built-in twelve-key hardware profile, so a clean install needs no recalibration. Run:
 
 ```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
 The wrapper runs `check-buttons` first. It changes the system only after Accessibility permission and the button runtime are both ready, then generates neutralization from the same hardware profile.
@@ -102,7 +102,7 @@ All four directions passed direct cursor positioning with real-coordinate monito
 ./scripts/verify-install.sh
 ```
 
-- Stop the foreground bridge with `Control + C`.
+- Stop from the menu bar with “安全退出并恢复遥控器”, or run `./scripts/stop.sh`.
 - Remove the app while retaining models and recordings with `./scripts/uninstall.sh`.
 - Remove all local MI-AO data with `./scripts/uninstall.sh --all-data`.
 

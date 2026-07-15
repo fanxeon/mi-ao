@@ -14,7 +14,7 @@ This checks the app, Bundle ID, signature, Codex process, Bluetooth and Accessib
 
 It also reports remote mapping state. After an abnormal exit, run `./scripts/remote-mapping.sh status`; if MI-AO neutralization remains active, keep the remote connected and run `./scripts/remote-mapping.sh restore`. Unknown user mappings are never deleted.
 
-If the terminal reports `suspended`, `Control + Z` paused the process. The one-command wrapper now catches the suspend signal, terminates its child, and restores the mapping. Use `Control + C` for a normal stop.
+If a foreground debug terminal reports `suspended`, `Control + Z` paused the process. The wrapper catches the suspend signal, terminates its child, and restores the mapping. For daily use, stop from the menu bar or run `./scripts/stop.sh`.
 
 ## The remote does not appear in Bluetooth settings
 
@@ -30,9 +30,11 @@ If it still does not appear, check the batteries, move it closer to the Mac, and
 - Make sure the filter matches part of the name shown by macOS.
 - Do not run two MI-AO bridge processes at the same time.
 
+`start.sh` rejects a second instance and reports the current process. If that state is stale, run `./scripts/stop.sh` to clean up and confirm mapping restoration before starting again.
+
 ## The voice button does nothing
 
-Wait for the ready message first. If it never appears, stop with `Control + C`, confirm Bluetooth, run the verification script, and restart with `--debug`. A working session should log `AUDIO_START` after the button is held.
+Wait for the ready state first. If it never appears, use menu-bar safe exit or `./scripts/stop.sh`, confirm Bluetooth, run the verification script, and restart in foreground with `--debug`. A working session should log `AUDIO_START` after the button is held.
 
 ## A transcript exists but Codex receives nothing
 
@@ -82,7 +84,7 @@ Confirm Codex is running and its View menu contains `Previous Task` / `Next Task
 
 ## Pointer movement and the foreground app both react
 
-Stop immediately with `Control + C`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all twelve intercepted keys mapped to `No Event` for the current device, while Menu is absent and keeps the native macOS right-click. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/run-with-mapping.sh`. Do not use a global keyboard remap as a workaround.
+Stop immediately from the menu bar or with `./scripts/stop.sh`, then run `./scripts/remote-mapping.sh status`. A healthy state shows all twelve intercepted keys mapped to `No Event` for the current device, while Menu is absent and keeps the native macOS right-click. If state is missing or readback differs, run `./scripts/remote-mapping.sh restore` first and restart through `./scripts/start.sh`. Do not use a global keyboard remap as a workaround.
 
 MI-AO installs no global Quartz keyboard event tap. If the physical Mac keyboard loses keystrokes or leaves a modifier stuck, stop MI-AO immediately and submit a redacted log; that is a safety defect, not an accepted limitation.
 

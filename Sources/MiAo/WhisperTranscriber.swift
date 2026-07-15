@@ -65,6 +65,12 @@ struct WhisperTranscriber {
         try process.run()
         process.waitUntilExit()
 
+        if FileManager.default.fileExists(atPath: outputTextURL.path) {
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: outputTextURL.path
+            )
+        }
         guard process.terminationStatus == 0 else {
             let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
             let error = String(data: errorData, encoding: .utf8) ?? "unknown whisper error"

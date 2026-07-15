@@ -402,6 +402,13 @@ for _ in {1..50}; do
   [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]] && break
   sleep 0.02
 done
+MI_AO_RUN_SCRIPT="$TEMP_ROOT/waiting-runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --name test >/dev/null 2>&1
+duplicate_status=$?
+[[ "$duplicate_status" == "1" ]]
+runtime_pid="$(<"$VOICE_BRIDGE_DATA_DIR/runtime.lock/pid")"
+[[ "$runtime_pid" != "$wrapper_pid" ]]
+kill -0 "$runtime_pid"
 kill -TSTP "$wrapper_pid"
 wait "$wrapper_pid"
 wrapper_status=$?
@@ -409,5 +416,24 @@ set -e
 [[ "$wrapper_status" == "148" ]]
 [[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
 [[ ! -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
+[[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
+
+cat > "$TEMP_ROOT/background-runner" <<'EOF'
+#!/bin/zsh
+trap 'exit 0' TERM INT HUP
+echo '桥接已就绪：测试后台实例'
+while true; do sleep 1; done
+EOF
+chmod +x "$TEMP_ROOT/background-runner"
+
+MI_AO_RUN_SCRIPT="$TEMP_ROOT/background-runner" \
+  "$ROOT/scripts/start.sh" --no-buttons >/dev/null
+background_pid="$(<"$VOICE_BRIDGE_DATA_DIR/runtime.lock/pid")"
+kill -0 "$background_pid"
+MI_AO_RUN_SCRIPT="$TEMP_ROOT/background-runner" \
+  "$ROOT/scripts/start.sh" --no-buttons | grep -q '已经在运行'
+"$ROOT/scripts/stop.sh" >/dev/null
+[[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
+[[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]
 
 echo "Remote mapping shell tests: OK"

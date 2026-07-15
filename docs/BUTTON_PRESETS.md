@@ -91,10 +91,10 @@ flowchart LR
 `pointer` 是默认套装。推荐使用一键安全启动：
 
 ```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
-这条命令先执行 `check-buttons`，再从与 Swift 运行时相同的硬件档案生成十二键 HID `No Event`。权限、档案或运行时检查失败时不写入；菜单不进入映射并沿用 macOS 原生鼠标右键。写入会回读验证，退出和信号中断都会安全恢复。
+这条命令在后台先执行 `check-buttons`，再从与 Swift 运行时相同的硬件档案生成十二键 HID `No Event`。权限、档案或运行时检查失败时不写入；菜单不进入映射并沿用 macOS 原生鼠标右键。写入会回读验证，菜单栏安全退出、`stop.sh` 和信号中断都会恢复。第二个实例会在修改系统前被拒绝。
 
 实现使用 macOS 内置 `hidutil UserKeyMapping`，编码方式和生命周期遵循 Apple 的 [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/)。不安装内核扩展，不申请 DriverKit entitlement，也不修改全局键盘映射。
 
@@ -135,6 +135,6 @@ flowchart LR
 - 米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源，Mac 实体键盘不会进入米遥的按键处理链；
 - 遥控器原生副作用只通过精确设备 service 的十二键 HID `No Event` 映射隔离；菜单始终沿用 macOS 原生鼠标右键；HOME、`TV`、电源和音量键的物理 Usage 已确认，但新动作结果仍需逐项真机验收；
 - 调试校准模式不会合成鼠标或键盘动作，但 macOS 仍可能处理遥控器原始 HID 键；请在无重要输入的窗口中校准；
-- `Control + C` 始终是退出入口；`--no-buttons` 是明确的安全回退。
+- 菜单栏“安全退出并恢复遥控器”或 `./scripts/stop.sh` 是日常退出入口；前台调试时使用 `Control + C`；`--no-buttons` 是明确的安全回退。
 
 模式切换和电源动作完成真机验收前，整套按键模式仍属于 **implementation preview**。

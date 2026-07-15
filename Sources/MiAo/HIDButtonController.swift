@@ -42,11 +42,20 @@ final class HIDButtonController {
     private var activeButton: RemoteButton?
     private let openOptions = IOOptionBits(kIOHIDOptionsTypeNone)
 
-    init(configuration: Configuration, map: CalibratedButtonMap, preset: ButtonPreset) {
+    init(
+        configuration: Configuration,
+        map: CalibratedButtonMap,
+        preset: ButtonPreset,
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+    ) {
         self.configuration = configuration
         self.map = map
         self.preset = preset
-        executor = ButtonActionExecutor(preset: preset, debug: configuration.debug)
+        executor = ButtonActionExecutor(
+            preset: preset,
+            debug: configuration.debug,
+            controlModeHandler: controlModeHandler
+        )
     }
 
     deinit {
@@ -214,7 +223,10 @@ enum ButtonRuntimeFactory {
         print("已导出解析后的硬件档案：\(path)")
     }
 
-    static func make(configuration: Configuration) throws -> HIDButtonController? {
+    static func make(
+        configuration: Configuration,
+        controlModeHandler: ((RemoteControlMode) -> Void)? = nil
+    ) throws -> HIDButtonController? {
         guard configuration.buttonsEnabled else {
             print("实体按键动作：已通过 --no-buttons 禁用")
             return nil
@@ -229,6 +241,11 @@ enum ButtonRuntimeFactory {
             return nil
         }
         print("已加载 \(map.sourceFiles.count) 份人工确认校准档案")
-        return HIDButtonController(configuration: configuration, map: map, preset: preset)
+        return HIDButtonController(
+            configuration: configuration,
+            map: map,
+            preset: preset,
+            controlModeHandler: controlModeHandler
+        )
     }
 }

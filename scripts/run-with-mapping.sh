@@ -3,27 +3,58 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/lib/project.sh"
 MAPPING_SCRIPT="$ROOT/scripts/remote-mapping.sh"
 RUN_SCRIPT="${MI_AO_RUN_SCRIPT:-$ROOT/scripts/run.sh}"
 BUTTON_CHECK_SCRIPT="${MI_AO_BUTTON_CHECK_SCRIPT:-$ROOT/scripts/check-buttons.sh}"
 mapping_active=false
 child_pid=""
 resolved_profile=""
+runtime_lock="$APP_DATA_DIR/runtime.lock"
+owns_runtime_lock=false
+skip_mapping=false
+runtime_token="$$-$RANDOM-$(date +%s)"
 
 for argument in "$@"; do
   case "$argument" in
-    --no-buttons|--help|-h)
+    --help|-h)
       exec "$RUN_SCRIPT" "$@"
+      ;;
+    --no-buttons)
+      skip_mapping=true
       ;;
   esac
 done
+
+acquire_runtime_lock() {
+  mkdir -p "$APP_DATA_DIR"
+  if mkdir "$runtime_lock" 2>/dev/null; then
+    owns_runtime_lock=true
+    print -r -- "$$" > "$runtime_lock/pid"
+    print -r -- "$runtime_token" > "$runtime_lock/token"
+    return 0
+  fi
+
+  local owner_pid=""
+  [[ -f "$runtime_lock/pid" ]] && owner_pid="$(<"$runtime_lock/pid")"
+  if [[ "$owner_pid" == <-> ]] && kill -0 "$owner_pid" 2>/dev/null; then
+    echo "错误：米遥已经在运行（进程 $owner_pid）。请使用菜单栏退出，或运行 scripts/stop.sh。" >&2
+    return 1
+  fi
+
+  rm -rf "$runtime_lock"
+  mkdir "$runtime_lock"
+  owns_runtime_lock=true
+  print -r -- "$$" > "$runtime_lock/pid"
+  print -r -- "$runtime_token" > "$runtime_lock/token"
+}
 
 stop_child() {
   [[ -n "$child_pid" ]] || return 0
   if kill -0 "$child_pid" 2>/dev/null; then
     kill -CONT "$child_pid" 2>/dev/null || true
     kill -TERM "$child_pid" 2>/dev/null || true
-    for _ in {1..20}; do
+    for _ in {1..700}; do
       kill -0 "$child_pid" 2>/dev/null || break
       sleep 0.05
     done
@@ -47,6 +78,14 @@ cleanup_session() {
   if [[ -n "$resolved_profile" ]]; then
     rm -f "$resolved_profile"
   fi
+  if $owns_runtime_lock; then
+    local stored_token=""
+    [[ -f "$runtime_lock/token" ]] && stored_token="$(<"$runtime_lock/token")"
+    if [[ "$stored_token" == "$runtime_token" ]]; then
+      rm -rf "$runtime_lock"
+    fi
+    owns_runtime_lock=false
+  fi
 }
 
 handle_signal() {
@@ -65,22 +104,30 @@ trap 'handle_signal 143 TERM' TERM
 trap 'handle_signal 129 HUP' HUP
 trap 'handle_signal 148 TSTP' TSTP
 
-resolved_profile="$(mktemp "${TMPDIR:-/tmp}/mi-ao-resolved-profile.XXXXXX")"
-if ! "$BUTTON_CHECK_SCRIPT" --emit-profile "$resolved_profile" "$@"; then
-  echo "错误：按键运行时未就绪，未修改系统映射。" >&2
-  exit 1
-fi
-export MI_AO_HARDWARE_PROFILE="$resolved_profile"
+acquire_runtime_lock
+export MI_AO_MAPPING_RESTORE_SCRIPT="$MAPPING_SCRIPT"
+export MI_AO_RUNTIME_LOCK="$runtime_lock"
+export MI_AO_RUNTIME_TOKEN="$runtime_token"
 
-mapping_active=true
-if ! "$MAPPING_SCRIPT" apply; then
-  mapping_active=false
-  exit 1
+if ! $skip_mapping; then
+  resolved_profile="$(mktemp "${TMPDIR:-/tmp}/mi-ao-resolved-profile.XXXXXX")"
+  if ! "$BUTTON_CHECK_SCRIPT" --emit-profile "$resolved_profile" "$@"; then
+    echo "错误：按键运行时未就绪，未修改系统映射。" >&2
+    exit 1
+  fi
+  export MI_AO_HARDWARE_PROFILE="$resolved_profile"
+
+  mapping_active=true
+  if ! "$MAPPING_SCRIPT" apply; then
+    mapping_active=false
+    exit 1
+  fi
 fi
 
 set +e
 "$RUN_SCRIPT" "$@" &
 child_pid=$!
+print -r -- "$child_pid" > "$runtime_lock/pid"
 wait "$child_pid"
 result_code=$?
 child_pid=""

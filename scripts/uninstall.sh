@@ -6,6 +6,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
 
 MAPPING_STATE_FILE="$APP_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active"
+RUNTIME_PID_FILE="$APP_DATA_DIR/runtime.lock/pid"
+runtime_pid=""
+[[ -f "$RUNTIME_PID_FILE" ]] && runtime_pid="$(<"$RUNTIME_PID_FILE")"
+if [[ "$runtime_pid" == <-> ]] && kill -0 "$runtime_pid" 2>/dev/null; then
+  "$ROOT/scripts/stop.sh"
+fi
 if [[ -x "$ROOT/scripts/remote-mapping.sh" && -f "$MAPPING_STATE_FILE" ]]; then
   "$ROOT/scripts/remote-mapping.sh" restore
 fi

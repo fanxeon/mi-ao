@@ -15,4 +15,12 @@ installed_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$
 
 "$INSTALLED_BIN" doctor
 "$ROOT/scripts/remote-mapping.sh" status
+runtime_lock="$APP_DATA_DIR/runtime.lock/pid"
+runtime_pid=""
+[[ -f "$runtime_lock" ]] && runtime_pid="$(<"$runtime_lock")"
+if [[ "$runtime_pid" == <-> ]] && kill -0 "$runtime_pid" 2>/dev/null; then
+  echo "运行状态：米遥正在后台运行（进程 $runtime_pid）"
+else
+  echo "运行状态：未启动；运行 $ROOT/scripts/start.sh"
+fi
 echo "安装验证通过：$INSTALL_APP"

@@ -10,8 +10,9 @@ BLE 遥控器
   -> ATVV session/protocol
   -> IMA/DVI ADPCM decoder
   -> PCM gain + 16 kHz resampling
+  -> serial background speech queue
   -> local whisper.cpp
-  -> verified Codex text input
+  -> verified Codex text input + clipboard change guard
 ```
 
 ## 实体按键链路
@@ -37,13 +38,16 @@ flowchart LR
 - `ADPCMDecoder.swift`：无平台依赖的 IMA/DVI ADPCM 解码。
 - `AudioPipeline.swift`：RMS、增益、重采样和 WAV 编码。
 - `WhisperTranscriber.swift`：本地 `whisper-cli` 进程合同。
-- `CodexSubmitter.swift`：Codex 进程识别、Electron 可访问性树遍历、唯一编辑器聚焦，以及语音文字的粘贴和发送。
+- `SpeechJobQueue.swift`：最多两条任务的串行后台队列、唯一文件名、私有文件权限，以及有序转写/提交。
+- `CodexSubmitter.swift`：Codex 进程识别、Electron 可访问性树遍历、唯一编辑器聚焦、非阻塞粘贴/发送和剪贴板并发变化保护。
+- `MenuBarController.swift`：连接、录音、处理、提交和错误状态，以及聚焦 Codex、打开记录和安全退出入口。
 - `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
 - `ButtonPreset.swift`：与硬件无关的映射套装；当前内置默认 `pointer`。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
 - `HIDButtonController.swift`：运行期 HID 事件到实体按钮的分发。
 - `ButtonActionExecutor.swift`：鼠标移动、方向键/Return/Escape、模式切换，以及 Codex 启动、聚焦和上/下一个会话。
-- `remote-mapping.sh` / `run-with-mapping.sh`：十二个接管键到 HID `No Event` 的设备专属中性化；菜单不进入映射并沿用 macOS 原生鼠标右键。包含 v1/v2/v3 迁移、所有权状态、回读验证和退出恢复。
+- `remote-mapping.sh` / `run-with-mapping.sh`：十二个接管键到 HID `No Event` 的设备专属中性化；菜单不进入映射并沿用 macOS 原生鼠标右键。包含 v1/v2/v3 迁移、单实例锁、所有权状态、回读验证和退出恢复。
+- `start.sh` / `stop.sh`：日常后台启停；运行锁记录真实 App PID，菜单退出、命令停止和外层包装器都会触发同一所有权校验恢复。即使启动终端或包装器意外消失，App 的正常退出路径仍会恢复映射。
 - `Configuration.swift`：CLI 模式和安全选项。
 
 米遥不建立全局 Quartz 键盘事件 tap，也不按时间窗口猜测事件来源。Mac 实体键盘不会进入米遥的按键处理链；遥控器原生副作用只由精确匹配该 HID service 的十二键 `No Event` 映射隔离。HOME 的单/双击仲裁只在已确认的遥控器 HOME 事件上运行。
@@ -51,10 +55,11 @@ flowchart LR
 ## 会话状态
 
 ```text
-disconnected -> discovering -> ready -> opening -> streaming -> transcribing -> ready
+disconnected -> discovering -> ready -> opening -> streaming -> ready
+                                                   |-> background queue: wav -> whisper -> submit
 ```
 
-失败不会伪造成功：协议错误会终止当前进程；单次转写或提交失败会保留录音并回到 `ready`。
+录音帧离开主线程后立即回到 `ready`，因此上一条正在转写时仍能接收按键和下一段语音。队列最多容纳一条处理中和一条等待中，第三条明确拒绝而不是无限积压。安全退出会等待已接收任务完成。失败不会伪造成功：协议错误会终止当前进程；单次转写或提交失败会保留本地文件并在菜单栏显示原因。
 
 `capture` 与 `run` 使用同一套 CoreBluetooth 回调，但行为边界不同：`capture` 可以连接未知协议、读取可读特征并订阅全部 notify/indicate，却不会向未知 characteristic 写入数据；只有识别到标准 ATVV UUID 后才复用已知能力协商。
 

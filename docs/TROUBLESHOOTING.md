@@ -20,7 +20,7 @@
 
 如果异常退出后仍显示“米遥中性映射”，保持遥控器连接并运行 `./scripts/remote-mapping.sh restore`。脚本检测到其他用户映射时会拒绝删除。
 
-若终端任务显示 `suspended`，说明误按了 `Control + Z`。新版一键脚本会捕获暂停信号，终止子进程并恢复映射；正常停止请使用 `Control + C`。
+若前台调试终端显示 `suspended`，说明误按了 `Control + Z`。包装脚本会捕获暂停信号、终止子进程并恢复映射。日常停止使用菜单栏“安全退出并恢复遥控器”或 `./scripts/stop.sh`。
 
 ## macOS 蓝牙页看不到遥控器
 
@@ -38,6 +38,8 @@
 - 设备名称必须与 macOS 显示名称的一部分匹配；
 - 不要同时启动两个米遥进程。
 
+`start.sh` 会拒绝第二个实例并显示现有进程号。若状态已经失效，运行 `./scripts/stop.sh` 清理并确认映射恢复后再启动。
+
 ```bash
 ./scripts/run.sh --name "小米蓝牙语音遥控器"
 ```
@@ -46,7 +48,7 @@
 
 终端应先显示“桥接已就绪”。如果没有：
 
-1. 按 `Control + C` 停止；
+1. 菜单栏安全退出或运行 `./scripts/stop.sh`；前台调试时按 `Control + C`；
 2. 重新确认蓝牙连接；
 3. 运行 `./scripts/verify-install.sh`；
 4. 用 `--debug` 重启并查看是否出现 `AUDIO_START`。
@@ -99,7 +101,7 @@
 
 ## 指针动作和前台 App 同时响应
 
-立即按 `Control + C` 停止，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十二个接管键均映射为 `No Event`，菜单不在映射内并继续作为 macOS 原生鼠标右键。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/run-with-mapping.sh` 启动；不要用全局键盘重映射作为绕过方案。
+立即从菜单栏安全退出或运行 `./scripts/stop.sh`，然后运行 `./scripts/remote-mapping.sh status`。正常状态应显示当前设备的十二个接管键均映射为 `No Event`，菜单不在映射内并继续作为 macOS 原生鼠标右键。若状态缺失或回读不一致，先执行 `./scripts/remote-mapping.sh restore`，再通过 `./scripts/start.sh` 启动；不要用全局键盘重映射作为绕过方案。
 
 米遥不建立全局 Quartz 键盘事件 tap。若 Mac 实体键盘出现按键丢失或修饰键卡住，应立即停止米遥并提交脱敏日志，这是安全缺陷而不是可接受的已知限制。
 

@@ -1,6 +1,8 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
+import Darwin
 import Foundation
 
+var runtimeSessionNeedsCleanup = false
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
     if configuration.mode == .learnButtons || configuration.mode == .debugButtons {
@@ -19,12 +21,35 @@ do {
         }
         exit(0)
     }
-    let bridge = BLEVoiceBridge(configuration: configuration)
+    var menuBarController: MenuBarController?
+    var terminationSignalSource: DispatchSourceSignal?
+    if configuration.mode == .run {
+        runtimeSessionNeedsCleanup = true
+        menuBarController = MenuBarController(outputDirectory: configuration.outputDirectory)
+    }
+    let bridge = BLEVoiceBridge(
+        configuration: configuration,
+        statusHandler: { [weak menuBarController] status in
+            menuBarController?.update(status: status)
+        }
+    )
+    menuBarController?.onQuit = { [weak bridge] in bridge?.requestShutdown() }
+    if configuration.mode == .run {
+        signal(SIGTERM, SIG_IGN)
+        terminationSignalSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        terminationSignalSource?.setEventHandler { [weak bridge] in bridge?.requestShutdown() }
+        terminationSignalSource?.resume()
+    }
     try bridge.start()
     var buttonController: HIDButtonController?
     if configuration.mode == .run {
         do {
-            buttonController = try ButtonRuntimeFactory.make(configuration: configuration)
+            buttonController = try ButtonRuntimeFactory.make(
+                configuration: configuration,
+                controlModeHandler: { [weak menuBarController] mode in
+                    menuBarController?.update(controlMode: mode)
+                }
+            )
             try buttonController?.start()
         } catch {
             fputs("实体按键动作已禁用：\(error.localizedDescription)\n", stderr)
@@ -35,9 +60,14 @@ do {
         while !bridge.isFinished {
             _ = RunLoop.main.run(mode: .default, before: .distantFuture)
         }
+        buttonController?.stop()
+        terminationSignalSource?.cancel()
+        RuntimeSessionCleanup.perform()
+        runtimeSessionNeedsCleanup = false
         if bridge.exitStatus != 0 { exit(bridge.exitStatus) }
     }
 } catch {
+    if runtimeSessionNeedsCleanup { RuntimeSessionCleanup.perform() }
     fputs("错误：\(error.localizedDescription)\n", stderr)
     exit(1)
 }

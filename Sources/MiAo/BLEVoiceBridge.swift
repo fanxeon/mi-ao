@@ -6,10 +6,11 @@ import Foundation
 
 final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     private enum SessionState: String {
-        case disconnected, discovering, ready, opening, streaming, transcribing
+        case disconnected, discovering, ready, opening, streaming
     }
 
     private let configuration: Configuration
+    private let statusHandler: ((MiAoRuntimeStatus) -> Void)?
     private let protocolHandler = ATVVProtocol()
     private var central: CBCentralManager!
     private var peripheral: CBPeripheral?
@@ -29,13 +30,18 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private var scanStopTimer: Timer?
     private var captureStopTimer: Timer?
     private var discoveredIdentifiers = Set<UUID>()
-    private var transcriber: WhisperTranscriber?
+    private var speechJobs: SpeechJobQueue?
     private var captureRecorder: CaptureRecorder?
+    private var shutdownRequested = false
     private(set) var isFinished = false
     private(set) var exitStatus: Int32 = 0
 
-    init(configuration: Configuration) {
+    init(
+        configuration: Configuration,
+        statusHandler: ((MiAoRuntimeStatus) -> Void)? = nil
+    ) {
         self.configuration = configuration
+        self.statusHandler = statusHandler
         super.init()
     }
 
@@ -50,11 +56,30 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         }
 
         if configuration.mode == .run {
-            transcriber = try WhisperTranscriber(configuration: configuration)
+            publish(.starting)
+            let transcriber = try WhisperTranscriber(configuration: configuration)
+            speechJobs = SpeechJobQueue(
+                transcribe: { wavURL in
+                    try transcriber.transcribe(wavURL: wavURL)
+                },
+                submit: { text, force, completion in
+                    CodexSubmitter().submit(text, force: force, completion: completion)
+                }
+            )
+            let outputDirectoryExisted = FileManager.default.fileExists(
+                atPath: configuration.outputDirectory
+            )
             try FileManager.default.createDirectory(
                 atPath: configuration.outputDirectory,
                 withIntermediateDirectories: true
             )
+            let defaultOutputDirectory = Configuration().outputDirectory
+            if !outputDirectoryExisted || configuration.outputDirectory == defaultOutputDirectory {
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o700],
+                    ofItemAtPath: configuration.outputDirectory
+                )
+            }
         }
         if configuration.mode == .capture {
             captureRecorder = try CaptureRecorder(
@@ -75,6 +100,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         switch central.state {
         case .poweredOn:
             log("蓝牙已就绪")
+            publish(.searching)
             if (configuration.mode == .run || configuration.mode == .capture),
                 let identifier = configuration.peripheralIdentifier,
                 let known = central.retrievePeripherals(withIdentifiers: [identifier]).first
@@ -110,6 +136,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
 
     private func startScan() {
         state = .discovering
+        if configuration.mode == .run { publish(.searching) }
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         let scanMessage =
             configuration.mode == .run
@@ -248,6 +275,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             deviceIdentifier: peripheral.identifier
         )
         log("连接 \(peripheral.name ?? peripheral.identifier.uuidString)（\(reason)）")
+        if configuration.mode == .run { publish(.connecting) }
         central.connect(peripheral)
     }
 
@@ -286,6 +314,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             finalizeRecording(reason: "device-disconnected")
         }
         state = .disconnected
+        if configuration.mode == .run { publish(.disconnected) }
         self.peripheral = nil
         txCharacteristic = nil
         rxCharacteristic = nil
@@ -293,6 +322,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         notificationReady.removeAll()
         didSendCapabilitiesRequest = false
         stopTimers()
+        if shutdownRequested {
+            finishShutdownIfPossible()
+            return
+        }
         if configuration.mode == .capture {
             finishCapture(reason: "device-disconnected")
             return
@@ -486,8 +519,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                     "ATVV v\(capabilities.version)，codec=\(protocolHandler.codec!)，interaction=0x\(String(format: "%02x", capabilities.interactionModel))，frame=\(capabilities.frameSize)B"
                 )
                 log("桥接已就绪：按遥控器语音键开始说话")
+                publishReadyStatus()
             } catch { fatal(error.localizedDescription) }
         case .startSearch:
+            guard !shutdownRequested else { return }
             if state == .streaming || state == .opening {
                 log("第二次 START_SEARCH，结束本次语音")
                 closeAndFinalize(reason: "second-press")
@@ -502,6 +537,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             detectedSpeech = false
             lastSpeechAt = Date()
             log("AUDIO_START \(codec)，开始录音")
+            publish(.recording)
             startTimers()
         case .audioStop(let reason):
             log("AUDIO_STOP reason=0x\(String(format: "%02x", reason))")
@@ -526,6 +562,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             detectedSpeech = false
             lastSpeechAt = Date()
             log("TX MIC_OPEN \(hex(command))")
+            publish(.recording)
         } catch { fatal(error.localizedDescription) }
     }
 
@@ -582,7 +619,6 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private func finalizeRecording(reason: String) {
         guard state == .streaming || state == .opening else { return }
         stopTimers()
-        state = .transcribing
         let captured = samples
         samples.removeAll(keepingCapacity: true)
 
@@ -620,28 +656,55 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             return
         }
 
-        let prepared = AudioPipeline.prepareForWhisper(captured, sampleRate: rate, gainDB: configuration.gainDB)
-        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
-        let wavURL = URL(fileURLWithPath: configuration.outputDirectory).appendingPathComponent("voice-\(stamp).wav")
-
-        do {
-            try AudioPipeline.writeWAV(samples: prepared, sampleRate: 16_000, to: wavURL)
-            log("录音完成 reason=\(reason)，保存 \(wavURL.path)")
-            guard let transcriber else { throw BridgeError.transcription("transcriber 未初始化") }
-            let transcript = try transcriber.transcribe(wavURL: wavURL)
-            let transcriptURL = wavURL.deletingPathExtension().appendingPathExtension("txt")
-            try transcript.write(to: transcriptURL, atomically: true, encoding: .utf8)
-            log("转写：\(transcript)")
-
-            if configuration.submitToCodex {
-                try CodexSubmitter().submit(transcript, force: configuration.forceSubmit)
-                log("已发送到 Codex")
-            }
-        } catch {
-            log("本次处理失败：\(error.localizedDescription)")
-        }
         state = .ready
-        log("桥接已就绪：按遥控器语音键继续")
+        guard let speechJobs else {
+            log("本次处理失败：转写队列未初始化")
+            return
+        }
+        let request = SpeechJobRequest(
+            samples: captured,
+            sampleRate: rate,
+            gainDB: configuration.gainDB,
+            outputDirectory: configuration.outputDirectory,
+            reason: reason,
+            submitToCodex: configuration.submitToCodex,
+            forceSubmit: configuration.forceSubmit
+        )
+        let accepted = speechJobs.enqueue(request) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let output):
+                self.log("转写：\(output.transcript)")
+                self.log("录音保存：\(output.wavURL.path)")
+                if output.submitted {
+                    self.log("已发送到 Codex")
+                    self.publish(.sent)
+                } else if let submissionError = output.submissionError {
+                    self.log("本次提交失败：\(submissionError)")
+                    self.publish(.error(submissionError))
+                } else {
+                    self.publishReadyStatus()
+                }
+            case .failure(let error):
+                self.log("本次处理失败：\(error.localizedDescription)")
+                self.publish(.error(error.localizedDescription))
+            }
+            if self.shutdownRequested {
+                self.finishShutdownIfPossible()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                    guard let self, self.state == .ready else { return }
+                    self.publishReadyStatus()
+                }
+            }
+        }
+        guard accepted else {
+            log("转写队列已满（最多一条处理中、一条等待中），本次录音未提交")
+            return
+        }
+        publish(.processing(speechJobs.pendingCount))
+        log("录音结束 reason=\(reason)，已进入后台转写队列（待处理 \(speechJobs.pendingCount)）")
+        log("桥接已就绪：可以继续使用遥控器")
     }
 
     private func write(_ data: Data) {
@@ -766,6 +829,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     }
 
     private func fatal(_ message: String) {
+        if configuration.mode == .run { publish(.error(message)) }
         fputs("错误：\(message)\n", stderr)
         fflush(stderr)
         if configuration.mode == .capture {
@@ -778,5 +842,38 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         exitStatus = 1
         isFinished = true
         CFRunLoopStop(CFRunLoopGetMain())
+    }
+
+    func requestShutdown() {
+        guard configuration.mode == .run, !shutdownRequested else { return }
+        shutdownRequested = true
+        publish(.stopping)
+        if state == .streaming || state == .opening {
+            closeAndFinalize(reason: "app-quit")
+        }
+        finishShutdownIfPossible()
+    }
+
+    private func finishShutdownIfPossible() {
+        guard shutdownRequested, speechJobs?.pendingCount ?? 0 == 0 else { return }
+        central?.stopScan()
+        if let peripheral { central?.cancelPeripheralConnection(peripheral) }
+        stopTimers()
+        isFinished = true
+        CFRunLoopStop(CFRunLoopGetMain())
+    }
+
+    private func publishReadyStatus() {
+        guard configuration.mode == .run else { return }
+        if state == .streaming || state == .opening {
+            publish(.recording)
+            return
+        }
+        let pending = speechJobs?.pendingCount ?? 0
+        publish(pending > 0 ? .processing(pending) : .ready)
+    }
+
+    private func publish(_ status: MiAoRuntimeStatus) {
+        statusHandler?(status)
     }
 }

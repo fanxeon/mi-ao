@@ -71,10 +71,10 @@ Only local reports with `captureMode=confirmed_calibration` can override the bui
 Use the safe one-command startup:
 
 ```bash
-./scripts/run-with-mapping.sh --name "小米蓝牙语音遥控器"
+./scripts/start.sh
 ```
 
-It runs `check-buttons` first, then generates the twelve-key HID `No Event` mapping from the same hardware profile used by the Swift runtime. Permission, profile, or runtime failure leaves the system unchanged. Menu is excluded and keeps the native macOS right-click. The wrapper verifies writes and restores on normal exit or signals.
+It runs `check-buttons` in the background, then generates the twelve-key HID `No Event` mapping from the same hardware profile used by the Swift runtime. Permission, profile, or runtime failure leaves the system unchanged. Menu is excluded and keeps the native macOS right-click. The wrapper verifies writes and restores after menu-bar safe exit, `stop.sh`, or signals. A second instance is rejected before any system change.
 
 The implementation uses the built-in `hidutil UserKeyMapping` format and lifecycle documented in Apple's [TN2450: Remapping Keys](https://developer.apple.com/library/archive/technotes/tn2450/). It installs no kernel extension, requests no DriverKit entitlement, and changes no global keyboard mapping.
 
@@ -90,6 +90,6 @@ Use `--preset pointer` to be explicit or `--button-profile "/path/to/buttons-*.j
 - MI-AO installs no global Quartz keyboard event tap and never guesses an event source from timing. Events from the physical Mac keyboard do not enter MI-AO's button pipeline.
 - Native remote side effects are isolated only by the twelve-key HID `No Event` mapping scoped to the exact device service. Menu keeps the native macOS right-click. HOME, `TV`, Power, and Volume have verified physical Usages, but new action results still require individual hardware acceptance.
 - Calibration does not synthesize actions, although macOS may still handle the original remote HID key while calibration is running. Calibrate in a window with no important input.
-- `Control + C` stops the bridge; `--no-buttons` is the explicit safe fallback.
+- Menu-bar safe exit or `./scripts/stop.sh` is the daily stop path; use `Control + C` for foreground debugging. `--no-buttons` is the explicit safe fallback.
 
 Until mode switching and Power complete hardware acceptance, the complete button mode remains an **implementation preview**.

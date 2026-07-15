@@ -24,45 +24,77 @@ enum CodexTaskDirection: Equatable {
 struct CodexSubmitter {
     private let bundleIdentifier = "com.openai.codex"
 
-    func submit(_ text: String, force: Bool) throws {
+    func submit(
+        _ text: String,
+        force: Bool,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async {
+                submit(text, force: force, completion: completion)
+            }
+            return
+        }
+
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw BridgeError.submission("转写为空，已取消发送")
+            completion(.failure(BridgeError.submission("转写为空，已取消发送")))
+            return
         }
 
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
         guard AXIsProcessTrustedWithOptions(options) else {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
-            throw BridgeError.submission("尚未授予辅助功能权限；transcript 已复制到剪贴板")
+            completion(
+                .failure(
+                    BridgeError.submission("尚未授予辅助功能权限；transcript 已复制到剪贴板")
+                )
+            )
+            return
         }
 
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first else {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
-            throw BridgeError.submission("Codex 未运行；transcript 已复制到剪贴板")
+            completion(.failure(BridgeError.submission("Codex 未运行；transcript 已复制到剪贴板")))
+            return
         }
 
         app.activate(options: [.activateAllWindows])
-        Thread.sleep(forTimeInterval: 0.35)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            if !force {
+                let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
+                guard focusCodexEditor(in: applicationElement) else {
+                    copyOnly(text)
+                    completion(
+                        .failure(
+                            BridgeError.submission(
+                                "无法安全聚焦唯一的 Codex 输入框；transcript 已复制到剪贴板"
+                            )
+                        )
+                    )
+                    return
+                }
+            }
 
-        if !force {
-            let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
-            guard focusCodexEditor(in: applicationElement) else {
-                copyOnly(text)
-                throw BridgeError.submission(
-                    "无法安全聚焦唯一的 Codex 输入框；transcript 已复制到剪贴板"
-                )
+            let snapshot = PasteboardSnapshot.capture()
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            guard pasteboard.setString(text, forType: .string) else {
+                snapshot.restore(ifUnchangedSince: pasteboard.changeCount)
+                completion(.failure(BridgeError.submission("无法写入剪贴板，已取消发送")))
+                return
+            }
+            let injectedChangeCount = pasteboard.changeCount
+            postKey(keyCode: 9, flags: .maskCommand)  // Cmd+V
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                postKey(keyCode: 36, flags: [])  // Return
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    snapshot.restore(ifUnchangedSince: injectedChangeCount)
+                    completion(.success(()))
+                }
             }
         }
-
-        let snapshot = PasteboardSnapshot.capture()
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-        postKey(keyCode: 9, flags: .maskCommand)  // Cmd+V
-        Thread.sleep(forTimeInterval: 0.2)
-        postKey(keyCode: 36, flags: [])  // Return
-        Thread.sleep(forTimeInterval: 0.35)
-        snapshot.restore()
     }
 
     @discardableResult
@@ -219,6 +251,12 @@ struct CodexSubmitter {
     }
 }
 
+enum PasteboardRestorePolicy {
+    static func shouldRestore(expectedChangeCount: Int, currentChangeCount: Int) -> Bool {
+        expectedChangeCount == currentChangeCount
+    }
+}
+
 private struct PasteboardSnapshot {
     let items: [[NSPasteboard.PasteboardType: Data]]
 
@@ -232,8 +270,14 @@ private struct PasteboardSnapshot {
         return PasteboardSnapshot(items: copied)
     }
 
-    func restore() {
+    func restore(ifUnchangedSince expectedChangeCount: Int) {
         let pasteboard = NSPasteboard.general
+        guard
+            PasteboardRestorePolicy.shouldRestore(
+                expectedChangeCount: expectedChangeCount,
+                currentChangeCount: pasteboard.changeCount
+            )
+        else { return }
         pasteboard.clearContents()
         let restored: [NSPasteboardItem] = items.map { values in
             let item = NSPasteboardItem()

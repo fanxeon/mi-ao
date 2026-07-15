@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">米遥 MI-AO 中心连接 Logo</title>
+  <desc id="description">06 中心连接方案，中心确认键与八向连接结构。</desc>
+  <metadata>Created and maintained by FanXeon@Poemcoder with Codex.</metadata>
+  <defs>
+    <linearGradient id="mi-ao-gradient" gradientUnits="userSpaceOnUse" x1="96" y1="96" x2="928" y2="928">
+      <stop offset="0" stop-color="#1473FF"/>
+      <stop offset="1" stop-color="#7B61FF"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#mi-ao-gradient)" stroke-width="64" stroke-linecap="round">
+    <line x1="512" y1="96" x2="512" y2="286"/>
+    <line x1="512" y1="738" x2="512" y2="928"/>
+    <line x1="96" y1="512" x2="286" y2="512"/>
+    <line x1="738" y1="512" x2="928" y2="512"/>
+    <line x1="204" y1="204" x2="338" y2="338"/>
+    <line x1="686" y1="338" x2="820" y2="204"/>
+    <line x1="686" y1="686" x2="820" y2="820"/>
+    <line x1="338" y1="686" x2="204" y2="820"/>
+    <circle cx="512" cy="512" r="83" stroke-width="54"/>
+  </g>
+</svg>

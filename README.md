@@ -3,7 +3,7 @@
 # 米遥 MI-AO
 
 <p align="center">
-  <img src="docs/assets/mi-ao-logo.png" width="180" alt="米遥 MI-AO 魔杖 Logo">
+  <img src="docs/assets/mi-ao-logo.png" width="180" alt="米遥 MI-AO 中心连接 Logo">
 </p>
 
 **在 Vibe Coding 时代，把小米蓝牙遥控器 2 Pro 变成 Mac 上一根真正握在手里的 Codex 魔法仙女棒。**
@@ -42,7 +42,7 @@
 | 调试与安全 | 内置固件 2671 真机档案，本地校准可安全覆盖；接管前先验证权限与运行时，退出时自动恢复 |
 | 交付形态 | **source-first alpha**；一条命令本地构建，安装后 App 内置日常运行组件，菜单栏 GUI 显示真实状态和安全操作 |
 
-首次安装需要联网安装 `whisper-cpp` 并下载多语言 base 模型；日常语音转写在本机完成。详细安装路径见 [3 分钟快速开始](docs/QUICKSTART.md)，已实现与计划中功能的边界见 [路线图](docs/ROADMAP.md)。
+首次安装需要联网安装 `whisper-cpp` 并下载多语言 base 模型；日常语音转写在本机完成。详细安装路径见 [3 分钟快速开始](docs/QUICKSTART.md)，已实现与计划中功能的边界见 [路线图](docs/ROADMAP.md) 和 [完整产品交付计划](docs/PRODUCT_DELIVERY_PLAN.md)。
 
 ## 为什么它像一根真正的魔法仙女棒
 
@@ -180,12 +180,13 @@ BLE 遥控器
 已经补齐首次设置向导、菜单栏 GUI、安全后台启停、重复实例门禁、非阻塞转写队列和剪贴板并发保护。下一阶段聚焦：
 
 - 设备选择、配置持久化与自动重连；
+- 可复制、测试、导入/导出的用户按键预设和自定义快捷键；
 - 默认 pointer 套装的模式切换、电源动作和多显示器定位体验验收；
 - Codex 会话导航等第二套映射；
 - 更多真实遥控器的兼容矩阵；
 - 可配置输出目标，但不弱化默认安全边界。
 
-见 [路线图](docs/ROADMAP.md) 和 [源码优先分发](docs/DISTRIBUTION.md)。
+见 [完整产品交付计划](docs/PRODUCT_DELIVERY_PLAN.md)、[路线图](docs/ROADMAP.md) 和 [源码优先分发](docs/DISTRIBUTION.md)。
 
 ## 参与贡献
 
@@ -211,6 +212,7 @@ BLE 遥控器
 - [ATVV 协议说明](docs/PROTOCOL.md)
 - [真机 Bring-up](docs/HARDWARE_BRINGUP.md)
 - [路线图](docs/ROADMAP.md)
+- [完整产品交付计划](docs/PRODUCT_DELIVERY_PLAN.md)
 
 ## 作者、致谢与许可证
 

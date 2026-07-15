@@ -27,10 +27,15 @@ zsh -n \
 
 BUILT_PROFILE="$BUILD_APP/Contents/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist"
 BUILT_ICON="$BUILD_APP/Contents/Resources/AppIcon.icns"
+BUILT_BRAND="$BUILD_APP/Contents/Resources/Brand"
 BUILT_RUNTIME="$BUILD_APP/Contents/Resources/Runtime"
 [[ -x "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" ]]
 [[ -f "$BUILT_PROFILE" ]]
 [[ -s "$BUILT_ICON" ]]
+[[ -s "$BUILT_BRAND/mi-ao-symbol-gradient.svg" ]]
+[[ -s "$BUILT_BRAND/mi-ao-symbol-gradient-1024.png" ]]
+[[ -s "$BUILT_BRAND/mi-ao-symbol-template.svg" ]]
+[[ -s "$BUILT_BRAND/mi-ao-symbol-template-1024.png" ]]
 [[ -x "$BUILT_RUNTIME/scripts/start.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/stop.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/run-with-mapping.sh" ]]
@@ -47,6 +52,12 @@ MI_AO_APP_BUNDLE="$RELOCATED_APP" \
 codesign --verify --deep --strict "$RELOCATED_APP"
 
 cmp "$ROOT/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist" "$BUILT_PROFILE"
+cmp "$ROOT/Resources/Brand/mi-ao-symbol-gradient.svg" "$BUILT_BRAND/mi-ao-symbol-gradient.svg"
+cmp "$ROOT/Resources/Brand/mi-ao-symbol-gradient-1024.png" "$BUILT_BRAND/mi-ao-symbol-gradient-1024.png"
+cmp "$ROOT/Resources/Brand/mi-ao-symbol-template.svg" "$BUILT_BRAND/mi-ao-symbol-template.svg"
+cmp \
+  "$ROOT/Resources/Brand/mi-ao-symbol-template-1024.png" \
+  "$BUILT_BRAND/mi-ao-symbol-template-1024.png"
 cmp \
   "$ROOT/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist" \
   "$BUILT_RUNTIME/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist"

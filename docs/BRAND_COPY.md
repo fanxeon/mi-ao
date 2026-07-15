@@ -16,10 +16,13 @@
 
 ## 视觉识别
 
-- 主标识：蓝紫渐变魔杖与星芒，对应“Codex 魔法棒”的产品隐喻。
+- 官方主标识：06「中心连接」，中心圆环对应遥控器确认键，八向线条同时表达方向操作、信号和 Agent 连接。
 - 品牌色：蓝色 `#1473FF`，紫色 `#7B61FF`。
-- 透明 Logo：`docs/assets/mi-ao-logo.png`，不带文字，保留 VI 原始渐变和星芒比例。
-- macOS App 图标：`Resources/AppIcon/AppIcon-1024.png`，使用 VI 的白色圆角方形方案，不把中英文名称塞进小尺寸图标。
+- 矢量母版：`Resources/Brand/mi-ao-symbol-gradient.svg`；位图导出：`Resources/Brand/mi-ao-symbol-gradient-1024.png`。
+- README 透明 Logo：`docs/assets/mi-ao-logo.png`，不带文字，避免小尺寸字标失真。
+- macOS App 图标：`Resources/AppIcon/AppIcon-1024.png`，使用白色圆角方形底板；`Resources/Brand/mi-ao-symbol-template.svg` 是后续菜单栏品牌态使用的单色 Template Image 母版，当前运行状态仍由可辨识的系统状态图标表达。
+- 原魔法棒图形保留为传播插画和「Codex 魔法棒」文案隐喻，不再作为官方 Logo。
+- 九款概念板、06 原始参考和全部导出规则见 `Resources/Brand/README.md`。
 - 所有官方视觉资产统一署名 `FanXeon@Poemcoder with Codex`；不混入小米、OpenAI 或 Codex 官方 Logo。
 
 ## 首页主文案

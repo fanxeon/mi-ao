@@ -8,7 +8,8 @@
 
 ### Added
 
-- 米遥 VI 正式接入：从主视觉精确提取蓝紫魔杖 Logo，生成透明品牌资产和白色圆角 macOS AppIcon；构建时使用系统工具生成完整 `.icns` 并纳入 App Bundle 校验。
+- 米遥 VI 正式定稿为 06「中心连接」：归档九款原始概念，生成蓝紫渐变 SVG/PNG、macOS 单色 Template Image 和白色圆角 AppIcon；品牌资产随 App Bundle 打包并纳入构建校验，原魔法棒图形改为传播插画。
+- 新增从 source-first alpha 到无终端日常使用的完整产品交付计划，定义自定义快捷键的版本化数据模型、GUI 动线、安全边界、迁移与真机验收门禁。
 - CoreBluetooth 扫描、连接和完整 GATT 枚举。
 - ATVV v0.4/v1.0 能力协商与语音会话。
 - IMA/DVI ADPCM 解码、增益、重采样和 WAV 输出。

@@ -3,7 +3,7 @@
 # MI-AO 米遥
 
 <p align="center">
-  <img src="docs/assets/mi-ao-logo.png" width="180" alt="MI-AO magic-wand logo">
+  <img src="docs/assets/mi-ao-logo.png" width="180" alt="MI-AO Center Connection logo">
 </p>
 
 **In the Vibe Coding era, turn a Xiaomi Bluetooth Remote Control 2 Pro into a real, hold-in-your-hand magic wand for Codex on Mac.**
@@ -42,7 +42,7 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
 | Delivery | **Source-first alpha**; one local build installs a self-contained daily runtime and a real-state menu-bar GUI |
 
-The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup and the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary.
+The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup, the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary, and the [product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md) for the path to a no-terminal user experience with custom shortcuts.
 
 ## Why it feels like a real magic wand
 
@@ -162,12 +162,13 @@ The verified core path is working. MI-AO is currently a **source-first alpha**: 
 MI-AO now includes menu-bar state, safe background start/stop, duplicate-instance prevention, a non-blocking speech queue, and clipboard concurrency protection. The next milestones are:
 
 - device selection, persisted configuration, and reconnect;
+- versioned user presets with recorded, tested, importable and exportable custom keyboard shortcuts;
 - mode switching, Power, event-suppression timing, and multi-display acceptance runs;
 - a second Codex-session navigation preset;
 - a broader real-hardware compatibility matrix;
 - configurable output targets without weakening the default safety contract.
 
-See the [Roadmap](docs/ROADMAP.md) and [Source-first distribution](docs/DISTRIBUTION.md).
+See the [Product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md), [Roadmap](docs/ROADMAP.md), and [Source-first distribution](docs/DISTRIBUTION.md).
 
 ## Contributing
 
@@ -193,6 +194,7 @@ Start with [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md). Compatibility claims withou
 - [ATVV protocol notes](docs/PROTOCOL.md)
 - [Hardware bring-up](docs/HARDWARE_BRINGUP.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md)
 
 ## Author, acknowledgments and license
 

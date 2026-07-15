@@ -19,6 +19,7 @@ mkdir -p \
 cp "$BUILD_BIN" "$CONTENTS/MacOS/$EXECUTABLE_NAME"
 cp "$ROOT/Resources/Info.plist" "$CONTENTS/Info.plist"
 ditto "$ROOT/Resources/HardwareProfiles" "$CONTENTS/Resources/HardwareProfiles"
+ditto "$ROOT/Resources/Brand" "$CONTENTS/Resources/Brand"
 "$ROOT/scripts/build-icon.sh" "$CONTENTS/Resources/AppIcon.icns" >/dev/null
 
 cp "$ROOT/Resources/Info.plist" "$RUNTIME_ROOT/Resources/Info.plist"

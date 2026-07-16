@@ -24,14 +24,14 @@ private enum SetupInterfaceStyle {
         )
     }
 
-    static func requirementColors(_ requirement: SetupRequirement) -> (text: NSColor, fill: NSColor) {
+    static func requirementTextColor(_ requirement: SetupRequirement) -> NSColor {
         switch requirement {
         case .required:
-            return (.systemBlue, NSColor.systemBlue.withAlphaComponent(0.13))
+            return .systemBlue
         case .featureRequired:
-            return (.systemOrange, NSColor.systemOrange.withAlphaComponent(0.14))
+            return .systemOrange
         case .optional:
-            return (.secondaryLabelColor, NSColor.labelColor.withAlphaComponent(0.08))
+            return .secondaryLabelColor
         }
     }
 }
@@ -241,10 +241,8 @@ private final class SetupCheckRowView: SetupSurfaceView {
 
         requirementLabel.translatesAutoresizingMaskIntoConstraints = false
         requirementLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-        requirementLabel.alignment = .center
-        requirementLabel.wantsLayer = true
-        requirementLabel.layer?.cornerRadius = 12
-        requirementLabel.layer?.masksToBounds = true
+        requirementLabel.setContentHuggingPriority(.required, for: .horizontal)
+        requirementLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         detailLabel.font = .systemFont(ofSize: 12)
@@ -286,8 +284,6 @@ private final class SetupCheckRowView: SetupSurfaceView {
                 lessThanOrEqualTo: actionButton.leadingAnchor,
                 constant: -10
             ),
-            requirementLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 54),
-            requirementLabel.heightAnchor.constraint(equalToConstant: 24),
             detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
             detailLabel.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -12),
@@ -310,9 +306,7 @@ private final class SetupCheckRowView: SetupSurfaceView {
         titleLabel.stringValue = check.title
         detailLabel.stringValue = check.detail
         requirementLabel.stringValue = check.requirement.title
-        let requirementColors = SetupInterfaceStyle.requirementColors(check.requirement)
-        requirementLabel.textColor = requirementColors.text
-        requirementLabel.layer?.backgroundColor = requirementColors.fill.cgColor
+        requirementLabel.textColor = SetupInterfaceStyle.requirementTextColor(check.requirement)
         let symbolName: String
         let color: NSColor
         switch check.state {
@@ -2314,11 +2308,27 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
                     output.isEmpty
                     ? "米遥已启动，请查看菜单栏。"
                     : output
-                NSApplication.shared.terminate(nil)
+                self?.showLaunchSuccessAndFinish()
             case .failure(let error):
                 self?.showError(title: "米遥没有启动", message: error.localizedDescription)
                 self?.refresh()
             }
+        }
+    }
+
+    private func showLaunchSuccessAndFinish() {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "米遥已在菜单栏运行"
+        alert.informativeText = "设置已保存。接下来可以从菜单栏查看连接状态、打开设置或安全退出。"
+        alert.addButton(withTitle: "完成")
+        guard let window else {
+            alert.runModal()
+            NSApplication.shared.terminate(nil)
+            return
+        }
+        alert.beginSheetModal(for: window) { _ in
+            NSApplication.shared.terminate(nil)
         }
     }
 

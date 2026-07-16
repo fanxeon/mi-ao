@@ -9,7 +9,8 @@ abstract: "Turn a Xiaomi Bluetooth Remote Control 2 Pro into a local push-to-tal
 repository-code: "https://github.com/fanxeon/mi-ao"
 url: "https://github.com/fanxeon/mi-ao"
 license: MIT
-version: 0.1.0
+version: 0.2.1
+date-released: 2026-07-17
 keywords:
   - vibe coding
   - Codex

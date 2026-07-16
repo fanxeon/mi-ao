@@ -16,6 +16,18 @@ It also reports remote mapping state. After an abnormal exit, run `./scripts/rem
 
 If a foreground debug terminal reports `suspended`, `Control + Z` paused the process. The wrapper catches the suspend signal, terminates its child, and restores the mapping. For daily use, stop from the menu bar or run `./scripts/stop.sh`.
 
+## MI-AO is running but its menu-bar icon is not visible
+
+First double-click `~/Applications/米遥.app`. If the settings window reports that MI-AO is already running, the background runtime exists; do not keep starting additional instances.
+
+On a notched MacBook, too many right-side status items can exceed the visible menu-bar width and leave the MI-AO item behind the camera housing. This is a menu-bar layout boundary, not a crash.
+
+1. Temporarily quit unneeded menu-bar apps to free right-side width.
+2. If available, use a non-notched external display to confirm the MI-AO status item.
+3. If the safe-exit item remains inaccessible, run `./scripts/stop.sh` from the project directory; it stops the runtime and restores the remote mapping.
+
+Only continue as a real status-item failure when enough right-side space is available and a fresh start still produces no visible item.
+
 ## The remote does not appear in Bluetooth settings
 
 Open System Settings → Bluetooth, then press and hold Menu + `HOME` simultaneously on the Xiaomi Bluetooth Remote Control 2 Pro. Click Connect when the remote appears and wait for the Connected status.

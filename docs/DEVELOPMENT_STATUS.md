@@ -2,7 +2,7 @@
 
 # 开发进度 / Development Status
 
-> 最近核对：2026-07-16 · 当前版本：`0.2.0` · 交付阶段：**source-first beta · V2**
+> 最近核对：2026-07-17 · 当前版本：`0.2.1` · 交付阶段：**source-first beta · V2**
 
 本页只记录已由真实代码、自动测试、安装产物或既有真机证据支持的状态。实现完成不等于物理场景已穷尽验收。
 
@@ -15,6 +15,7 @@
 - GATT 已连接但 `GET_CAPS` 通知丢失时不再永久卡住：能力协商最多重试 3 次，超时后显示原因并进入同一分级重连链路；重连先复用已保存 UUID 或系统已连接 ATVV 设备，再回退到广播扫描。
 - 按键方案保存后通过运行时通知立即热重载；真实 HID 按下/松开驱动界面高亮；测试按钮只显式执行一次当前动作。
 - 菜单栏同时保留基础运行态和短暂指令态：实体按键执行器按真实动作/结果回传对应图标与蓝、绿、红圆角底色；录音、转写、断连和错误不会被普通指令覆盖。
+- 刘海屏右侧常驻项过多时，状态项可能超出菜单栏可见区域；这与运行进程、映射是否生效分属不同边界，必须分开诊断。
 - 过短录音取消后会立即从“正在听你说话”恢复就绪；转写队列已满或缺失时显示真实错误，不再留下过期录音状态。
 - JSON 导入/导出已交付；导入限制 1 MB 且在写入前验证 schema、按键集、保留键、TV 目标、快捷键安全规则与完整 catalog。
 - 首次设置与日常管理使用不同文案和主操作；窗口可缩放到 380 px，内容在 390 px 已完成真实页面检查。
@@ -51,6 +52,6 @@
 
 ## English snapshot
 
-MI-AO `0.2.0` is the source-first V2 beta. Real device selection, persisted identity, deterministic arbitration, visible reconnect backoff, runtime preset hot reload, real HID highlighting, one-shot tests, validated JSON transfer, atomic app rollback, pinned model verification, and Swift 6 mode are implemented. Developer ID distribution, a second verified remote class, relogin acceptance, and long-duration hardware stress remain outside the verified boundary.
+MI-AO `0.2.1` is the source-first V2 beta. Real device selection, persisted identity, deterministic arbitration, visible reconnect backoff, runtime preset hot reload, real HID highlighting, one-shot tests, validated JSON transfer, atomic app rollback, pinned model verification, and Swift 6 mode are implemented. Notched displays can hide a valid status item when the right-side menu-bar area is crowded; runtime and visible-area state are diagnosed separately. Developer ID distribution, a second verified remote class, relogin acceptance, and long-duration hardware stress remain outside the verified boundary.
 
 作者与维护 / Created and maintained by **FanXeon@Poemcoder with Codex**.

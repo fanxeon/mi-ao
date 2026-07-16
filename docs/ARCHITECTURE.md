@@ -43,7 +43,7 @@ flowchart LR
 - `SpeechJobQueue.swift`：最多两条任务的串行后台队列、唯一文件名、私有文件权限，以及有序转写/提交。
 - `CodexSubmitter.swift`：Codex 进程识别、Accessibility 唯一编辑器发现与聚焦、带兼容参数的启动、非阻塞粘贴/发送和剪贴板并发变化保护。
 - `SetupEnvironment.swift` / `SetupGuideWindowController.swift`：首次设置与日常管理的双语境、六项真实环境检查、系统授权入口、设备选择、按键编辑/高亮/测试/导入导出，以及通过既有启动门禁开始运行；不伪造授权、配对、连接或动作成功。
-- `MenuBarPresentation.swift` / `MenuBarController.swift`：把基础运行态和 1.2 秒短暂指令态合成一个菜单栏呈现；动作图标、成功/失败色与圆角底色来自执行器的真实结果，录音、处理、断连和错误优先；popover 提供聚焦 Codex、打开记录、设置诊断和安全退出入口。运行态须在 `NSApplication` 完成启动后创建状态项，并由进程级强引用持有控制器，不允许后台进程存活但菜单栏入口丢失。
+- `MenuBarPresentation.swift` / `MenuBarController.swift`：把基础运行态和 1.2 秒短暂指令态合成一个菜单栏呈现；动作图标、成功/失败色与圆角底色来自执行器的真实结果，录音、处理、断连和错误优先；popover 提供聚焦 Codex、打开记录、设置诊断和安全退出入口。运行态须在 `NSApplication` 完成启动后创建状态项，并由进程级强引用持有控制器。状态项的存在与屏幕上是否可见必须分开判断：刘海屏且右侧常驻项过多时，macOS 可用宽度可以遮挡一个仍然有效的状态项。
 - `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
 - `ButtonPreset.swift` / `ButtonPresetStore.swift`：与硬件无关的映射套装、`KeyboardShortcutSpec`、TV 跳转规则和私有方案库；导入限制大小并校验整份 catalog，导出使用私有权限，保存通知运行时热重载。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。

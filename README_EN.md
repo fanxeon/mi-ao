@@ -30,8 +30,9 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 
 > **Verified hardware:** Xiaomi Bluetooth Remote Control 2 Pro firmware 2671 has completed a real hold-to-talk → local Whisper → Codex submission test.
 
-## V2 / 0.2.0 highlights
+## V2 / 0.2.1 highlights
 
+- `0.2.1` documents the notched-display visibility boundary: a valid status item can sit behind the camera housing or outside the remaining right-side width. It also hardens status-item creation order and process-level lifetime ownership.
 - The final installed app passed Accessibility authorization, real ATVV v1.0 negotiation, paired D-pad/Center/TV/Voice HID events, and menu-bar command-feedback acceptance.
 - A physical D-pad Up press produced the real “Move pointer · Up” menu state. Commands use a brief blue rounded highlight, confirmed success is green, failure is red, and recording/transcription/disconnect states retain priority.
 - Persisted device selection, deterministic arbitration, capability watchdogs, visible reconnect backoff, preset hot reload, real highlighting, one-shot tests, and validated JSON transfer are now runtime contracts.
@@ -52,7 +53,7 @@ See the [V2 delivery audit](docs/V2_COMPLETION_AUDIT.md) for requirement-level e
 | Voice path | ATVV v0.4 / v1.0 → ADPCM decoding → local Whisper transcription → Codex |
 | Button control | The default D-pad toggles between pointer movement and arrow keys; saved custom configurations can be selected and reached from TV |
 | Diagnostics and safety | Built-in firmware 2671 hardware profile with safe local overrides; permission/runtime preflight before interception; automatic restore on exit |
-| Delivery | **Source-first beta · V2 / 0.2.0**; one local build installs a self-contained daily runtime and a real-state menu-bar GUI |
+| Delivery | **Source-first beta · V2 / 0.2.1**; one local build installs a self-contained daily runtime and a real-state menu-bar GUI |
 
 The first setup needs network access to install `whisper-cpp` and download the multilingual base model. Daily transcription then runs locally. See the [3-minute quick start](docs/QUICKSTART_EN.md) for setup, the [roadmap](docs/ROADMAP.md) for the implemented/planned boundary, and the [product delivery plan](docs/PRODUCT_DELIVERY_PLAN_EN.md) for the path to a no-terminal user experience with custom shortcuts.
 
@@ -63,7 +64,7 @@ The first setup needs network access to install `whisper-cpp` and download the m
 - **Local speech processing.** ADPCM decoding and `whisper.cpp` transcription run on your Mac.
 - **Ready for the next instruction.** Transcription and submission run on a serial background queue instead of blocking BLE, buttons, or the next recording.
 - **Fail-safe submission.** MI-AO submits only when the current Codex accessibility tree contains exactly one usable composer; otherwise it only copies the transcript.
-- **Visible state and safe exit.** The menu-bar icon follows search, connection, recording, processing, submission, and physical-button commands. Commands receive a brief blue rounded highlight, success is green, and failure is red. Click it for Codex focus, records, diagnostics, and safe exit.
+- **Persistent runtime state and safe exit.** The menu-bar icon follows search, connection, recording, processing, submission, and physical-button commands. Commands receive a brief blue rounded highlight, success is green, and failure is red. Click it for Codex focus, records, diagnostics, and safe exit. On a notched display, too many right-side status items can push MI-AO outside the visible area; that is a menu-bar space limit, not evidence that the runtime stopped. See [Troubleshooting](docs/TROUBLESHOOTING_EN.md).
 - **Evidence-driven compatibility.** A privacy-aware GATT capture mode makes new remote support reproducible.
 - **Works from a verified baseline and remains recalibratable.** The Xiaomi Remote 2 Pro uses a built-in hardware profile; debug mode can create local overrides without observing the Mac keyboard or synthesizing actions.
 
@@ -175,7 +176,7 @@ Read the complete policy in [SECURITY_EN.md](SECURITY_EN.md).
 
 ## Project status
 
-The verified core path is working. MI-AO is currently a **source-first beta · V2 / 0.2.0**: it builds and ad-hoc signs the app on the user's own Mac. Until a Developer ID distribution channel exists, the project will not present an unnotarized DMG as a frictionless trusted install.
+The verified core path is working. MI-AO is currently a **source-first beta · V2 / 0.2.1**: it builds and ad-hoc signs the app on the user's own Mac. Until a Developer ID distribution channel exists, the project will not present an unnotarized DMG as a frictionless trusted install.
 
 V2 includes Preferences v2, feature-dependent permission gates, real device discovery and persisted selection, deterministic multi-device arbitration, visible reconnect backoff, runtime preset hot reload, real HID highlighting, one-shot action tests, validated JSON transfer, atomic app replacement with rollback, and pinned model integrity verification. The final installed firmware 2671 path has completed full BLE, physical D-pad/Center/TV/Voice, transient menu feedback, and recovery acceptance. See the [V2 delivery audit](docs/V2_COMPLETION_AUDIT.md). The next 1.0 acceptance milestones are:
 

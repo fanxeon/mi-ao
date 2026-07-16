@@ -5,15 +5,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 PLIST_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/Resources/Info.plist")"
+CITATION_VERSION="$(sed -n 's/^version: //p' "$ROOT/CITATION.cff")"
 
 [[ "$VERSION" == <->.<->.<-> ]]
 [[ "$PLIST_VERSION" == "$VERSION" ]]
+[[ "$CITATION_VERSION" == "$VERSION" ]]
 grep -Fq '// swift-tools-version: 6.0' "$ROOT/Package.swift"
 grep -Fq 'swiftLanguageModes: [.v6]' "$ROOT/Package.swift"
 grep -Fq 'run: make check' "$ROOT/.github/workflows/ci.yml"
 grep -Fq "V2 / $VERSION" "$ROOT/README.md"
 grep -Fq "V2 / $VERSION" "$ROOT/README_EN.md"
 grep -Fq "当前版本：\`$VERSION\`" "$ROOT/docs/DEVELOPMENT_STATUS.md"
+grep -Fq "## [$VERSION]" "$ROOT/CHANGELOG.md"
 grep -Fq 'Tests/Shell/EnvironmentIsolationTests.sh' "$ROOT/Makefile"
 grep -Fq 'Tests/Shell/AppLaunchTests.sh' "$ROOT/Makefile"
 grep -Fq 'Tests/Shell/RepairRuntimeTests.sh' "$ROOT/Makefile"

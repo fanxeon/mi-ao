@@ -5,6 +5,7 @@ import Foundation
 
 var runtimeSessionNeedsCleanup = false
 var runtimeApplicationDelegate: RuntimeApplicationDelegate?
+var runtimeMenuBarController: MenuBarController?
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
     if configuration.mode == .launch {
@@ -56,12 +57,17 @@ do {
         guard RuntimeSessionCleanup.registerCurrentProcess() else {
             throw BridgeError.configuration("无法登记 LaunchServices 运行进程，已拒绝启动")
         }
-        menuBarController = MenuBarController(configuration: configuration)
+        let application = NSApplication.shared
+        application.setActivationPolicy(.accessory)
+        application.finishLaunching()
+
+        let controller = MenuBarController(configuration: configuration)
+        runtimeMenuBarController = controller
+        menuBarController = controller
         runtimeApplicationDelegate = RuntimeApplicationDelegate { [weak menuBarController] in
             menuBarController?.showSetupGuide()
         }
-        NSApplication.shared.delegate = runtimeApplicationDelegate
-        NSApplication.shared.finishLaunching()
+        application.delegate = runtimeApplicationDelegate
     }
     let bridge = BLEVoiceBridge(
         configuration: configuration,
@@ -132,6 +138,8 @@ do {
         buttonController?.stop()
         terminationSignalSource?.cancel()
         RuntimeSessionCleanup.perform()
+        runtimeMenuBarController = nil
+        runtimeApplicationDelegate = nil
         runtimeSessionNeedsCleanup = false
         if bridge.exitStatus != 0 { exit(bridge.exitStatus) }
     }

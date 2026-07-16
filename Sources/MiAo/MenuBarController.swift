@@ -273,6 +273,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         let preset = (try? catalog.preset(id: configuration.buttonPresetID)) ?? .pointer
         panel.update(preset: preset)
         update(status: .starting)
+        statusItem.isVisible = true
     }
 
     func update(status: MiAoRuntimeStatus) {

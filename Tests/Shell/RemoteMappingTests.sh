@@ -209,7 +209,8 @@ EOF
 chmod +x "$HIDUTIL_BIN"
 
 echo empty > "$FAKE_HID_STATE"
-"$ROOT/scripts/remote-mapping.sh" status | grep -q '映射：原始状态（空）'
+mapping_status_output="$("$ROOT/scripts/remote-mapping.sh" status)"
+grep -q '映射：原始状态（空）' <<< "$mapping_status_output"
 "$ROOT/scripts/remote-mapping.sh" apply >/dev/null
 [[ "$(cat "$FAKE_HID_STATE")" == "expected" ]]
 [[ -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
@@ -493,8 +494,11 @@ MI_AO_RUN_SCRIPT="$TEMP_ROOT/background-runner" \
   "$ROOT/scripts/start.sh" --no-buttons >/dev/null
 background_pid="$(<"$VOICE_BRIDGE_DATA_DIR/runtime.lock/pid")"
 kill -0 "$background_pid"
-MI_AO_RUN_SCRIPT="$TEMP_ROOT/background-runner" \
-  "$ROOT/scripts/start.sh" --no-buttons | grep -q '已经在运行'
+duplicate_start_output="$(
+  MI_AO_RUN_SCRIPT="$TEMP_ROOT/background-runner" \
+    "$ROOT/scripts/start.sh" --no-buttons
+)"
+grep -q '已经在运行' <<< "$duplicate_start_output"
 "$ROOT/scripts/stop.sh" >/dev/null
 [[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
 [[ "$(cat "$FAKE_HID_STATE")" == "empty" ]]

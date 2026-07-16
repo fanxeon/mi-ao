@@ -281,7 +281,7 @@ private final class SetupCheckRowView: SetupSurfaceView {
                 constant: -8
             ),
             requirementLabel.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
-            requirementLabel.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            requirementLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor),
             requirementLabel.trailingAnchor.constraint(
                 lessThanOrEqualTo: actionButton.leadingAnchor,
                 constant: -10

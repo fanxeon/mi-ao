@@ -5,23 +5,21 @@ import ApplicationServices
 import Foundation
 
 private enum SetupInterfaceStyle {
-    static func applySurface(to view: NSView, radius: CGFloat = 20, emphasized: Bool = false) {
-        view.wantsLayer = true
-        view.layer?.cornerRadius = radius
-        view.layer?.masksToBounds = true
-        view.layer?.backgroundColor =
-            NSColor.labelColor.withAlphaComponent(emphasized ? 0.10 : 0.075).cgColor
-        view.layer?.borderWidth = 1
-        view.layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.055).cgColor
-    }
-
     static func applyActionStyle(to button: NSButton, primary: Bool, compact: Bool = false) {
         button.isBordered = true
         button.bezelStyle = .rounded
         button.controlSize = compact ? .small : .regular
-        button.font = .systemFont(ofSize: compact ? 12 : 13, weight: .semibold)
+        let font = NSFont.systemFont(ofSize: compact ? 12 : 13, weight: .semibold)
+        button.font = font
         button.bezelColor = primary ? .controlAccentColor : nil
-        button.contentTintColor = primary ? .white : nil
+        button.contentTintColor = primary ? .white : .labelColor
+        button.attributedTitle = NSAttributedString(
+            string: button.title,
+            attributes: [
+                .font: font,
+                .foregroundColor: primary ? NSColor.white : NSColor.labelColor,
+            ]
+        )
     }
 
     static func requirementColors(_ requirement: SetupRequirement) -> (text: NSColor, fill: NSColor) {
@@ -36,14 +34,67 @@ private enum SetupInterfaceStyle {
     }
 }
 
+/// A system-appearance-aware surface. AppKit dynamic colors must be resolved again
+/// when macOS switches between light and dark appearances; a one-off CGColor does not
+/// redraw itself after that change.
+private class SetupSurfaceView: NSView {
+    private let surfaceRadius: CGFloat
+    private let emphasized: Bool
+
+    init(radius: CGFloat = 20, emphasized: Bool = false) {
+        surfaceRadius = radius
+        self.emphasized = emphasized
+        super.init(frame: .zero)
+        configureSurface()
+    }
+
+    override init(frame frameRect: NSRect) {
+        surfaceRadius = 20
+        emphasized = false
+        super.init(frame: frameRect)
+        configureSurface()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        configureSurface()
+    }
+
+    private func configureSurface() {
+        wantsLayer = true
+        layer?.cornerRadius = surfaceRadius
+        layer?.masksToBounds = true
+        let appearance = effectiveAppearance
+        appearance.performAsCurrentDrawingAppearance {
+            self.layer?.backgroundColor =
+                NSColor.labelColor
+                .withAlphaComponent(self.emphasized ? 0.10 : 0.075)
+                .cgColor
+            self.layer?.borderWidth = 1
+            self.layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.055).cgColor
+        }
+    }
+}
+
 private class FlippedLayoutView: NSView {
     override var isFlipped: Bool { true }
 }
 
-private final class SetupToggleRowView: NSView {
+private final class SetupTabViewController: NSTabViewController {
+    var onSelectionChanged: (() -> Void)?
+
+    override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        super.tabView(tabView, didSelect: tabViewItem)
+        onSelectionChanged?()
+    }
+}
+
+private final class SetupToggleRowView: SetupSurfaceView {
     init(title: String, detail: String, toggle: NSSwitch) {
-        super.init(frame: .zero)
-        SetupInterfaceStyle.applySurface(to: self, radius: 18)
+        super.init(radius: 18)
 
         let titleLabel = NSTextField(labelWithString: title)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -81,7 +132,7 @@ private final class SetupToggleRowView: NSView {
     required init?(coder: NSCoder) { nil }
 }
 
-private final class SetupCheckRowView: NSView {
+private final class SetupCheckRowView: SetupSurfaceView {
     private let iconPlate = NSView()
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
@@ -91,8 +142,7 @@ private final class SetupCheckRowView: NSView {
     private var actionWidthConstraint: NSLayoutConstraint!
 
     override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        SetupInterfaceStyle.applySurface(to: self, radius: 20)
+        super.init(radius: 20)
 
         iconPlate.translatesAutoresizingMaskIntoConstraints = false
         iconPlate.wantsLayer = true
@@ -164,6 +214,10 @@ private final class SetupCheckRowView: NSView {
             actionButton.heightAnchor.constraint(equalToConstant: 34),
             actionWidthConstraint,
         ])
+    }
+
+    convenience init() {
+        self.init(frame: .zero)
     }
 
     @available(*, unavailable)
@@ -267,7 +321,7 @@ private final class ShortcutRecorderView: NSView {
     }
 }
 
-private final class ButtonMappingRowView: NSView {
+private final class ButtonMappingRowView: SetupSurfaceView {
     private enum Choice {
         static let shortcut = "shortcut"
         static let presetSwitch = "preset_switch"
@@ -288,8 +342,7 @@ private final class ButtonMappingRowView: NSView {
 
     init(button: RemoteButton) {
         self.button = button
-        super.init(frame: .zero)
-        SetupInterfaceStyle.applySurface(to: self, radius: 18)
+        super.init(radius: 18)
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
@@ -502,7 +555,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
     private let openLoginItemsButton = NSButton(title: "打开登录项设置", target: nil, action: nil)
     private let refreshButton = NSButton(title: "重新检查", target: nil, action: nil)
     private let startButton = NSButton(title: "连接遥控器并开始", target: nil, action: nil)
-    private let pageTabs = NSTabViewController()
+    private let pageTabs = SetupTabViewController()
     private let presetPicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let presetNameField = NSTextField(string: "")
     private let createPresetButton = NSButton(title: "新建", target: nil, action: nil)
@@ -555,6 +608,8 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         window.title = "米遥设置向导"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        // nil means inherit the current macOS appearance and keep following it.
+        window.appearance = nil
         window.backgroundColor = .windowBackgroundColor
         window.minSize = NSSize(width: 660, height: 720)
         window.isReleasedWhenClosed = false
@@ -591,9 +646,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
 
     private func buildInterface() {
         guard let contentView = window?.contentView else { return }
-
-        contentView.wantsLayer = true
-        contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        let horizontalInset: CGFloat = 16
 
         let heroView = buildHeroView()
         heroView.translatesAutoresizingMaskIntoConstraints = false
@@ -629,32 +682,35 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         pageTabs.addChild(makeTabPage(title: "控制偏好", content: preferencesView))
         pageTabs.addChild(makeTabPage(title: "按键配置", content: buttonMappingsView))
         pageTabs.addChild(makeTabPage(title: "按键指南", content: buttonGuideView))
+        pageTabs.onSelectionChanged = { [weak self] in self?.refresh() }
         pageTabs.view.translatesAutoresizingMaskIntoConstraints = false
         pageTabs.view.setAccessibilityLabel("米遥设置分类")
 
         summaryLabel.font = .systemFont(ofSize: 12, weight: .medium)
         summaryLabel.textColor = .secondaryLabelColor
-        let summaryView = NSView()
+        let summaryView = SetupSurfaceView(radius: 16)
         summaryView.translatesAutoresizingMaskIntoConstraints = false
-        SetupInterfaceStyle.applySurface(to: summaryView, radius: 16)
         let summaryIcon = NSImageView()
         summaryIcon.translatesAutoresizingMaskIntoConstraints = false
         summaryIcon.image = NSImage(systemSymbolName: "info.circle.fill", accessibilityDescription: nil)
         summaryIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
         summaryIcon.contentTintColor = .secondaryLabelColor
         summaryLabel.translatesAutoresizingMaskIntoConstraints = false
-        summaryView.addSubview(summaryIcon)
-        summaryView.addSubview(summaryLabel)
+        let summaryContent = NSStackView(views: [summaryIcon, summaryLabel])
+        summaryContent.translatesAutoresizingMaskIntoConstraints = false
+        summaryContent.orientation = .horizontal
+        summaryContent.alignment = .centerY
+        summaryContent.spacing = 10
+        summaryView.addSubview(summaryContent)
         NSLayoutConstraint.activate([
-            summaryView.heightAnchor.constraint(greaterThanOrEqualToConstant: 52),
-            summaryIcon.leadingAnchor.constraint(equalTo: summaryView.leadingAnchor, constant: 17),
-            summaryIcon.centerYAnchor.constraint(equalTo: summaryView.centerYAnchor),
+            summaryView.heightAnchor.constraint(equalToConstant: 56),
+            summaryContent.leadingAnchor.constraint(equalTo: summaryView.leadingAnchor, constant: 17),
+            summaryContent.trailingAnchor.constraint(equalTo: summaryView.trailingAnchor, constant: -17),
+            summaryContent.centerYAnchor.constraint(equalTo: summaryView.centerYAnchor),
+            summaryContent.topAnchor.constraint(greaterThanOrEqualTo: summaryView.topAnchor, constant: 12),
+            summaryContent.bottomAnchor.constraint(lessThanOrEqualTo: summaryView.bottomAnchor, constant: -12),
             summaryIcon.widthAnchor.constraint(equalToConstant: 18),
             summaryIcon.heightAnchor.constraint(equalToConstant: 18),
-            summaryLabel.leadingAnchor.constraint(equalTo: summaryIcon.trailingAnchor, constant: 10),
-            summaryLabel.trailingAnchor.constraint(equalTo: summaryView.trailingAnchor, constant: -17),
-            summaryLabel.topAnchor.constraint(equalTo: summaryView.topAnchor, constant: 13),
-            summaryLabel.bottomAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: -13),
         ])
 
         refreshButton.target = self
@@ -684,17 +740,21 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
 
         NSLayoutConstraint.activate(
             [
-                heroView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 28),
-                heroView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
+                heroView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: horizontalInset),
+                heroView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -horizontalInset),
                 heroView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 22),
-                pageTabs.view.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
-                pageTabs.view.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
-                pageTabs.view.topAnchor.constraint(equalTo: heroView.bottomAnchor, constant: 18),
+                heroView.heightAnchor.constraint(equalToConstant: 92),
+                pageTabs.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: horizontalInset),
+                pageTabs.view.trailingAnchor.constraint(
+                    equalTo: contentView.trailingAnchor,
+                    constant: -horizontalInset
+                ),
+                pageTabs.view.topAnchor.constraint(equalTo: heroView.bottomAnchor, constant: 14),
                 pageTabs.view.bottomAnchor.constraint(equalTo: summaryView.topAnchor, constant: -18),
-                summaryView.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
-                summaryView.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
-                buttons.leadingAnchor.constraint(equalTo: heroView.leadingAnchor),
-                buttons.trailingAnchor.constraint(equalTo: heroView.trailingAnchor),
+                summaryView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: horizontalInset),
+                summaryView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -horizontalInset),
+                buttons.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: horizontalInset),
+                buttons.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -horizontalInset),
                 buttons.topAnchor.constraint(equalTo: summaryView.bottomAnchor, constant: 12),
                 buttons.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
                 buttonSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 1),
@@ -734,27 +794,26 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
     private func buildOverviewView() -> NSView {
         let sectionHeader = buildSectionHeader(
             title: "三步开始使用",
-            detail: "先选好使用方式，再完成有标记的检查；检查通过前，米遥不会修改系统按键映射。"
+            detail: "按 Tab 顺序完成权限、使用方式与按键配置；检查通过前，米遥不会修改系统按键映射。"
         )
 
-        let stepsCard = NSView()
-        SetupInterfaceStyle.applySurface(to: stepsCard, radius: 22, emphasized: true)
+        let stepsCard = SetupSurfaceView(radius: 22, emphasized: true)
         let steps = NSStackView(
             views: [
                 buildOverviewStep(
                     number: "01",
-                    title: "选择使用方式",
-                    detail: "在“控制偏好”中决定是否自动发送到 Codex 与启用遥控器按键控制。"
+                    title: "完成权限与连接",
+                    detail: "在“权限与连接”逐项处理橙色检查，并确认小米蓝牙遥控器 2 Pro 已连接。"
                 ),
                 buildOverviewStep(
                     number: "02",
-                    title: "完成必要检查并连接遥控器",
-                    detail: "在“权限与连接”处理橙色项目，并确认小米蓝牙遥控器 2 Pro 已连接。"
+                    title: "选择使用方式",
+                    detail: "在“控制偏好”决定是否自动发送到 Codex 与启用遥控器按键控制。"
                 ),
                 buildOverviewStep(
                     number: "03",
-                    title: "启动后按住说话，松开提交",
-                    detail: "环境就绪后点击下方主按钮；之后可随时在菜单栏打开设置与诊断。"
+                    title: "配置按键并开始使用",
+                    detail: "在“按键配置”保存自己的方案；完成设置后即可按住说话、松开提交。"
                 ),
             ]
         )
@@ -774,21 +833,12 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
             steps.bottomAnchor.constraint(equalTo: stepsCard.bottomAnchor, constant: -22),
         ])
 
-        let continueButton = NSButton(
-            title: "下一步：选择使用方式",
-            target: self,
-            action: #selector(showControlPreferences)
-        )
-        continueButton.setAccessibilityLabel("前往控制偏好")
-        SetupInterfaceStyle.applyActionStyle(to: continueButton, primary: true)
-
-        let stack = NSStackView(views: [sectionHeader, stepsCard, continueButton])
+        let stack = NSStackView(views: [sectionHeader, stepsCard])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
         sectionHeader.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         stepsCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        continueButton.heightAnchor.constraint(equalToConstant: 34).isActive = true
         return stack
     }
 
@@ -825,8 +875,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
             detail: "默认 pointer 预设已经写入 App。TV 只切换方向环；其余按钮在两种模式下保持相同。"
         )
 
-        let guideCard = NSView()
-        SetupInterfaceStyle.applySurface(to: guideCard, radius: 22, emphasized: true)
+        let guideCard = SetupSurfaceView(radius: 22, emphasized: true)
 
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -981,8 +1030,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         nameTitle.widthAnchor.constraint(equalToConstant: 66).isActive = true
         presetNameField.widthAnchor.constraint(equalToConstant: 260).isActive = true
 
-        let configurationCard = NSView()
-        SetupInterfaceStyle.applySurface(to: configurationCard, radius: 20, emphasized: true)
+        let configurationCard = SetupSurfaceView(radius: 20, emphasized: true)
         let buttonSpacer = NSView()
         let buttonRow = NSStackView(
             views: [createPresetButton, duplicatePresetButton, deletePresetButton, buttonSpacer, savePresetButton]
@@ -1021,8 +1069,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         retainedLabel.font = .systemFont(ofSize: 11)
         retainedLabel.textColor = .secondaryLabelColor
         retainedLabel.maximumNumberOfLines = 3
-        let retainedCard = NSView()
-        SetupInterfaceStyle.applySurface(to: retainedCard, radius: 16)
+        let retainedCard = SetupSurfaceView(radius: 16)
         retainedLabel.translatesAutoresizingMaskIntoConstraints = false
         retainedCard.addSubview(retainedLabel)
         NSLayoutConstraint.activate([
@@ -1340,47 +1387,26 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
     }
 
     private func buildHeroView() -> NSView {
-        let hero = NSVisualEffectView()
-        hero.material = .headerView
-        hero.blendingMode = .withinWindow
-        hero.state = .active
-        hero.wantsLayer = true
-        hero.layer?.cornerRadius = 26
-        hero.layer?.masksToBounds = true
-        hero.layer?.borderWidth = 1
-        hero.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
-
         let eyebrow = NSTextField(labelWithString: "米遥 · 设置向导")
-        eyebrow.translatesAutoresizingMaskIntoConstraints = false
         eyebrow.font = .systemFont(ofSize: 12, weight: .semibold)
         eyebrow.textColor = .controlAccentColor
 
         let title = NSTextField(labelWithString: "让米遥在这台 Mac 上就绪")
-        title.translatesAutoresizingMaskIntoConstraints = false
         title.font = .systemFont(ofSize: 25, weight: .bold)
 
         let subtitle = NSTextField(
             wrappingLabelWithString: "权限只在当前功能真正需要时才请求。完成必要项后，就可以按住遥控器说话，让 Codex 干活。"
         )
-        subtitle.translatesAutoresizingMaskIntoConstraints = false
         subtitle.font = .systemFont(ofSize: 12)
         subtitle.textColor = .secondaryLabelColor
         subtitle.maximumNumberOfLines = 2
 
-        let copy = NSStackView(views: [eyebrow, title, subtitle])
-        copy.translatesAutoresizingMaskIntoConstraints = false
-        copy.orientation = .vertical
-        copy.alignment = .leading
-        copy.spacing = 6
-        hero.addSubview(copy)
-
-        NSLayoutConstraint.activate([
-            hero.heightAnchor.constraint(equalToConstant: 116),
-            copy.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 24),
-            copy.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -24),
-            copy.topAnchor.constraint(equalTo: hero.topAnchor, constant: 18),
-            copy.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -18),
-        ])
+        let hero = NSStackView(views: [eyebrow, title, subtitle])
+        hero.orientation = .vertical
+        hero.alignment = .leading
+        hero.spacing = 6
+        hero.setContentHuggingPriority(.required, for: .vertical)
+        subtitle.widthAnchor.constraint(equalTo: hero.widthAnchor).isActive = true
         return hero
     }
 
@@ -1402,8 +1428,25 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         refresh()
     }
 
+    @objc private func showPermissions() {
+        selectTab(at: 1)
+    }
+
     @objc private func showControlPreferences() {
-        pageTabs.selectedTabViewItemIndex = 2
+        selectTab(at: 2)
+    }
+
+    @objc private func showButtonMappings() {
+        selectTab(at: 3)
+    }
+
+    private func selectTab(at index: Int) {
+        guard pageTabs.selectedTabViewItemIndex != index else {
+            refresh()
+            return
+        }
+
+        pageTabs.selectedTabViewItemIndex = index
     }
 
     private func refresh() {
@@ -1423,24 +1466,98 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
 
         if report.runtimeActive {
             summaryLabel.stringValue = "米遥当前已经运行。这里可以复查环境；退出请使用菜单栏中的安全退出。"
-            startButton.title = "米遥正在运行"
-            startButton.isEnabled = false
         } else if report.canStart {
             summaryLabel.stringValue = "环境已就绪。请先在系统蓝牙中连接遥控器，然后开始使用。"
-            startButton.title = "连接遥控器并开始"
-            startButton.isEnabled = process == nil
         } else {
-            let remainingCount = report.checks.filter {
+            let blockingChecks = report.checks.filter {
                 $0.requirement.blocksStart && $0.state != .ready
-            }.count
-            summaryLabel.stringValue =
-                "还差 \(remainingCount) 项必要检查；请在“权限与连接”页处理橙色项目。米遥在检查通过前不会修改系统按键映射。"
-            startButton.title = "完成上方设置后开始"
-            startButton.isEnabled = false
+            }
+            summaryLabel.stringValue = footerMessage(for: blockingChecks)
         }
         refreshButton.isEnabled = process == nil
+        updateFooterPrimaryAction(for: report)
         SetupInterfaceStyle.applyActionStyle(to: refreshButton, primary: false)
         SetupInterfaceStyle.applyActionStyle(to: startButton, primary: true)
+    }
+
+    private func footerMessage(for blockingChecks: [SetupCheck]) -> String {
+        let names = blockingChecks.map(\.title).joined(separator: "、")
+        let count = blockingChecks.count
+        switch pageTabs.selectedTabViewItemIndex {
+        case 0:
+            return
+                "当前完整模式还需完成：\(names)。可先选择使用方式；完成必要检查前，米遥不会修改系统按键映射。"
+        case 1:
+            return
+                "请处理上方 \(count) 项橙色检查：\(names)。每项完成后，这里会自动刷新状态。"
+        case 2:
+            return
+                "当前完整模式还需完成：\(names)。关闭不需要的功能后，对应授权会变为可选。"
+        default:
+            return "尚未完成：\(names)。请在“权限与连接”中逐项处理；状态会自动刷新。"
+        }
+    }
+
+    private func updateFooterPrimaryAction(for report: SetupEnvironmentReport) {
+        guard !report.runtimeActive else {
+            startButton.title = "米遥正在运行"
+            startButton.target = nil
+            startButton.action = nil
+            startButton.setAccessibilityLabel("米遥正在运行")
+            startButton.isEnabled = false
+            return
+        }
+
+        switch pageTabs.selectedTabViewItemIndex {
+        case 0:
+            configureFooterAction(
+                title: "下一步：权限与连接",
+                accessibilityLabel: "前往权限与连接",
+                action: #selector(showPermissions),
+                isEnabled: true
+            )
+        case 1:
+            configureFooterAction(
+                title: "下一步：选择使用方式",
+                accessibilityLabel: "前往控制偏好",
+                action: #selector(showControlPreferences),
+                isEnabled: true
+            )
+        case 2:
+            configureFooterAction(
+                title: "下一步：按键配置",
+                accessibilityLabel: "前往按键配置",
+                action: #selector(showButtonMappings),
+                isEnabled: true
+            )
+        case 3:
+            configureFooterAction(
+                title: report.canStart ? "完成设置并开始" : "完成必要检查后完成设置",
+                accessibilityLabel: "完成设置并开始米遥",
+                action: #selector(startPressed),
+                isEnabled: report.canStart && process == nil
+            )
+        default:
+            configureFooterAction(
+                title: "返回按键配置",
+                accessibilityLabel: "返回按键配置",
+                action: #selector(showButtonMappings),
+                isEnabled: true
+            )
+        }
+    }
+
+    private func configureFooterAction(
+        title: String,
+        accessibilityLabel: String,
+        action: Selector,
+        isEnabled: Bool
+    ) {
+        startButton.title = title
+        startButton.target = self
+        startButton.action = action
+        startButton.setAccessibilityLabel(accessibilityLabel)
+        startButton.isEnabled = isEnabled
     }
 
     private func updatePreferenceControls() {

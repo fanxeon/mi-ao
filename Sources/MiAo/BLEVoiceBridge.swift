@@ -4,9 +4,9 @@ import ApplicationServices
 @preconcurrency import CoreBluetooth
 import Foundation
 
-final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, @unchecked Sendable {
     private enum SessionState: String {
-        case disconnected, discovering, ready, opening, streaming
+        case disconnected, discovering, negotiating, ready, opening, streaming
     }
 
     private let configuration: Configuration
@@ -29,7 +29,16 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private var keepAliveTimer: Timer?
     private var scanStopTimer: Timer?
     private var captureStopTimer: Timer?
+    private var selectionTimer: Timer?
+    private var reconnectTimer: Timer?
+    private var capabilityNegotiationTimer: Timer?
+    private var capabilityRequestCount = 0
+    private let capabilityNegotiationPolicy = CapabilityNegotiationPolicy()
+    private var disconnectReasonOverride: String?
     private var discoveredIdentifiers = Set<UUID>()
+    private var candidatePeripherals: [UUID: CBPeripheral] = [:]
+    private var candidateRecords: [UUID: BLEDeviceCandidate] = [:]
+    private var reconnectBackoff = ReconnectBackoff()
     private var speechJobs: SpeechJobQueue?
     private var captureRecorder: CaptureRecorder?
     private var shutdownRequested = false
@@ -101,7 +110,11 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         case .poweredOn:
             log("蓝牙已就绪")
             publish(.searching)
-            if (configuration.mode == .run || configuration.mode == .capture),
+            if configuration.mode == .run, connectKnownRunPeripheralIfAvailable(reason: "启动") {
+                return
+            }
+
+            if configuration.mode == .capture,
                 let identifier = configuration.peripheralIdentifier,
                 let known = central.retrievePeripherals(withIdentifiers: [identifier]).first
             {
@@ -113,30 +126,40 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 return
             }
 
-            if configuration.mode == .run {
-                let connected = central.retrieveConnectedPeripherals(
-                    withServices: [CBUUID(string: ATVVProtocol.serviceUUID)]
-                )
-                if let match = connected.first(where: { isCandidate($0) }) {
-                    connect(match, reason: "已连接 ATVV 设备")
-                    return
-                }
-            }
             startScan()
         case .unauthorized:
             fatal("没有蓝牙权限。请在 系统设置 → 隐私与安全性 → 蓝牙 中允许本程序。")
         case .unsupported:
             fatal("这台 Mac 不支持 CoreBluetooth")
         case .poweredOff:
-            fatal("蓝牙已关闭")
+            if configuration.mode == .run {
+                clearConnectionState()
+                scanStopTimer?.invalidate()
+                selectionTimer?.invalidate()
+                reconnectTimer?.invalidate()
+                publish(.error("蓝牙已关闭 · 开启后会自动继续"))
+                log("蓝牙已关闭；等待系统蓝牙恢复")
+            } else {
+                fatal("蓝牙已关闭")
+            }
         default:
             log("等待蓝牙状态：\(central.state.rawValue)")
         }
     }
 
     private func startScan() {
+        reconnectTimer?.invalidate()
+        reconnectTimer = nil
+        selectionTimer?.invalidate()
+        selectionTimer = nil
+        if configuration.mode == .run, connectKnownRunPeripheralIfAvailable(reason: "重连") {
+            return
+        }
+
         state = .discovering
         if configuration.mode == .run { publish(.searching) }
+        candidatePeripherals.removeAll()
+        candidateRecords.removeAll()
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
         let scanMessage =
             configuration.mode == .run
@@ -158,13 +181,43 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 self.finishCapture(reason: reason)
             case .run:
                 if self.peripheral == nil {
-                    self.fatal("没有发现匹配的遥控器。先运行 scan，或用 --name/--identifier 指定设备。")
+                    self.scheduleReconnect(reason: "未发现已选遥控器")
                 }
             case .launch, .setup, .doctor, .authorize, .checkButtons, .learnButtons,
                 .debugButtons:
                 break
             }
         }
+    }
+
+    @discardableResult
+    private func connectKnownRunPeripheralIfAvailable(reason: String) -> Bool {
+        guard configuration.mode == .run else { return false }
+
+        if let identifier = configuration.peripheralIdentifier,
+            let known = central.retrievePeripherals(withIdentifiers: [identifier]).first
+        {
+            connect(known, reason: "\(reason)：已选设备 UUID")
+            return true
+        }
+
+        let connected = central.retrieveConnectedPeripherals(
+            withServices: [CBUUID(string: ATVVProtocol.serviceUUID)]
+        )
+        let candidates = connected.map {
+            BLEDeviceCandidate(
+                identifier: $0.identifier,
+                name: $0.name,
+                rssi: -127,
+                advertisesATVV: true
+            )
+        }
+        guard let selected = deviceSelectionPolicy.bestCandidate(from: candidates),
+            let match = connected.first(where: { $0.identifier == selected.identifier })
+        else { return false }
+
+        connect(match, reason: "\(reason)：系统已连接 ATVV 设备")
+        return true
     }
 
     @discardableResult
@@ -243,8 +296,16 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         }
 
         guard self.peripheral == nil else { return }
-        if configuration.mode == .run, isCandidate(peripheral, discoveredName: name) || hasATVV {
-            connect(peripheral, reason: hasATVV ? "广播 ATVV 服务" : "名称匹配")
+        if configuration.mode == .run {
+            considerForConnection(
+                peripheral,
+                candidate: BLEDeviceCandidate(
+                    identifier: peripheral.identifier,
+                    name: name == "(unknown)" ? nil : name,
+                    rssi: RSSI.intValue,
+                    advertisesATVV: hasATVV
+                )
+            )
         } else if configuration.mode == .capture,
             (configuration.peripheralIdentifier != nil || configuration.nameFilter != nil),
             isCandidate(peripheral, discoveredName: name)
@@ -261,9 +322,52 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         return (discoveredName ?? peripheral.name)?.lowercased().contains(filter) == true
     }
 
+    private var deviceSelectionPolicy: BLEDeviceSelectionPolicy {
+        BLEDeviceSelectionPolicy(
+            preferredIdentifier: configuration.peripheralIdentifier,
+            nameFilter: configuration.nameFilter
+        )
+    }
+
+    private func considerForConnection(
+        _ peripheral: CBPeripheral,
+        candidate: BLEDeviceCandidate
+    ) {
+        let policy = deviceSelectionPolicy
+        guard policy.accepts(candidate) else { return }
+        candidatePeripherals[candidate.identifier] = peripheral
+        candidateRecords[candidate.identifier] = candidate
+
+        if configuration.peripheralIdentifier == candidate.identifier {
+            connect(peripheral, reason: "已选设备 UUID 匹配")
+            return
+        }
+        guard selectionTimer == nil else { return }
+        selectionTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) {
+            [weak self] _ in
+            guard let self, self.peripheral == nil else { return }
+            self.selectionTimer = nil
+            guard
+                let selected = self.deviceSelectionPolicy.bestCandidate(
+                    from: Array(self.candidateRecords.values)
+                ),
+                let peripheral = self.candidatePeripherals[selected.identifier]
+            else { return }
+            let reason =
+                selected.matches(nameFilter: self.configuration.nameFilter)
+                ? "多设备仲裁：名称与信号最佳"
+                : "多设备仲裁：ATVV 信号最佳"
+            self.connect(peripheral, reason: reason)
+        }
+    }
+
     private func connect(_ peripheral: CBPeripheral, reason: String) {
         central.stopScan()
         scanStopTimer?.invalidate()
+        selectionTimer?.invalidate()
+        selectionTimer = nil
+        reconnectTimer?.invalidate()
+        reconnectTimer = nil
         self.peripheral = peripheral
         peripheral.delegate = self
         captureRecorder?.setTarget(
@@ -301,11 +405,21 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             connected: false,
             detail: error?.localizedDescription ?? "unknown"
         )
-        fatal("连接失败：\(error?.localizedDescription ?? "unknown")")
+        let detail = error?.localizedDescription ?? "unknown"
+        disconnectReasonOverride = nil
+        clearConnectionState()
+        if configuration.mode == .run {
+            scheduleReconnect(reason: "连接失败：\(detail)")
+        } else {
+            fatal("连接失败：\(detail)")
+        }
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         log("遥控器断开：\(error?.localizedDescription ?? "normal")")
+        let reconnectReason =
+            disconnectReasonOverride ?? error?.localizedDescription ?? "遥控器已断开"
+        disconnectReasonOverride = nil
         captureRecorder?.recordConnection(
             identifier: peripheral.identifier,
             connected: false,
@@ -314,15 +428,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         if configuration.mode == .capture, state == .streaming || state == .opening {
             finalizeRecording(reason: "device-disconnected")
         }
-        state = .disconnected
+        clearConnectionState()
         if configuration.mode == .run { publish(.disconnected) }
-        self.peripheral = nil
-        txCharacteristic = nil
-        rxCharacteristic = nil
-        controlCharacteristic = nil
-        notificationReady.removeAll()
-        didSendCapabilitiesRequest = false
-        stopTimers()
         if shutdownRequested {
             finishShutdownIfPossible()
             return
@@ -331,7 +438,40 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             finishCapture(reason: "device-disconnected")
             return
         }
-        startScan()
+        scheduleReconnect(reason: reconnectReason)
+    }
+
+    private func clearConnectionState() {
+        state = .disconnected
+        peripheral = nil
+        txCharacteristic = nil
+        rxCharacteristic = nil
+        controlCharacteristic = nil
+        notificationReady.removeAll()
+        didSendCapabilitiesRequest = false
+        capabilityRequestCount = 0
+        stopCapabilityNegotiation()
+        stopTimers()
+    }
+
+    private func scheduleReconnect(reason: String) {
+        guard configuration.mode == .run, !shutdownRequested else { return }
+        central.stopScan()
+        scanStopTimer?.invalidate()
+        scanStopTimer = nil
+        selectionTimer?.invalidate()
+        selectionTimer = nil
+        reconnectTimer?.invalidate()
+        let delay = reconnectBackoff.nextDelay()
+        let attempt = reconnectBackoff.attempt
+        log("连接暂不可用：\(reason)；\(String(format: "%.0f", delay)) 秒后重试")
+        publish(.reconnecting(attempt: attempt, delaySeconds: Int(ceil(delay))))
+        reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) {
+            [weak self] _ in
+            guard let self, !self.shutdownRequested else { return }
+            self.reconnectTimer = nil
+            self.startScan()
+        }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
@@ -475,8 +615,51 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             notificationReady.contains(ATVVProtocol.controlUUID)
         else { return }
         didSendCapabilitiesRequest = true
+        state = .negotiating
+        sendCapabilitiesRequest()
+    }
+
+    private func sendCapabilitiesRequest() {
+        capabilityNegotiationTimer?.invalidate()
+        capabilityRequestCount += 1
         write(protocolHandler.getCapabilitiesCommand)
-        log("TX GET_CAPS \(hex(protocolHandler.getCapabilitiesCommand))")
+        log(
+            "TX GET_CAPS \(hex(protocolHandler.getCapabilitiesCommand)) "
+                + "(\(capabilityRequestCount)/\(capabilityNegotiationPolicy.maximumRequests))"
+        )
+        capabilityNegotiationTimer = Timer.scheduledTimer(
+            withTimeInterval: capabilityNegotiationPolicy.retryDelay,
+            repeats: false
+        ) { [weak self] _ in
+            self?.handleCapabilityNegotiationTimeout()
+        }
+    }
+
+    private func handleCapabilityNegotiationTimeout() {
+        capabilityNegotiationTimer = nil
+        guard configuration.mode == .run,
+            !shutdownRequested,
+            state == .negotiating,
+            let peripheral
+        else { return }
+
+        switch capabilityNegotiationPolicy.decision(afterRequestCount: capabilityRequestCount) {
+        case .retry:
+            log("遥控器尚未响应 ATVV 能力协商，正在重试")
+            publish(.connecting)
+            sendCapabilitiesRequest()
+        case .reconnect:
+            let reason = "ATVV 能力协商超时（已尝试 \(capabilityRequestCount) 次）"
+            log("\(reason)，断开后重新连接")
+            publish(.error("遥控器未响应能力协商，正在重新连接"))
+            disconnectReasonOverride = reason
+            central.cancelPeripheralConnection(peripheral)
+        }
+    }
+
+    private func stopCapabilityNegotiation() {
+        capabilityNegotiationTimer?.invalidate()
+        capabilityNegotiationTimer = nil
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -514,8 +697,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         switch event {
         case .capabilities(let capabilities):
             do {
+                stopCapabilityNegotiation()
                 try protocolHandler.acceptCapabilities(capabilities)
                 state = .ready
+                reconnectBackoff.reset()
                 log(
                     "ATVV v\(capabilities.version)，codec=\(protocolHandler.codec!)，interaction=0x\(String(format: "%02x", capabilities.interactionModel))，frame=\(capabilities.frameSize)B"
                 )
@@ -527,8 +712,10 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             if state == .streaming || state == .opening {
                 log("第二次 START_SEARCH，结束本次语音")
                 closeAndFinalize(reason: "second-press")
-            } else {
+            } else if state == .ready {
                 beginOpening()
+            } else {
+                log("能力协商尚未完成，忽略本次语音请求")
             }
         case .audioStart(_, let codec, let newStreamID):
             streamID = newStreamID
@@ -630,6 +817,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 detail: "reason=\(reason) samples=\(captured.count)"
             )
             state = .ready
+            publishReadyStatus()
             return
         }
 
@@ -660,6 +848,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         state = .ready
         guard let speechJobs else {
             log("本次处理失败：转写队列未初始化")
+            publish(.error("转写队列未初始化"))
             return
         }
         let request = SpeechJobRequest(
@@ -701,6 +890,11 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         }
         guard accepted else {
             log("转写队列已满（最多一条处理中、一条等待中），本次录音未提交")
+            publish(.error("转写队列已满，本次录音未提交"))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                guard let self, self.state == .ready else { return }
+                self.publishReadyStatus()
+            }
             return
         }
         publish(.processing(speechJobs.pendingCount))
@@ -813,7 +1007,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     }
 
     private func requestAccessibilityAuthorization() {
-        let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         if AXIsProcessTrustedWithOptions(options) {
             print("辅助功能权限已授权")
         } else {
@@ -845,6 +1039,9 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
             return
         }
         central?.stopScan()
+        selectionTimer?.invalidate()
+        reconnectTimer?.invalidate()
+        stopCapabilityNegotiation()
         stopTimers()
         exitStatus = 1
         isFinished = true
@@ -864,6 +1061,9 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private func finishShutdownIfPossible() {
         guard shutdownRequested, speechJobs?.pendingCount ?? 0 == 0 else { return }
         central?.stopScan()
+        selectionTimer?.invalidate()
+        reconnectTimer?.invalidate()
+        stopCapabilityNegotiation()
         if let peripheral { central?.cancelPeripheralConnection(peripheral) }
         stopTimers()
         isFinished = true
@@ -871,7 +1071,7 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     }
 
     private func publishReadyStatus() {
-        guard configuration.mode == .run else { return }
+        guard configuration.mode == .run, !shutdownRequested else { return }
         if state == .streaming || state == .opening {
             publish(.recording)
             return

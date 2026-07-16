@@ -26,10 +26,16 @@ struct CodexSubmitter {
 
     private let bundleIdentifier = "com.openai.codex"
 
+    static func sanitizedLaunchEnvironment(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> [String: String] {
+        MiAoProcessEnvironment.sanitizedForExternalProcess(environment)
+    }
+
     func submit(
         _ text: String,
         force: Bool,
-        completion: @escaping (Result<Void, Error>) -> Void
+        completion: @escaping @Sendable (Result<Void, Error>) -> Void
     ) {
         guard Thread.isMainThread else {
             DispatchQueue.main.async {
@@ -43,7 +49,7 @@ struct CodexSubmitter {
             return
         }
 
-        let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         guard AXIsProcessTrustedWithOptions(options) else {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
@@ -115,6 +121,7 @@ struct CodexSubmitter {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
         configuration.arguments = [Self.accessibilityLaunchArgument]
+        configuration.environment = Self.sanitizedLaunchEnvironment()
         NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
             if let error {
                 fputs("启动 Codex 失败：\(error.localizedDescription)\n", stderr)

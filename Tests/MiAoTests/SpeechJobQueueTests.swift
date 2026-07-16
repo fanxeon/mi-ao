@@ -1,4 +1,6 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
+import AppKit
+import CryptoKit
 import Foundation
 import Testing
 
@@ -24,6 +26,87 @@ import Testing
     #expect(MiAoRuntimeStatus.processing(1).label.contains("可继续说话"))
     #expect(MiAoRuntimeStatus.processing(2).label.contains("一条等待"))
     #expect(MiAoRuntimeStatus.sent.label.contains("Codex"))
+}
+
+@Test func menuBarUsesCommandFeedbackOnlyWhenRuntimeCanBeInterrupted() throws {
+    let command = try #require(MiAoCommandActivity.executed(action: .pointerMoveLeft))
+
+    #expect(
+        MiAoMenuBarPresentation.resolved(status: .ready, activity: command)
+            == command.presentation
+    )
+    #expect(command.presentation.systemImageName == "arrow.left")
+    #expect(command.presentation.tone == .command)
+    #expect(command.presentation.tone.showsHighlightedBackground)
+    #expect(MiAoCommandActivity.displayDuration == 1.2)
+
+    for status in [
+        MiAoRuntimeStatus.recording,
+        .processing(1),
+        .disconnected,
+        .reconnecting(attempt: 2, delaySeconds: 4),
+        .error("测试错误"),
+    ] {
+        #expect(
+            MiAoMenuBarPresentation.resolved(status: status, activity: command)
+                == status.menuBarPresentation
+        )
+    }
+}
+
+@Test func menuBarFeedbackDistinguishesPendingSuccessAndFailure() {
+    let pending = MiAoCommandActivity.codexActivation(.launchRequested).presentation
+    let success = MiAoCommandActivity.codexFocus(succeeded: true).presentation
+    let failure = MiAoCommandActivity.codexTask(.next, succeeded: false).presentation
+
+    #expect(pending.label == "正在启动 Codex")
+    #expect(pending.tone == .command)
+    #expect(success.tone == .success)
+    #expect(failure.tone == .failure)
+    #expect(MiAoRuntimeStatus.ready.menuBarPresentation.tone == .ready)
+    #expect(!MiAoRuntimeStatus.ready.menuBarPresentation.tone.showsHighlightedBackground)
+    #expect(MiAoRuntimeStatus.recording.menuBarPresentation.tone == .recording)
+    #expect(MiAoRuntimeStatus.recording.menuBarPresentation.tone.showsHighlightedBackground)
+}
+
+@Test func menuBarFeedbackUsesAvailableSystemSymbols() throws {
+    let presentations = try [
+        #require(MiAoCommandActivity.executed(action: .pointerMoveUp)).presentation,
+        #require(MiAoCommandActivity.executed(action: .pointerScrollDown)).presentation,
+        #require(MiAoCommandActivity.executed(action: .keyboardReturn)).presentation,
+        #require(MiAoCommandActivity.executed(action: .keyboardEscape)).presentation,
+        MiAoCommandActivity.controlMode(.pointer).presentation,
+        MiAoCommandActivity.controlMode(.directional).presentation,
+        MiAoCommandActivity.presetChanged(name: "测试").presentation,
+        MiAoCommandActivity.codexFocus(succeeded: true).presentation,
+        MiAoCommandActivity.codexTask(.previous, succeeded: true).presentation,
+        MiAoCommandActivity.codexTask(.next, succeeded: false).presentation,
+    ]
+
+    for presentation in presentations {
+        #expect(
+            NSImage(
+                systemSymbolName: presentation.systemImageName,
+                accessibilityDescription: presentation.label
+            ) != nil
+        )
+    }
+}
+
+@MainActor
+@Test func runtimeApplicationReopenRoutesToSettings() {
+    var reopenCount = 0
+    let delegate = RuntimeApplicationDelegate {
+        reopenCount += 1
+    }
+
+    #expect(
+        delegate.applicationShouldHandleReopen(
+            NSApplication.shared,
+            hasVisibleWindows: false
+        )
+    )
+    #expect(reopenCount == 1)
 }
 
 @Test func whisperRawTranscriptIsRestrictedToCurrentUser() throws {
@@ -59,7 +142,16 @@ import Testing
     var configuration = Configuration()
     configuration.whisperPath = executable.path
     configuration.modelPath = model.path
-    let transcriber = try WhisperTranscriber(configuration: configuration)
+    let modelHash = SHA256.hash(data: Data([0]))
+        .map { String(format: "%02x", $0) }
+        .joined()
+    let transcriber = try WhisperTranscriber(
+        configuration: configuration,
+        modelVerifier: ModelIntegrityVerifier(
+            expectedSHA256: modelHash,
+            minimumByteCount: 0
+        )
+    )
     #expect(try transcriber.transcribe(wavURL: wav) == "权限测试")
 
     let rawTranscript = URL(fileURLWithPath: wav.deletingPathExtension().path + ".whisper.txt")
@@ -81,6 +173,38 @@ import Testing
     #expect(!FileManager.default.fileExists(atPath: root.path))
 }
 
+@Test func runtimeRegistersOnlyAgainstItsOwnSessionToken() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mi-ao-runtime-registration-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let tokenURL = root.appendingPathComponent("token")
+    let pidURL = root.appendingPathComponent("pid")
+    try "current-session\n".write(to: tokenURL, atomically: true, encoding: .utf8)
+    try "100\n".write(to: pidURL, atomically: true, encoding: .utf8)
+
+    #expect(
+        !RuntimeSessionCleanup.registerCurrentProcess(
+            processID: 4242,
+            environment: [
+                "MI_AO_RUNTIME_LOCK": root.path,
+                "MI_AO_RUNTIME_TOKEN": "another-session",
+            ]
+        ))
+    #expect(try String(contentsOf: pidURL, encoding: .utf8) == "100\n")
+
+    #expect(
+        RuntimeSessionCleanup.registerCurrentProcess(
+            processID: 4242,
+            environment: [
+                "MI_AO_RUNTIME_LOCK": root.path,
+                "MI_AO_RUNTIME_TOKEN": "current-session",
+            ]
+        ))
+    #expect(try String(contentsOf: pidURL, encoding: .utf8) == "4242\n")
+    #expect(try permissions(of: pidURL) == 0o600)
+}
+
 @Test func speechJobQueueWritesPrivateArtifactsAndCompletesOffTheBLEPath() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("mi-ao-speech-job-\(UUID().uuidString)")
@@ -89,7 +213,7 @@ import Testing
 
     let completed = DispatchSemaphore(value: 0)
     let callbackQueue = DispatchQueue(label: "com.fanx.miao.tests.callback")
-    var received: Result<SpeechJobOutput, Error>?
+    let received = LockedBox<Result<SpeechJobOutput, Error>?>(nil)
     let queue = SpeechJobQueue(
         callbackQueue: callbackQueue,
         transcribe: { wavURL in
@@ -110,13 +234,13 @@ import Testing
             forceSubmit: false
         )
     ) { result in
-        received = result
+        received.set(result)
         completed.signal()
     }
 
     #expect(accepted)
     #expect(completed.wait(timeout: .now() + 3) == .success)
-    let output = try #require(try received?.get())
+    let output = try #require(try received.get()?.get())
     #expect(output.reason == "test-release")
     #expect(output.transcript == "米遥异步测试")
     #expect(output.submitted)
@@ -152,7 +276,9 @@ import Testing
         submitToCodex: false,
         forceSubmit: false
     )
-    let completion: (Result<SpeechJobOutput, Error>) -> Void = { _ in completed.signal() }
+    let completion: @Sendable (Result<SpeechJobOutput, Error>) -> Void = { _ in
+        completed.signal()
+    }
 
     #expect(queue.enqueue(request, completion: completion))
     #expect(transcribeStarted.wait(timeout: .now() + 2) == .success)
@@ -169,4 +295,25 @@ import Testing
 private func permissions(of url: URL) throws -> Int {
     let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
     return try #require(attributes[.posixPermissions] as? Int)
+}
+
+private final class LockedBox<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+
+    func set(_ value: Value) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> Value {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
 }

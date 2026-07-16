@@ -26,19 +26,12 @@ private func miAoRuntimeValueReceived(
 }
 
 final class HIDButtonController {
-    private struct ElementSignature: Equatable {
-        let page: Int
-        let usage: Int
-    }
-
     private let configuration: Configuration
     private let map: CalibratedButtonMap
     private let executor: ButtonActionExecutor
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
-    private var activeKey: HIDUsageKey?
-    private var activeElement: ElementSignature?
-    private var activeButton: RemoteButton?
+    private var eventReducer = HIDButtonEventReducer()
     private let openOptions = IOOptionBits(kIOHIDOptionsTypeNone)
 
     init(
@@ -47,7 +40,8 @@ final class HIDButtonController {
         preset: ButtonPreset,
         catalog: ButtonPresetCatalog,
         controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
-        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil,
+        activityHandler: ((MiAoCommandActivity) -> Void)? = nil
     ) {
         self.configuration = configuration
         self.map = map
@@ -56,11 +50,19 @@ final class HIDButtonController {
             catalog: catalog,
             debug: configuration.debug,
             controlModeHandler: controlModeHandler,
-            presetChangeHandler: presetChangeHandler
+            presetChangeHandler: presetChangeHandler,
+            activityHandler: activityHandler
+        )
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(buttonConfigurationChanged),
+            name: MiAoRuntimeNotifications.buttonConfigurationChanged,
+            object: nil
         )
     }
 
     deinit {
+        DistributedNotificationCenter.default().removeObserver(self)
         stop()
     }
 
@@ -96,6 +98,10 @@ final class HIDButtonController {
     }
 
     func stop() {
+        if let activeButton = eventReducer.activeButton {
+            executor.buttonUp(activeButton)
+        }
+        eventReducer.clear()
         executor.stop()
         guard let manager else { return }
         IOHIDManagerUnscheduleFromRunLoop(
@@ -126,47 +132,54 @@ final class HIDButtonController {
         let rawValue = IOHIDValueGetIntegerValue(value)
         let page = Int(IOHIDElementGetUsagePage(element))
         let elementUsage = Int(IOHIDElementGetUsage(element))
-        let elementSignature = ElementSignature(page: page, usage: elementUsage)
-
-        if rawValue == 0 {
-            guard elementSignature == activeElement else { return }
-            if let activeButton {
+        let events = eventReducer.reduce(
+            page: page,
+            elementUsage: elementUsage,
+            rawValue: rawValue,
+            buttonsByUsage: map.buttonsByUsage
+        )
+        for event in events {
+            switch event {
+            case .buttonDown(let button):
+                MiAoRuntimeNotifications.postButtonActivity(button: button, isPressed: true)
                 if configuration.debug {
-                    print("HID 松手：\(activeButton.rawValue)")
+                    print(
+                        String(
+                            format: "HID 按下：page 0x%02X usage 0x%02X → %@",
+                            page,
+                            eventReducer.activeKey?.usage ?? elementUsage,
+                            button.rawValue
+                        )
+                    )
                 }
-                executor.buttonUp(activeButton)
+                executor.buttonDown(button)
+            case .buttonUp(let button):
+                MiAoRuntimeNotifications.postButtonActivity(button: button, isPressed: false)
+                if configuration.debug { print("HID 松手：\(button.rawValue)") }
+                executor.buttonUp(button)
             }
-            activeKey = nil
-            activeElement = nil
-            activeButton = nil
+        }
+    }
+
+    @objc private func buttonConfigurationChanged(_ notification: Notification) {
+        let presetSnapshot = ButtonPresetStore().load()
+        if case .unsupportedVersion(let version) = presetSnapshot.state {
+            fputs("运行时未重载按键配置：schema v\(version) 过新\n", stderr)
             return
         }
-
-        guard
-            let usage = ButtonLearner.normalizedUsage(
-                elementUsage: elementUsage,
-                rawValues: [rawValue]
+        let preferencesSnapshot = AppPreferencesStore().load()
+        if case .unsupportedVersion(let version) = preferencesSnapshot.state {
+            fputs("运行时未重载按键选择：schema v\(version) 过新\n", stderr)
+            return
+        }
+        do {
+            let selected = try executor.replaceCatalog(
+                presetSnapshot.catalog,
+                selecting: preferencesSnapshot.preferences.selectedPresetID
             )
-        else { return }
-        let key = HIDUsageKey(page: page, usage: usage)
-        guard key != activeKey else { return }
-
-        if let activeButton { executor.buttonUp(activeButton) }
-        activeKey = key
-        activeElement = elementSignature
-        activeButton = map.buttonsByUsage[key]
-        if let activeButton {
-            if configuration.debug {
-                print(
-                    String(
-                        format: "HID 按下：page 0x%02X usage 0x%02X → %@",
-                        page,
-                        usage,
-                        activeButton.rawValue
-                    )
-                )
-            }
-            executor.buttonDown(activeButton)
+            print("按键配置已热更新：\(selected.name)")
+        } catch {
+            fputs("按键配置热更新失败：\(error.localizedDescription)\n", stderr)
         }
     }
 }
@@ -254,7 +267,8 @@ enum ButtonRuntimeFactory {
     static func make(
         configuration: Configuration,
         controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
-        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil,
+        activityHandler: ((MiAoCommandActivity) -> Void)? = nil
     ) throws -> HIDButtonController? {
         guard configuration.buttonsEnabled else {
             print("实体按键动作：已通过 --no-buttons 禁用")
@@ -292,7 +306,8 @@ enum ButtonRuntimeFactory {
                     return
                 }
                 fputs("当前配置没有写入：偏好文件来自更新版本\n", stderr)
-            }
+            },
+            activityHandler: activityHandler
         )
     }
 }

@@ -4,6 +4,7 @@ import Darwin
 import Foundation
 
 var runtimeSessionNeedsCleanup = false
+var runtimeApplicationDelegate: RuntimeApplicationDelegate?
 do {
     let configuration = try Configuration.parse(CommandLine.arguments)
     if configuration.mode == .launch {
@@ -52,7 +53,15 @@ do {
     var terminationSignalSource: DispatchSourceSignal?
     if configuration.mode == .run {
         runtimeSessionNeedsCleanup = true
+        guard RuntimeSessionCleanup.registerCurrentProcess() else {
+            throw BridgeError.configuration("无法登记 LaunchServices 运行进程，已拒绝启动")
+        }
         menuBarController = MenuBarController(configuration: configuration)
+        runtimeApplicationDelegate = RuntimeApplicationDelegate { [weak menuBarController] in
+            menuBarController?.showSetupGuide()
+        }
+        NSApplication.shared.delegate = runtimeApplicationDelegate
+        NSApplication.shared.finishLaunching()
     }
     let bridge = BLEVoiceBridge(
         configuration: configuration,
@@ -78,6 +87,9 @@ do {
                 },
                 presetChangeHandler: { [weak menuBarController] preset in
                     menuBarController?.update(preset: preset)
+                },
+                activityHandler: { [weak menuBarController] activity in
+                    menuBarController?.show(activity: activity)
                 }
             )
             try buttonController?.start()
@@ -86,10 +98,37 @@ do {
             buttonController = nil
         }
     }
-    if configuration.mode == .scan || configuration.mode == .capture || configuration.mode == .run {
+    if configuration.mode == .run {
+        let application = NSApplication.shared
+        let completionTimer = Timer(timeInterval: 0.05, repeats: true) { _ in
+            if bridge.isFinished {
+                Task { @MainActor in
+                    application.stop(nil)
+                    if let wakeEvent = NSEvent.otherEvent(
+                        with: .applicationDefined,
+                        location: .zero,
+                        modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime,
+                        windowNumber: 0,
+                        context: nil,
+                        subtype: 0,
+                        data1: 0,
+                        data2: 0
+                    ) {
+                        application.postEvent(wakeEvent, atStart: true)
+                    }
+                }
+            }
+        }
+        RunLoop.main.add(completionTimer, forMode: .common)
+        application.run()
+        completionTimer.invalidate()
+    } else if configuration.mode == .scan || configuration.mode == .capture {
         while !bridge.isFinished {
             _ = RunLoop.main.run(mode: .default, before: .distantFuture)
         }
+    }
+    if configuration.mode == .scan || configuration.mode == .capture || configuration.mode == .run {
         buttonController?.stop()
         terminationSignalSource?.cancel()
         RuntimeSessionCleanup.perform()

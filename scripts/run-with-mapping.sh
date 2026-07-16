@@ -10,6 +10,7 @@ BUTTON_CHECK_SCRIPT="${MI_AO_BUTTON_CHECK_SCRIPT:-$ROOT/scripts/check-buttons.sh
 CODEX_ACCESSIBILITY_SCRIPT="${MI_AO_CODEX_ACCESSIBILITY_SCRIPT:-$ROOT/scripts/codex-accessibility.sh}"
 mapping_active=false
 child_pid=""
+launcher_pid=""
 resolved_profile=""
 runtime_lock="$APP_DATA_DIR/runtime.lock"
 owns_runtime_lock=false
@@ -63,20 +64,46 @@ acquire_runtime_lock() {
 }
 
 stop_child() {
-  [[ -n "$child_pid" ]] || return 0
-  if kill -0 "$child_pid" 2>/dev/null; then
-    kill -CONT "$child_pid" 2>/dev/null || true
-    kill -TERM "$child_pid" 2>/dev/null || true
-    for _ in {1..700}; do
-      kill -0 "$child_pid" 2>/dev/null || break
-      sleep 0.05
-    done
-    if kill -0 "$child_pid" 2>/dev/null; then
-      kill -KILL "$child_pid" 2>/dev/null || true
+  if [[ -z "$child_pid" && "${MI_AO_LAUNCH_VIA_OPEN:-0}" == "1" ]]; then
+    local registered_pid=""
+    local registered_token=""
+    [[ -f "$runtime_lock/pid" ]] && registered_pid="$(<"$runtime_lock/pid")"
+    [[ -f "$runtime_lock/token" ]] && registered_token="$(<"$runtime_lock/token")"
+    if [[ "$registered_token" == "$runtime_token" && "$registered_pid" == <-> \
+      && "$registered_pid" != "$$" ]] && kill -0 "$registered_pid" 2>/dev/null; then
+      child_pid="$registered_pid"
     fi
   fi
-  wait "$child_pid" 2>/dev/null || true
-  child_pid=""
+
+  if [[ -n "$child_pid" ]]; then
+    if kill -0 "$child_pid" 2>/dev/null; then
+      kill -CONT "$child_pid" 2>/dev/null || true
+      kill -TERM "$child_pid" 2>/dev/null || true
+      for _ in {1..700}; do
+        kill -0 "$child_pid" 2>/dev/null || break
+        sleep 0.05
+      done
+      if kill -0 "$child_pid" 2>/dev/null; then
+        kill -KILL "$child_pid" 2>/dev/null || true
+      fi
+    fi
+    if [[ "$child_pid" == "$launcher_pid" ]]; then
+      wait "$child_pid" 2>/dev/null || true
+    fi
+    child_pid=""
+  fi
+
+  if [[ -n "$launcher_pid" ]]; then
+    for _ in {1..100}; do
+      kill -0 "$launcher_pid" 2>/dev/null || break
+      sleep 0.02
+    done
+    if kill -0 "$launcher_pid" 2>/dev/null; then
+      kill -TERM "$launcher_pid" 2>/dev/null || true
+    fi
+    wait "$launcher_pid" 2>/dev/null || true
+    launcher_pid=""
+  fi
 }
 
 cleanup_session() {
@@ -139,10 +166,41 @@ fi
 
 set +e
 "$RUN_SCRIPT" "$@" &
-child_pid=$!
-print -r -- "$child_pid" > "$runtime_lock/pid"
-wait "$child_pid"
-result_code=$?
+launcher_pid=$!
+if [[ "${MI_AO_LAUNCH_VIA_OPEN:-0}" == "1" ]]; then
+  for _ in {1..200}; do
+    candidate_pid=""
+    [[ -f "$runtime_lock/pid" ]] && candidate_pid="$(<"$runtime_lock/pid")"
+    if [[ "$candidate_pid" == <-> && "$candidate_pid" != "$$" ]] \
+      && kill -0 "$candidate_pid" 2>/dev/null; then
+      child_pid="$candidate_pid"
+      break
+    fi
+    kill -0 "$launcher_pid" 2>/dev/null || break
+    sleep 0.05
+  done
+  if [[ -z "$child_pid" ]]; then
+    echo "错误：LaunchServices 未在 10 秒内启动米遥运行进程。" >&2
+    kill -TERM "$launcher_pid" 2>/dev/null || true
+    wait "$launcher_pid" 2>/dev/null || true
+    result_code=1
+    launcher_pid=""
+  else
+    while kill -0 "$child_pid" 2>/dev/null; do
+      sleep 0.05
+    done
+    wait "$launcher_pid"
+    result_code=$?
+    launcher_pid=""
+  fi
+else
+  child_pid="$launcher_pid"
+  print -r -- "$child_pid" > "$runtime_lock/pid"
+  wait "$child_pid"
+  result_code=$?
+  child_pid=""
+  launcher_pid=""
+fi
 child_pid=""
 set -e
 exit "$result_code"

@@ -2,6 +2,8 @@
 # Copyright (c) 2026 FanXeon@Poemcoder with Codex
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/lib/environment.sh"
 BUNDLE_ID="com.openai.codex"
 ACCESSIBILITY_SWITCH="--force-renderer-accessibility"
 
@@ -59,7 +61,7 @@ quit_codex() {
 }
 
 launch_enabled() {
-  /usr/bin/open -b "$BUNDLE_ID" --args "$ACCESSIBILITY_SWITCH"
+  mi_ao_run_external /usr/bin/open -b "$BUNDLE_ID" --args "$ACCESSIBILITY_SWITCH"
   for _ in {1..100}; do
     if codex_running; then
       if is_enabled; then
@@ -113,7 +115,7 @@ case "$mode" in
       print -r -- "已使用 Codex 原生辅助功能参数启动；该设置只在本次进程有效。"
       print -r -- "提示：渲染完整辅助功能树可能略微增加 Codex 的资源占用。"
     else
-      /usr/bin/open -b "$BUNDLE_ID"
+      mi_ao_run_external /usr/bin/open -b "$BUNDLE_ID"
       print -r -- "已按原生方式启动 Codex；辅助功能兼容参数未启用。"
     fi
     ;;

@@ -17,15 +17,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: swift --version
-      - name: Lint
-        run: xcrun swift-format lint --strict --recursive Sources Tests Package.swift
-      - name: Test
-        run: swift test
-      - name: Remote mapping contract
-        run: zsh Tests/Shell/RemoteMappingTests.sh
-      - name: Keyboard isolation contract
-        run: zsh Tests/Shell/KeyboardIsolationTests.sh
-      - name: App bundle and built-in hardware profile
-        run: zsh Tests/Shell/AppBundleTests.sh
-      - name: Validate app metadata
-        run: plutil -lint Resources/Info.plist
+      - name: Full delivery check
+        run: make check

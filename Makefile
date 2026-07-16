@@ -73,9 +73,14 @@ mapping-restore:
 check:
 	xcrun swift-format lint --strict --recursive Sources Tests Package.swift
 	swift test
+	zsh Tests/Shell/EnvironmentIsolationTests.sh
+	zsh Tests/Shell/AppLaunchTests.sh
 	zsh Tests/Shell/RemoteMappingTests.sh
 	zsh Tests/Shell/KeyboardIsolationTests.sh
 	zsh Tests/Shell/CodexLaunchGateTests.sh
+	zsh Tests/Shell/ReleaseContractTests.sh
+	zsh Tests/Shell/RepairRuntimeTests.sh
+	zsh Tests/Shell/InstallAppTests.sh
 	zsh Tests/Shell/AppBundleTests.sh
 	plutil -lint Resources/Info.plist
 	git diff --check

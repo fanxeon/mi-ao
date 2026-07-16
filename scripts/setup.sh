@@ -16,17 +16,7 @@ fi
 "$ROOT/scripts/preflight.sh"
 "$ROOT/scripts/migrate-prototype.sh"
 
-if ! command -v whisper-cli >/dev/null 2>&1; then
-  brew install whisper-cpp
-fi
-
-mkdir -p "$MODEL_DIR"
-if [[ ! -f "$MODEL_PATH" ]]; then
-  curl -fL --progress-bar \
-    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" \
-    -o "$MODEL_PATH.part"
-  mv "$MODEL_PATH.part" "$MODEL_PATH"
-fi
+"$ROOT/scripts/repair-runtime.sh"
 
 cd "$ROOT"
 "$ROOT/scripts/install-app.sh"

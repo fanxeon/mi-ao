@@ -22,6 +22,7 @@ zsh -n \
   "$ROOT/scripts/start.sh" \
   "$ROOT/scripts/stop.sh" \
   "$ROOT/scripts/codex-accessibility.sh"
+zsh -n "$ROOT/scripts/lib/environment.sh"
 
 "$ROOT/scripts/build-app.sh" >/dev/null
 
@@ -41,15 +42,17 @@ BUILT_RUNTIME="$BUILD_APP/Contents/Resources/Runtime"
 [[ -x "$BUILT_RUNTIME/scripts/stop.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/run-with-mapping.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/repair-runtime.sh" ]]
+[[ -f "$BUILT_RUNTIME/scripts/lib/environment.sh" ]]
+[[ -f "$BUILD_APP/Contents/Resources/WhisperModel.sha256" ]]
+[[ -f "$BUILT_RUNTIME/Resources/WhisperModel.sha256" ]]
 "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" --help | grep -q "setup"
 otool -L "$BUILD_APP/Contents/MacOS/$EXECUTABLE_NAME" | grep -q "ServiceManagement.framework"
-MI_AO_APP_BUNDLE="$BUILD_APP" "$BUILT_RUNTIME/scripts/run.sh" --help | grep -q "setup"
+"$BUILT_RUNTIME/scripts/run.sh" --help | grep -q "setup"
 
 RELOCATED_APP="$TEMP_ROOT/Relocated/米遥.app"
 mkdir -p "${RELOCATED_APP:h}"
 ditto "$BUILD_APP" "$RELOCATED_APP"
-MI_AO_APP_BUNDLE="$RELOCATED_APP" \
-  "$RELOCATED_APP/Contents/Resources/Runtime/scripts/run.sh" --help \
+"$RELOCATED_APP/Contents/Resources/Runtime/scripts/run.sh" --help \
   | grep -q "setup"
 codesign --verify --deep --strict "$RELOCATED_APP"
 
@@ -64,6 +67,9 @@ cmp \
 cmp \
   "$ROOT/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist" \
   "$BUILT_RUNTIME/Resources/HardwareProfiles/xiaomi-remote-2-pro-2671.plist"
+cmp "$ROOT/scripts/lib/environment.sh" "$BUILT_RUNTIME/scripts/lib/environment.sh"
+cmp "$ROOT/Resources/WhisperModel.sha256" "$BUILD_APP/Contents/Resources/WhisperModel.sha256"
+cmp "$ROOT/Resources/WhisperModel.sha256" "$BUILT_RUNTIME/Resources/WhisperModel.sha256"
 plutil -lint "$BUILD_APP/Contents/Info.plist" "$BUILT_PROFILE" >/dev/null
 plutil -lint "$BUILT_RUNTIME/Resources/Info.plist" >/dev/null
 [[ "$(plutil -extract CFBundleIconFile raw "$BUILD_APP/Contents/Info.plist")" == "AppIcon" ]]

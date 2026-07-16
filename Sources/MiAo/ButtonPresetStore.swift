@@ -15,16 +15,24 @@ struct ButtonPresetCatalogSnapshot: Equatable {
 
 enum ButtonPresetStoreError: LocalizedError {
     case unsupportedVersion(Int)
+    case importTooLarge(Int)
+    case importNotRegularFile
 
     var errorDescription: String? {
         switch self {
         case .unsupportedVersion(let version):
             return "按键配置来自较新的 schema v\(version)，当前版本无法安全写入"
+        case .importTooLarge(let bytes):
+            return "按键配置文件过大（\(bytes) 字节），上限为 1 MB"
+        case .importNotRegularFile:
+            return "只能导入本机普通 JSON 文件"
         }
     }
 }
 
 struct ButtonPresetStore {
+    static let maximumImportBytes = 1_048_576
+
     private struct Document: Codable {
         static let currentSchemaVersion = 1
 
@@ -97,6 +105,42 @@ struct ButtonPresetStore {
     func save(_ catalog: ButtonPresetCatalog) throws {
         try catalog.validate()
         try prepareDirectory()
+        let data = try encodedData(for: catalog)
+        try data.write(to: fileURL, options: .atomic)
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        MiAoRuntimeNotifications.postButtonConfigurationChanged()
+    }
+
+    func export(_ catalog: ButtonPresetCatalog, to destinationURL: URL) throws {
+        try catalog.validate()
+        let data = try encodedData(for: catalog)
+        try data.write(to: destinationURL, options: .atomic)
+        try fileManager.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: destinationURL.path
+        )
+    }
+
+    func importCatalog(from sourceURL: URL) throws -> ButtonPresetCatalog {
+        let values = try sourceURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+        guard values.isRegularFile == true else {
+            throw ButtonPresetStoreError.importNotRegularFile
+        }
+        if let size = values.fileSize, size > Self.maximumImportBytes {
+            throw ButtonPresetStoreError.importTooLarge(size)
+        }
+        let data = try Data(contentsOf: sourceURL, options: .mappedIfSafe)
+        guard data.count <= Self.maximumImportBytes else {
+            throw ButtonPresetStoreError.importTooLarge(data.count)
+        }
+        let document = try JSONDecoder().decode(Document.self, from: data)
+        guard document.schemaVersion <= Document.currentSchemaVersion else {
+            throw ButtonPresetStoreError.unsupportedVersion(document.schemaVersion)
+        }
+        return try catalog(from: document)
+    }
+
+    private func encodedData(for catalog: ButtonPresetCatalog) throws -> Data {
         let document = Document(
             schemaVersion: Document.currentSchemaVersion,
             presets: catalog.userPresets.map { preset in
@@ -113,8 +157,7 @@ struct ButtonPresetStore {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         var data = try encoder.encode(document)
         data.append(0x0A)
-        try data.write(to: fileURL, options: .atomic)
-        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        return data
     }
 
     private func catalog(from document: Document) throws -> ButtonPresetCatalog {

@@ -42,7 +42,7 @@ private func miAoHIDValueReceived(
         .valueReceived(value, result: result)
 }
 
-final class ButtonLearner {
+final class ButtonLearner: @unchecked Sendable {
     private struct Step {
         let id: String
         let label: String

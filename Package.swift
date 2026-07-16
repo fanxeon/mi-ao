@@ -24,5 +24,5 @@ let package = Package(
             dependencies: ["MiAo"]
         ),
     ],
-    swiftLanguageModes: [.v5]
+    swiftLanguageModes: [.v6]
 )

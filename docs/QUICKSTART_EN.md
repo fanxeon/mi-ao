@@ -23,11 +23,15 @@ cd mi-ao
 
 The app is installed to `~/Applications/米遥.app`, the model to `~/.cache/mi-ao`, and recordings to `~/Library/Application Support/mi-ao/recordings`. The setup guide opens automatically when installation finishes. The app bundles the signed daily start, safe stop, button gate, mapping recovery, and speech-engine repair runtime. After first install, normal Finder-based use does not depend on the repository remaining at its original path; updates, reinstalls, and developer diagnostics still use the source tree.
 
+V2 refuses to replace a running app, signature-verifies a staged bundle before an atomic swap, and restores the previous app if a later install step fails. The Whisper model is downloaded to a temporary file and replaces the existing model only after its pinned SHA-256 matches.
+
 MI-AO currently uses a local source build and ad-hoc signing. Do not download unofficial "unsigned" or "quarantine-free" DMGs.
 
 ## 2. Pair from the guide
 
 Complete the Bluetooth card in the setup guide and choose “配对遥控器”. On the Xiaomi Bluetooth Remote Control 2 Pro, **press and hold Menu + `HOME` simultaneously** until it appears under Nearby Devices. Click Connect and wait for the Connected status. Pairing shortcuts for other remotes may differ; see the device manual and the [complete pairing guide](PAIRING_EN.md).
+
+Back in Permissions & Connection, choose Scan Remotes to inspect real CoreBluetooth results. Keep automatic arbitration for one remote, or select and persist a specific target when multiple compatible remotes are present. The saved UUID is preferred on later reconnects.
 
 ## 3. Choose features and complete the real checks
 

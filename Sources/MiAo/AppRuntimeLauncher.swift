@@ -1,21 +1,40 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import Foundation
 
+struct AppRuntimeLaunchPlan: Equatable {
+    let executableURL: URL
+    let arguments: [String]
+    let currentDirectoryURL: URL
+    let environment: [String: String]
+
+    static func make(
+        context: MiAoInstallationContext,
+        preferences: AppPreferences,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> AppRuntimeLaunchPlan {
+        AppRuntimeLaunchPlan(
+            executableURL: URL(fileURLWithPath: "/bin/zsh"),
+            arguments: [context.startScriptURL.path] + preferences.runtimeArguments,
+            currentDirectoryURL: context.startScriptURL.deletingLastPathComponent()
+                .deletingLastPathComponent(),
+            environment: MiAoProcessEnvironment.sanitizedForExternalProcess(environment)
+        )
+    }
+}
+
 struct AppRuntimeLauncher {
     func start(preferences: AppPreferences) throws -> String {
         guard let context = MiAoInstallationContext.load(), context.isValid else {
             throw BridgeError.configuration("App 内置启动组件缺失或损坏，请打开设置向导修复")
         }
 
+        let plan = AppRuntimeLaunchPlan.make(context: context, preferences: preferences)
         let process = Process()
         let output = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = [context.startScriptURL.path] + preferences.runtimeArguments
-        process.currentDirectoryURL =
-            context.startScriptURL.deletingLastPathComponent().deletingLastPathComponent()
-        var environment = ProcessInfo.processInfo.environment
-        environment["MI_AO_APP_BUNDLE"] = Bundle.main.bundleURL.path
-        process.environment = environment
+        process.executableURL = plan.executableURL
+        process.arguments = plan.arguments
+        process.currentDirectoryURL = plan.currentDirectoryURL
+        process.environment = plan.environment
         process.standardOutput = output
         process.standardError = output
         try process.run()

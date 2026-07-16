@@ -439,6 +439,48 @@ set -e
 [[ ! -f "$VOICE_BRIDGE_DATA_DIR/system-mapping/xiaomi-remote-2717-32b8.active" ]]
 [[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
 
+cat > "$TEMP_ROOT/open-wait-runner" <<'EOF'
+#!/bin/zsh
+/bin/sh -c '
+  trap "exit 0" TERM INT HUP
+  printf "%s\n" "$$" > "$MI_AO_RUNTIME_LOCK/pid"
+  while :; do sleep 1; done
+' &
+app_pid=$!
+trap 'kill -TERM "$app_pid" 2>/dev/null || true; wait "$app_pid" 2>/dev/null || true; exit 0' TERM INT HUP
+wait "$app_pid"
+EOF
+chmod +x "$TEMP_ROOT/open-wait-runner"
+
+MI_AO_LAUNCH_VIA_OPEN=1 MI_AO_RUN_SCRIPT="$TEMP_ROOT/open-wait-runner" \
+  "$ROOT/scripts/run-with-mapping.sh" --no-submit --no-buttons >/dev/null 2>&1 &
+open_wrapper_pid=$!
+open_runtime_pid=""
+for _ in {1..100}; do
+  [[ -f "$VOICE_BRIDGE_DATA_DIR/runtime.lock/pid" ]] \
+    && open_runtime_pid="$(<"$VOICE_BRIDGE_DATA_DIR/runtime.lock/pid")"
+  [[ "$open_runtime_pid" == <-> && "$open_runtime_pid" != "$open_wrapper_pid" ]] && break
+  sleep 0.02
+done
+[[ "$open_runtime_pid" == <-> ]]
+[[ "$open_runtime_pid" != "$open_wrapper_pid" ]]
+kill -0 "$open_runtime_pid"
+set +e
+kill -TERM "$open_wrapper_pid"
+wait "$open_wrapper_pid"
+open_wrapper_status=$?
+set -e
+[[ "$open_wrapper_status" == "143" ]]
+for _ in {1..100}; do
+  kill -0 "$open_runtime_pid" 2>/dev/null || break
+  sleep 0.02
+done
+if kill -0 "$open_runtime_pid" 2>/dev/null; then
+  echo "LaunchServices runtime child remained alive after wrapper exit" >&2
+  exit 1
+fi
+[[ ! -d "$VOICE_BRIDGE_DATA_DIR/runtime.lock" ]]
+
 cat > "$TEMP_ROOT/background-runner" <<'EOF'
 #!/bin/zsh
 trap 'exit 0' TERM INT HUP

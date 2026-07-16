@@ -1,7 +1,7 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import Foundation
 
-struct SpeechJobRequest {
+struct SpeechJobRequest: Sendable {
     let samples: [Int16]
     let sampleRate: Int
     let gainDB: Double
@@ -11,7 +11,7 @@ struct SpeechJobRequest {
     let forceSubmit: Bool
 }
 
-struct SpeechJobOutput {
+struct SpeechJobOutput: Sendable {
     let reason: String
     let wavURL: URL
     let transcriptURL: URL
@@ -20,11 +20,11 @@ struct SpeechJobOutput {
     let submissionError: String?
 }
 
-final class SpeechJobQueue {
-    typealias Transcribe = (URL) throws -> String
-    typealias Submit = (String, Bool, @escaping (Result<Void, Error>) -> Void) -> Void
+final class SpeechJobQueue: @unchecked Sendable {
+    typealias Transcribe = @Sendable (URL) throws -> String
+    typealias Submit = @Sendable (String, Bool, @escaping @Sendable (Result<Void, Error>) -> Void) -> Void
 
-    private final class SubmissionBox {
+    private final class SubmissionBox: @unchecked Sendable {
         private let lock = NSLock()
         private var stored: Result<Void, Error>?
 
@@ -72,7 +72,7 @@ final class SpeechJobQueue {
     @discardableResult
     func enqueue(
         _ request: SpeechJobRequest,
-        completion: @escaping (Result<SpeechJobOutput, Error>) -> Void
+        completion: @escaping @Sendable (Result<SpeechJobOutput, Error>) -> Void
     ) -> Bool {
         stateLock.lock()
         guard pendingJobs < maximumPendingJobs else {

@@ -116,6 +116,8 @@ struct MiAoInstallationContext: Codable, Equatable {
             "scripts/remote-mapping.sh",
             "scripts/codex-accessibility.sh",
             "scripts/lib/project.sh",
+            "scripts/lib/environment.sh",
+            "Resources/WhisperModel.sha256",
         ]
         let baseIsValid = requiredPaths.allSatisfy {
             FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
@@ -194,9 +196,14 @@ struct CodexRuntimeSnapshot: Equatable {
 
 struct SetupEnvironmentInspector {
     private let fileManager: FileManager
+    private let modelVerifier: ModelIntegrityVerifier
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        modelVerifier: ModelIntegrityVerifier? = nil
+    ) {
         self.fileManager = fileManager
+        self.modelVerifier = modelVerifier ?? .production(fileManager: fileManager)
     }
 
     func inspect(
@@ -278,32 +285,54 @@ struct SetupEnvironmentInspector {
 
     private func speechEngineCheck(configuration: Configuration) -> SetupCheck {
         let whisperPath = resolvedWhisperPath(explicit: configuration.whisperPath)
-        let modelSize =
-            (try? fileManager.attributesOfItem(atPath: configuration.modelPath)[.size])
-            as? NSNumber
-        let modelReady = (modelSize?.int64Value ?? 0) > 1_000_000
-        if whisperPath != nil, modelReady {
+        let modelStatus = modelVerifier.verify(
+            modelPath: configuration.modelPath,
+            useMetadataCache: true
+        )
+        if whisperPath != nil, case .valid(let byteCount) = modelStatus {
             let formattedSize = ByteCountFormatter.string(
-                fromByteCount: modelSize?.int64Value ?? 0,
+                fromByteCount: byteCount,
                 countStyle: .file
             )
             return SetupCheck(
                 id: .speechEngine,
                 title: "本地语音引擎",
-                detail: "whisper-cli 与 \(formattedSize) 模型已就绪",
+                detail: "whisper-cli 与 \(formattedSize) 模型已就绪 · SHA-256 已验证",
                 state: .ready,
                 action: nil,
                 actionTitle: nil
             )
         }
-        let missing = [
-            whisperPath == nil ? "whisper-cli" : nil,
-            modelReady ? nil : "语音模型",
-        ].compactMap { $0 }.joined(separator: "、")
+        let modelDetail: String
+        switch modelStatus {
+        case .valid:
+            modelDetail = "缺少 whisper-cli"
+        case .missing:
+            modelDetail = "缺少语音模型"
+        case .tooSmall(let byteCount):
+            let size = ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file)
+            modelDetail = "语音模型不完整（\(size)）"
+        case .hashMismatch:
+            modelDetail = "语音模型完整性校验失败"
+        case .contractMissing:
+            modelDetail = "当前安装缺少语音模型校验契约"
+        case .unreadable:
+            modelDetail = "语音模型无法读取"
+        }
+        let detail: String
+        if whisperPath == nil {
+            if case .valid = modelStatus {
+                detail = "缺少 whisper-cli"
+            } else {
+                detail = "缺少 whisper-cli；\(modelDetail)"
+            }
+        } else {
+            detail = modelDetail
+        }
         return SetupCheck(
             id: .speechEngine,
             title: "本地语音引擎",
-            detail: "缺少\(missing)，需要完成安装",
+            detail: "\(detail)，需要修复安装",
             state: .actionRequired,
             action: .runSetup,
             actionTitle: "修复安装"

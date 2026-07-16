@@ -7,6 +7,9 @@ source "$ROOT/scripts/lib/project.sh"
 
 [[ -d "$INSTALL_APP" ]] || { echo "未安装：$INSTALL_APP" >&2; exit 1; }
 [[ -x "$INSTALLED_BIN" ]] || { echo "缺少可执行文件：$INSTALLED_BIN" >&2; exit 1; }
+verify_model_integrity \
+  || { echo "语音模型完整性校验失败，请先执行 scripts/repair-runtime.sh" >&2; exit 1; }
+echo "语音模型：SHA-256 已验证"
 
 codesign --verify --deep --strict "$INSTALL_APP"
 installed_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INSTALL_APP/Contents/Info.plist")"

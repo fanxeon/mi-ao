@@ -423,12 +423,18 @@ import Testing
 }
 
 @Test func controlModeChangesOnlyDpadActions() {
-    let executor = ButtonActionExecutor(preset: .pointer)
+    var activities: [MiAoCommandActivity] = []
+    let executor = ButtonActionExecutor(
+        preset: .pointer,
+        activityHandler: { activities.append($0) }
+    )
     #expect(executor.controlMode == .pointer)
     executor.buttonDown(.tv)
     #expect(executor.controlMode == .directional)
+    #expect(activities.last == .controlMode(.directional))
     executor.buttonDown(.tv)
     #expect(executor.controlMode == .pointer)
+    #expect(activities.last == .controlMode(.pointer))
 
     let dpadChanges: [ButtonAction: ButtonAction] = [
         .pointerMoveUp: .keyboardArrowUp,

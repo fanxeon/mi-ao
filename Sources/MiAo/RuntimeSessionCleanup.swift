@@ -6,6 +6,39 @@ enum RuntimeSessionCleanup {
     private static let runtimeLockKey = "MI_AO_RUNTIME_LOCK"
     private static let runtimeTokenKey = "MI_AO_RUNTIME_TOKEN"
 
+    @discardableResult
+    static func registerCurrentProcess(
+        processID: Int32 = ProcessInfo.processInfo.processIdentifier,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        let lockPath = environment[runtimeLockKey]
+        let expectedToken = environment[runtimeTokenKey]
+        if lockPath == nil, expectedToken == nil { return true }
+        guard
+            let lockPath,
+            let expectedToken
+        else { return false }
+        let lockURL = URL(fileURLWithPath: lockPath, isDirectory: true)
+        let tokenURL = lockURL.appendingPathComponent("token")
+        guard
+            let storedToken = try? String(contentsOf: tokenURL, encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            storedToken == expectedToken
+        else { return false }
+        let pidURL = lockURL.appendingPathComponent("pid")
+        do {
+            try "\(processID)\n".write(to: pidURL, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: pidURL.path
+            )
+            return true
+        } catch {
+            fputs("警告：无法登记米遥运行进程：\(error.localizedDescription)\n", stderr)
+            return false
+        }
+    }
+
     static func perform(environment: [String: String] = ProcessInfo.processInfo.environment) {
         if let restoreScript = environment[restoreScriptKey],
             FileManager.default.isExecutableFile(atPath: restoreScript)

@@ -24,6 +24,11 @@ if (( ${#arguments[@]} == 0 )); then
   arguments=(--name "小米蓝牙语音遥控器")
 fi
 
+if [[ -z "${MI_AO_RUN_SCRIPT:-}" ]]; then
+  export MI_AO_LAUNCH_VIA_OPEN=1
+  export MI_AO_RUNTIME_LOG_FILE="$LOG_FILE"
+fi
+
 nohup "$ROOT/scripts/run-with-mapping.sh" "${arguments[@]}" >> "$LOG_FILE" 2>&1 &
 launcher_pid=$!
 disown "$launcher_pid" 2>/dev/null || true

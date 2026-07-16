@@ -8,7 +8,7 @@ This guide starts after installation and covers daily startup, hold-to-talk beha
 
 ## Current launch model
 
-MI-AO is currently a **source-first alpha**. After installation, double-click `~/Applications/米遥.app` in Finder.
+MI-AO V2 / 0.2.0 is currently a **source-first beta**. After installation, double-click `~/Applications/米遥.app` in Finder.
 
 On first use, double-clicking opens the setup guide. It follows the real path of Start → Control Preferences → Permissions & Connection → Start: choose submission and button control first, then resolve only the checks required by those choices. The Button Guide page contains the built-in default mapping image. Launch at Login is always optional. After the first successful start, manual and optional login launches read the same preferences and invoke the same real gate. See [Permissions and optional features](PERMISSIONS_EN.md).
 
@@ -38,6 +38,8 @@ Click the menu-bar icon and wait for:
 ```
 
 Do not start speaking before the ready message appears.
+
+Once ready, D-pad, scrolling, Return/Escape, shortcuts, HOME, mode/preset changes, and Codex actions briefly replace the menu-bar symbol. A blue rounded background reports a command, green reports confirmed success, and red reports a real failure; after about 1.2 seconds the latest runtime state returns. Recording, processing, disconnection, and error states always take priority over ordinary button feedback.
 
 ### 3. Hold, speak, release
 

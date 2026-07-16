@@ -18,12 +18,14 @@ mkdir -p \
   "$RUNTIME_ROOT/scripts/lib"
 cp "$BUILD_BIN" "$CONTENTS/MacOS/$EXECUTABLE_NAME"
 cp "$ROOT/Resources/Info.plist" "$CONTENTS/Info.plist"
+cp "$ROOT/Resources/WhisperModel.sha256" "$CONTENTS/Resources/WhisperModel.sha256"
 ditto "$ROOT/Resources/HardwareProfiles" "$CONTENTS/Resources/HardwareProfiles"
 ditto "$ROOT/Resources/Brand" "$CONTENTS/Resources/Brand"
 cp "$ROOT/docs/assets/mi-ao-button-map.png" "$CONTENTS/Resources/Brand/mi-ao-button-map.png"
 "$ROOT/scripts/build-icon.sh" "$CONTENTS/Resources/AppIcon.icns" >/dev/null
 
 cp "$ROOT/Resources/Info.plist" "$RUNTIME_ROOT/Resources/Info.plist"
+cp "$ROOT/Resources/WhisperModel.sha256" "$RUNTIME_ROOT/Resources/WhisperModel.sha256"
 ditto "$ROOT/Resources/HardwareProfiles" "$RUNTIME_ROOT/Resources/HardwareProfiles"
 cp "$ROOT/VERSION" "$RUNTIME_ROOT/VERSION"
 for script in \
@@ -38,6 +40,7 @@ for script in \
   cp "$ROOT/scripts/$script" "$RUNTIME_ROOT/scripts/$script"
 done
 cp "$ROOT/scripts/lib/project.sh" "$RUNTIME_ROOT/scripts/lib/project.sh"
+cp "$ROOT/scripts/lib/environment.sh" "$RUNTIME_ROOT/scripts/lib/environment.sh"
 chmod 0755 "$RUNTIME_ROOT/scripts"/*.sh
 
 BUILD_NUMBER="$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)"

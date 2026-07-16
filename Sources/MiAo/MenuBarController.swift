@@ -1,6 +1,7 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import AppKit
 import Foundation
+import QuartzCore
 
 enum MiAoRuntimeStatus: Equatable {
     case starting
@@ -11,6 +12,7 @@ enum MiAoRuntimeStatus: Equatable {
     case processing(Int)
     case sent
     case disconnected
+    case reconnecting(attempt: Int, delaySeconds: Int)
     case stopping
     case error(String)
 
@@ -25,6 +27,8 @@ enum MiAoRuntimeStatus: Equatable {
             return count > 1 ? "后台转写中 · 另有一条等待" : "后台转写中 · 可继续说话"
         case .sent: return "已发送到 Codex"
         case .disconnected: return "遥控器已断开 · 正在重连"
+        case .reconnecting(let attempt, let delaySeconds):
+            return "重连第 \(attempt) 次 · \(delaySeconds) 秒后继续"
         case .stopping: return "正在安全退出"
         case .error(let message): return "需要处理：\(message)"
         }
@@ -54,6 +58,7 @@ enum MiAoRuntimeStatus: Equatable {
     }
 }
 
+@MainActor
 private final class MenuBarPanelViewController: NSViewController {
     var onFocusCodex: (() -> Void)?
     var onOpenRecordings: (() -> Void)?
@@ -213,6 +218,7 @@ private final class MenuBarPanelViewController: NSViewController {
     @objc private func quitSafely() { onQuit?() }
 }
 
+@MainActor
 final class MenuBarController: NSObject, NSPopoverDelegate {
     var onQuit: (() -> Void)?
 
@@ -221,8 +227,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
     private let panel = MenuBarPanelViewController()
+    private let statusHighlightLayer = CALayer()
     private var setupWindowController: SetupGuideWindowController?
     private var status: MiAoRuntimeStatus = .starting
+    private var activity: MiAoCommandActivity?
+    private var activityTimer: Timer?
 
     init(configuration: Configuration) {
         self.configuration = configuration
@@ -237,8 +246,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.contentViewController = panel
 
         panel.onFocusCodex = { [weak self] in
-            self?.closePopover()
-            _ = CodexSubmitter().launchOrActivateCodex()
+            guard let self else { return }
+            self.closePopover()
+            self.show(activity: .codexActivation(CodexSubmitter().launchOrActivateCodex()))
         }
         panel.onOpenRecordings = { [weak self] in
             self?.closePopover()
@@ -246,7 +256,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
         panel.onOpenSetup = { [weak self] in
             self?.closePopover()
-            self?.openSetupGuide()
+            self?.showSetupGuide()
         }
         panel.onQuit = { [weak self] in
             self?.closePopover()
@@ -257,6 +267,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             button.target = self
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp])
+            configureHighlightLayer(for: button)
         }
         let catalog = ButtonPresetStore().load().catalog
         let preset = (try? catalog.preset(id: configuration.buttonPresetID)) ?? .pointer
@@ -271,17 +282,49 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
         self.status = status
         panel.update(status: status)
+        if !status.allowsTransientCommandActivity {
+            clearActivity(render: false)
+        }
+        renderMenuBarPresentation()
+    }
+
+    func show(activity: MiAoCommandActivity) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.show(activity: activity) }
+            return
+        }
+        guard status.allowsTransientCommandActivity else { return }
+        activityTimer?.invalidate()
+        self.activity = activity
+        renderMenuBarPresentation()
+        activityTimer = Timer.scheduledTimer(
+            withTimeInterval: MiAoCommandActivity.displayDuration,
+            repeats: false
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.clearActivity(render: true)
+            }
+        }
+    }
+
+    private func renderMenuBarPresentation() {
         guard let button = statusItem.button else { return }
+        let presentation = MiAoMenuBarPresentation.resolved(
+            status: status,
+            activity: activity
+        )
         let image = NSImage(
-            systemSymbolName: status.systemImageName,
-            accessibilityDescription: "米遥：\(status.label)"
+            systemSymbolName: presentation.systemImageName,
+            accessibilityDescription: "米遥：\(presentation.label)"
         )
         image?.isTemplate = true
         button.image = image
         button.title = ""
-        button.toolTip = "米遥 · \(status.label)"
+        button.contentTintColor = iconColor(for: presentation.tone)
+        button.toolTip = "米遥 · \(presentation.label)"
         button.setAccessibilityLabel("米遥")
-        button.setAccessibilityValue(status.label)
+        button.setAccessibilityValue(presentation.label)
+        updateHighlight(tone: presentation.tone)
     }
 
     func update(controlMode: RemoteControlMode) {
@@ -314,6 +357,52 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.performClose(nil)
     }
 
+    private func configureHighlightLayer(for button: NSStatusBarButton) {
+        button.wantsLayer = true
+        statusHighlightLayer.frame = button.bounds.insetBy(dx: 2, dy: 2)
+        statusHighlightLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        statusHighlightLayer.cornerRadius = 6
+        statusHighlightLayer.opacity = 0
+        statusHighlightLayer.backgroundColor = NSColor.clear.cgColor
+        button.layer?.insertSublayer(statusHighlightLayer, at: 0)
+    }
+
+    private func clearActivity(render: Bool) {
+        activityTimer?.invalidate()
+        activityTimer = nil
+        activity = nil
+        if render { renderMenuBarPresentation() }
+    }
+
+    private func iconColor(for tone: MiAoMenuBarTone) -> NSColor {
+        switch tone {
+        case .neutral: return .labelColor
+        case .ready: return .systemBlue
+        case .command: return .systemBlue
+        case .success: return .systemGreen
+        case .warning, .processing: return .systemOrange
+        case .recording, .failure: return .systemRed
+        }
+    }
+
+    private func updateHighlight(tone: MiAoMenuBarTone) {
+        let color: NSColor
+        switch tone {
+        case .neutral, .ready: color = .clear
+        case .command: color = .systemBlue.withAlphaComponent(0.26)
+        case .success: color = .systemGreen.withAlphaComponent(0.26)
+        case .warning: color = .systemOrange.withAlphaComponent(0.22)
+        case .recording: color = .systemRed.withAlphaComponent(0.28)
+        case .processing: color = .systemOrange.withAlphaComponent(0.26)
+        case .failure: color = .systemRed.withAlphaComponent(0.30)
+        }
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.16)
+        statusHighlightLayer.backgroundColor = color.cgColor
+        statusHighlightLayer.opacity = tone.showsHighlightedBackground ? 1 : 0
+        CATransaction.commit()
+    }
+
     private func openRecordings() {
         try? FileManager.default.createDirectory(
             atPath: outputDirectory,
@@ -322,7 +411,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: outputDirectory)
     }
 
-    private func openSetupGuide() {
+    func showSetupGuide() {
         if setupWindowController == nil {
             setupWindowController = SetupGuideWindowController(
                 configuration: configuration,

@@ -1,8 +1,8 @@
 <!-- Copyright (c) 2026 FanXeon@Poemcoder with Codex -->
 
-# Product Delivery Plan: Alpha to User-Ready
+# Product Delivery Plan: V2 Beta to User-Ready
 
-This plan defines the path from MI-AO's current source-first alpha to a product that a non-developer can use every day. A milestone is complete only when the real device, system permissions, persisted state, failure recovery, and public documentation form an end-to-end user path.
+This plan defines the path from MI-AO's source-first V2 beta to a product that a non-developer can use every day. A milestone is complete only when the real device, system permissions, persisted state, failure recovery, and public documentation form an end-to-end user path.
 
 See the bilingual [development status snapshot](DEVELOPMENT_STATUS.md) for the currently verified baseline, active phase, and explicit not-yet-delivered boundary.
 
@@ -28,7 +28,7 @@ Already implemented:
 - A first-run setup guide, real menu-bar state, self-contained app runtime, and a launch gate that leaves mappings untouched on failure.
 - The official 06 “Center Connection” logo, AppIcon, macOS monochrome template, and archived source concepts.
 
-Not yet implemented and not to be marketed as complete: visual device selection, persisted preferences, launch at login, the custom-shortcut editor, automatic updates, and Developer ID distribution.
+V2 now implements visual device selection and persisted identity, the custom-shortcut editor, real HID highlighting, one-shot tests, validated import/export, runtime hot reload, reconnect feedback, atomic install rollback, and model integrity verification. Still not to be marketed as complete: Developer ID signing/notarization, source-independent automatic updates, relogin acceptance, or support for a second remote class without real evidence.
 
 ## Stable architecture boundary
 
@@ -109,26 +109,26 @@ KeyboardShortcutSpec
 - [x] Persist automatic Codex submission versus transcription-only mode and the remote-button-control switch.
 - [ ] Complete installed-app enable, relogin launch, disable, and ad-hoc update re-registration acceptance.
 
-### P2 · Custom-action core (in progress)
+### P2 · Custom-action core (V2 complete)
 
 - [x] Extend the fixed `ButtonAction` contract with versioned `KeyboardShortcutSpec` and an explicit TV preset target.
 - [x] Add a private user-preset store with atomic save, corruption quarantine, schema protection, and official-default fallback.
 - [x] Extend the executor with guaranteed modifier cleanup and interruption handling.
 - [x] Add TV-target, reserved-shortcut, and safe-preset tests.
-- [ ] Add import/export and cross-version migration.
+- [x] Add import/export, whole-catalog validation, corruption quarantine, and future-schema protection.
 
-### P3 · Buttons & Shortcuts GUI (in progress)
+### P3 · Buttons & Shortcuts GUI (V2 complete)
 
 - [x] Add a Button Configurations tab with an accessible text list and separate button-map guide.
 - [x] Support create, duplicate, rename, delete, action selection, shortcut recording, save/select, and TV target selection.
-- [ ] Add real-button highlight, one-shot testing, import/export, reset, and cross-app hot reload.
-- [ ] Complete Chinese/English copy, VoiceOver, keyboard navigation, high contrast, and 390 px narrow-window acceptance.
+- [x] Add real-button highlight, one-shot testing, import/export, official-default fallback, and cross-process hot reload.
+- [x] Complete native accessible labels, keyboard focus behavior, appearance redraw, and 390 px narrow-window page acceptance; retain a full manual VoiceOver pass as a 1.0 release check.
 
 ### P4 · Device management and resilient connection
 
-- [ ] Show real scan results, explicit target-device selection, and persisted identity.
-- [ ] Add backoff reconnect with visible next attempt and an actionable terminal failure.
-- [ ] Require explicit choice when multiple compatible remotes are present.
+- [x] Show real scan results, explicit target-device selection, and persisted identity.
+- [x] Add reconnect backoff with visible attempt and next-delay state.
+- [x] Prefer an explicitly saved target; otherwise arbitrate deterministically after a bounded multi-device discovery window.
 - [ ] Complete multi-display, simultaneous Mac-keyboard, long-press, and eight-hour soak tests.
 
 ### P5 · Non-developer installation and maintenance

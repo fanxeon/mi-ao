@@ -9,10 +9,32 @@ struct WhisperTranscriber {
     let language: String
     let prompt: String?
 
-    init(configuration: Configuration) throws {
-        guard FileManager.default.fileExists(atPath: configuration.modelPath) else {
+    init(
+        configuration: Configuration,
+        modelVerifier: ModelIntegrityVerifier = .production()
+    ) throws {
+        switch modelVerifier.verify(modelPath: configuration.modelPath) {
+        case .valid:
+            break
+        case .missing:
             throw BridgeError.transcription(
-                "Whisper 模型不存在：\(configuration.modelPath)\n请先运行 scripts/setup.sh"
+                "Whisper 模型不存在：\(configuration.modelPath)\n请在米遥设置中执行“修复安装”"
+            )
+        case .tooSmall:
+            throw BridgeError.transcription(
+                "Whisper 模型不完整：\(configuration.modelPath)\n请在米遥设置中执行“修复安装”"
+            )
+        case .hashMismatch:
+            throw BridgeError.transcription(
+                "Whisper 模型完整性校验失败：\(configuration.modelPath)\n已拒绝启动，请执行“修复安装”"
+            )
+        case .contractMissing:
+            throw BridgeError.transcription(
+                "当前米遥安装缺少语音模型校验契约，已拒绝启动；请重新安装米遥"
+            )
+        case .unreadable:
+            throw BridgeError.transcription(
+                "Whisper 模型无法读取：\(configuration.modelPath)\n请检查权限或执行“修复安装”"
             )
         }
         modelURL = URL(fileURLWithPath: configuration.modelPath)

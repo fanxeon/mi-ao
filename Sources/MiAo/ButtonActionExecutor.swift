@@ -36,12 +36,13 @@ struct HomeClickArbiter {
     }
 }
 
-final class ButtonActionExecutor {
+final class ButtonActionExecutor: @unchecked Sendable {
     private(set) var preset: ButtonPreset
-    private let catalog: ButtonPresetCatalog
+    private var catalog: ButtonPresetCatalog
     private let debug: Bool
     private let controlModeHandler: ((RemoteControlMode) -> Void)?
     private let presetChangeHandler: ((ButtonPreset) -> Void)?
+    private let activityHandler: ((MiAoCommandActivity) -> Void)?
     private var timer: Timer?
     private var activeButton: RemoteButton?
     private var activeAction: ButtonAction?
@@ -61,13 +62,19 @@ final class ButtonActionExecutor {
         catalog: ButtonPresetCatalog = .builtIn,
         debug: Bool = false,
         controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
-        presetChangeHandler: ((ButtonPreset) -> Void)? = nil
+        presetChangeHandler: ((ButtonPreset) -> Void)? = nil,
+        activityHandler: ((MiAoCommandActivity) -> Void)? = nil
     ) {
         self.preset = preset
         self.catalog = catalog
         self.debug = debug
         self.controlModeHandler = controlModeHandler
         self.presetChangeHandler = presetChangeHandler
+        self.activityHandler = activityHandler
+    }
+
+    deinit {
+        stop()
     }
 
     func start() {
@@ -103,10 +110,28 @@ final class ButtonActionExecutor {
             activeShortcut = shortcut
             pressedAt = Date()
             postKeyboardShortcut(shortcut, isDown: true)
+            activityHandler?(.keyboardShortcut(shortcut))
             return
         case .action(let baseAction):
             execute(action: baseAction, for: button)
         }
+    }
+
+    @discardableResult
+    func replaceCatalog(
+        _ catalog: ButtonPresetCatalog,
+        selecting presetID: String
+    ) throws -> ButtonPreset {
+        try catalog.validate()
+        let selected = (try? catalog.preset(id: presetID)) ?? .pointer
+        self.catalog = catalog
+        preset = selected
+        if controlMode != .pointer {
+            controlMode = .pointer
+            controlModeHandler?(controlMode)
+        }
+        presetChangeHandler?(selected)
+        return selected
     }
 
     private func execute(action baseAction: ButtonAction, for button: RemoteButton) {
@@ -119,6 +144,7 @@ final class ButtonActionExecutor {
                     : "控制模式：方向键（仅方向环发送上下左右）"
             )
             controlModeHandler?(controlMode)
+            activityHandler?(.controlMode(controlMode))
             return
         }
 
@@ -145,27 +171,33 @@ final class ButtonActionExecutor {
         case .homePageNavigation:
             break
         case .codexFocus:
-            print(CodexSubmitter().activateCodex() ? "已聚焦 Codex" : "Codex 未运行")
+            let succeeded = CodexSubmitter().activateCodex()
+            print(succeeded ? "已聚焦 Codex" : "Codex 未运行")
+            activityHandler?(.codexFocus(succeeded: succeeded))
         case .codexLaunchOrFocus:
-            switch CodexSubmitter().launchOrActivateCodex() {
+            let result = CodexSubmitter().launchOrActivateCodex()
+            switch result {
             case .activated: print("已聚焦 Codex")
             case .launchRequested: print("正在启动 Codex")
             case .unavailable: print("未找到 Codex App，请先安装 Codex")
             }
+            activityHandler?(.codexActivation(result))
         case .codexPreviousTask:
-            print(
-                CodexSubmitter().navigateTask(.previous)
-                    ? "Codex：上一个会话" : "Codex 未运行或找不到会话菜单，未切换"
-            )
+            let succeeded = CodexSubmitter().navigateTask(.previous)
+            print(succeeded ? "Codex：上一个会话" : "Codex 未运行或找不到会话菜单，未切换")
+            activityHandler?(.codexTask(.previous, succeeded: succeeded))
         case .codexNextTask:
-            print(
-                CodexSubmitter().navigateTask(.next)
-                    ? "Codex：下一个会话" : "Codex 未运行或找不到会话菜单，未切换"
-            )
+            let succeeded = CodexSubmitter().navigateTask(.next)
+            print(succeeded ? "Codex：下一个会话" : "Codex 未运行或找不到会话菜单，未切换")
+            activityHandler?(.codexTask(.next, succeeded: succeeded))
         case .presetCycle:
             print("旧版循环切换已停用；请在按键配置中为 TV 选择目标配置")
+            activityHandler?(.legacyPresetCycleUnavailable())
         case .voicePushToTalk, .modeTogglePointerDirectional, .unmapped:
             break
+        }
+        if let activity = MiAoCommandActivity.executed(action: action) {
+            activityHandler?(activity)
         }
     }
 
@@ -252,10 +284,12 @@ final class ButtonActionExecutor {
     private func switchPreset(to targetPresetID: String) {
         guard let target = try? catalog.preset(id: targetPresetID) else {
             print("配置切换失败：找不到 \(targetPresetID)")
+            activityHandler?(.presetUnavailable(id: targetPresetID))
             return
         }
         guard target.id != preset.id else {
             print("配置切换已忽略：目标与当前配置相同")
+            activityHandler?(.presetAlreadySelected(name: target.name))
             return
         }
         preset = target
@@ -265,6 +299,7 @@ final class ButtonActionExecutor {
         }
         presetChangeHandler?(target)
         print("已切换按键配置：\(target.name)")
+        activityHandler?(.presetChanged(name: target.name))
     }
 
     private func handleHomeClick() {
@@ -275,6 +310,7 @@ final class ButtonActionExecutor {
                 self.pendingHomeSingle = nil
                 self.postKeyboardStroke(action: .keyboardPageDown)
                 print("HOME 单击：Page Down")
+                self.activityHandler?(.homePage(up: false))
             }
             pendingHomeSingle = workItem
             DispatchQueue.main.asyncAfter(
@@ -286,6 +322,7 @@ final class ButtonActionExecutor {
             pendingHomeSingle = nil
             postKeyboardStroke(action: .keyboardPageUp)
             print("HOME 双击：Page Up")
+            activityHandler?(.homePage(up: true))
         }
     }
 

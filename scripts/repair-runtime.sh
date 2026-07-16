@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/scripts/lib/project.sh"
+REPAIR_CURL_BIN="${MI_AO_REPAIR_CURL_BIN:-/usr/bin/curl}"
 
 find_brew() {
   local candidate
@@ -44,12 +45,20 @@ fi
 
 mkdir -p "$MODEL_DIR"
 chmod 0700 "$MODEL_DIR"
-if [[ ! -s "$MODEL_PATH" || "$(stat -f%z "$MODEL_PATH" 2>/dev/null || echo 0)" -le 1000000 ]]; then
-  temporary="$MODEL_PATH.part"
+if ! verify_model_integrity; then
+  temporary="$MODEL_PATH.part.$$"
   rm -f "$temporary"
-  /usr/bin/curl -fL --progress-bar \
-    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" \
+  "$REPAIR_CURL_BIN" -fL --progress-bar \
+    "$MODEL_URL" \
     -o "$temporary"
+  downloaded_sha="$(/usr/bin/shasum -a 256 "$temporary" | /usr/bin/awk '{print $1}')"
+  if [[ "$downloaded_sha" != "$MODEL_SHA256" ]]; then
+    rm -f "$temporary"
+    echo "错误：语音模型校验失败，未替换现有文件。" >&2
+    echo "预期：$MODEL_SHA256" >&2
+    echo "实际：$downloaded_sha" >&2
+    exit 1
+  fi
   mv "$temporary" "$MODEL_PATH"
 fi
 chmod 0600 "$MODEL_PATH"

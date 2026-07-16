@@ -28,6 +28,7 @@ export HOME="$TEMP_ROOT"
 export MI_AO_CODEX_ACCESSIBILITY_SCRIPT="$GATE"
 export MI_AO_TEST_GATE_LOG="$GATE_LOG"
 export MI_AO_TEST_APP_LOG="$APP_LOG"
+export MI_AO_APP_BUNDLE="/Users/example/Applications/garbled-mi-ao.app"
 
 MI_AO_TEST_GATE_EXIT=0 "$ROOT/scripts/run.sh" --no-buttons
 [[ "$(cat "$GATE_LOG")" == "ensure" ]]

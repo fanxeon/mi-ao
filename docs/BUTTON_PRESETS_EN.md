@@ -70,7 +70,10 @@ TV in the default `pointer` preset still changes only the D-pad mode. A custom p
 - A shortcut is triggered only through the calibrated, exact remote HID service. Physical Mac keyboard events never enter the MI-AO button path.
 - `Cmd-Q`, `Cmd-Option-Escape`, and `Cmd-Control-Q` are rejected to avoid an accidental quit, force-quit panel, or lock screen.
 - MI-AO presses modifiers before the target key and releases them in reverse order on release, safe exit, BLE-session stop, and runtime interruption so Option, Control, Command, and Shift cannot remain down.
-- This first version does not yet include import/export, cross-app hot reload, or test recording. A saved selection applies to the next safe launch; a runtime TV transition requires no restart.
+- Saving posts a runtime notification and immediately reloads the catalog and selected preset without restarting the app.
+- Test executes the row's current action exactly once; it does not pretend to be a physical remote event. Real highlighting comes only from runtime HID down/up notifications.
+- Runtime actions also report to the menu bar: direction, scrolling, keyboard, HOME, mode/preset, and Codex actions get matching symbols; blue reports a command, green a confirmed success, and red a real failure. Recording, processing, disconnection, and error state retain priority.
+- Export writes a private JSON file. Import accepts a regular file up to 1 MB and validates the entire catalog schema, button set, reserved buttons, TV targets, and shortcut safety before the user confirms replacement.
 
 ## Built-in profile and optional calibration
 

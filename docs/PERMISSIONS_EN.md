@@ -46,7 +46,7 @@ MI-AO uses macOS 13+ `SMAppService.mainApp`, not a custom LaunchAgent and not an
 
 Login launch never bypasses setup or the button gate. After the first successful start, a no-argument app launch reads the same preferences and invokes the same bundled `start.sh` path. Failure reopens the setup guide. Disabling the login item does not affect manual use.
 
-The source-first alpha uses ad-hoc signing. A rebuilt binary may need its login item or Accessibility authorization registered again; MI-AO does not weaken the system identity boundary to hide this.
+The source-first beta uses ad-hoc signing. A rebuilt binary may need its login item or Accessibility authorization registered again; MI-AO does not weaken the system identity boundary to hide this.
 
 ## Permissions MI-AO does not request
 

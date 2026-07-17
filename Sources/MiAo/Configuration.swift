@@ -44,6 +44,7 @@ struct Configuration {
     var buttonProfilePath: String?
     var resolvedProfilePath: String?
     var buttonsEnabled = true
+    var voiceConnectionMode: VoiceConnectionMode = .alwaysReady
     var buttonProfileDirectory = NSString(
         string: "~/Library/Application Support/mi-ao/button-profiles"
     ).expandingTildeInPath
@@ -135,6 +136,14 @@ struct Configuration {
                     ).expandingTildeInPath
             case "--no-buttons":
                 config.buttonsEnabled = false
+            case "--voice-connection-mode":
+                let raw = try requireValue(for: flag)
+                guard let mode = VoiceConnectionMode(rawValue: raw) else {
+                    throw BridgeError.configuration(
+                        "\(flag) 需要 always_ready 或 smart_sleep，收到: \(raw)"
+                    )
+                }
+                config.voiceConnectionMode = mode
             case "--profile-dir":
                 config.buttonProfileDirectory =
                     NSString(
@@ -220,6 +229,8 @@ struct Configuration {
           --button-profile <路径>    只使用指定的已确认校准档案
           --emit-profile <路径>      check-buttons 输出合并后的硬件档案
           --no-buttons               禁用实体按键动作，只保留语音链路
+          --voice-connection-mode <always_ready|smart_sleep>
+                                     语音连接策略，默认 always_ready
 
         learn-buttons 选项：
           --name <文本>              HID 产品名需包含该文本

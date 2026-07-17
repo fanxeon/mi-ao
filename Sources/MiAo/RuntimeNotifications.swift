@@ -6,6 +6,9 @@ enum MiAoRuntimeNotifications {
         "com.poemcoder.mi-ao.button-configuration-changed"
     )
     static let buttonActivity = Notification.Name("com.poemcoder.mi-ao.button-activity")
+    static let voiceConnectionModeChanged = Notification.Name(
+        "com.poemcoder.mi-ao.voice-connection-mode-changed"
+    )
 
     static func postButtonConfigurationChanged() {
         DistributedNotificationCenter.default().postNotificationName(
@@ -21,6 +24,15 @@ enum MiAoRuntimeNotifications {
             buttonActivity,
             object: nil,
             userInfo: ["button": button.rawValue, "phase": isPressed ? "down" : "up"],
+            deliverImmediately: true
+        )
+    }
+
+    static func postVoiceConnectionModeChanged() {
+        DistributedNotificationCenter.default().postNotificationName(
+            voiceConnectionModeChanged,
+            object: nil,
+            userInfo: nil,
             deliverImmediately: true
         )
     }

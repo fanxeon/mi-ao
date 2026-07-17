@@ -72,7 +72,7 @@ TV in the default `pointer` preset still changes only the D-pad mode. A custom p
 - MI-AO presses modifiers before the target key and releases them in reverse order on release, safe exit, BLE-session stop, and runtime interruption so Option, Control, Command, and Shift cannot remain down.
 - Saving posts a runtime notification and immediately reloads the catalog and selected preset without restarting the app.
 - Test executes the row's current action exactly once; it does not pretend to be a physical remote event. Real highlighting comes only from runtime HID down/up notifications.
-- Runtime actions also report to the menu bar: direction, scrolling, keyboard, HOME, mode/preset, and Codex actions get matching symbols; blue reports a command, green a confirmed success, and red a real failure. Recording, processing, disconnection, and error state retain priority.
+- Runtime actions also report to the menu bar: real direction, scrolling, keyboard, HOME, mode/preset, and Codex actions show matching monochrome symbols for about 1.2 seconds, without result colors or rounded backgrounds. Voice disconnect, reconnect, and Smart Sleep do not suppress HID feedback; active recording and safe shutdown retain priority.
 - Export writes a private JSON file. Import accepts a regular file up to 1 MB and validates the entire catalog schema, button set, reserved buttons, TV targets, and shortcut safety before the user confirms replacement.
 
 ## Built-in profile and optional calibration

@@ -6,13 +6,26 @@ enum SubmissionMode: String, Codable, CaseIterable {
     case transcriptionOnly = "transcription_only"
 }
 
+enum VoiceConnectionMode: String, Codable, CaseIterable {
+    case alwaysReady = "always_ready"
+    case smartSleep = "smart_sleep"
+
+    var displayName: String {
+        switch self {
+        case .alwaysReady: return "随时就绪"
+        case .smartSleep: return "智能休眠"
+        }
+    }
+}
+
 struct AppPreferences: Codable, Equatable {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     var schemaVersion = currentSchemaVersion
     var hasCompletedSetup = false
     var submissionMode: SubmissionMode = .codex
     var buttonControlEnabled = true
+    var voiceConnectionMode: VoiceConnectionMode = .alwaysReady
     var selectedPresetID = "pointer"
     var preferredPeripheralIdentifier: UUID?
 
@@ -23,6 +36,7 @@ struct AppPreferences: Codable, Equatable {
         case hasCompletedSetup
         case submissionMode
         case buttonControlEnabled
+        case voiceConnectionMode
         case selectedPresetID
         case preferredPeripheralIdentifier
     }
@@ -32,6 +46,7 @@ struct AppPreferences: Codable, Equatable {
         hasCompletedSetup: Bool = false,
         submissionMode: SubmissionMode = .codex,
         buttonControlEnabled: Bool = true,
+        voiceConnectionMode: VoiceConnectionMode = .alwaysReady,
         selectedPresetID: String = "pointer",
         preferredPeripheralIdentifier: UUID? = nil
     ) {
@@ -39,6 +54,7 @@ struct AppPreferences: Codable, Equatable {
         self.hasCompletedSetup = hasCompletedSetup
         self.submissionMode = submissionMode
         self.buttonControlEnabled = buttonControlEnabled
+        self.voiceConnectionMode = voiceConnectionMode
         self.selectedPresetID = selectedPresetID
         self.preferredPeripheralIdentifier = preferredPeripheralIdentifier
     }
@@ -51,6 +67,9 @@ struct AppPreferences: Codable, Equatable {
         hasCompletedSetup = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedSetup) ?? false
         submissionMode = try container.decodeIfPresent(SubmissionMode.self, forKey: .submissionMode) ?? .codex
         buttonControlEnabled = try container.decodeIfPresent(Bool.self, forKey: .buttonControlEnabled) ?? true
+        voiceConnectionMode =
+            try container.decodeIfPresent(VoiceConnectionMode.self, forKey: .voiceConnectionMode)
+            ?? .alwaysReady
         selectedPresetID = try container.decodeIfPresent(String.self, forKey: .selectedPresetID) ?? "pointer"
         preferredPeripheralIdentifier = try container.decodeIfPresent(
             UUID.self,
@@ -64,6 +83,7 @@ struct AppPreferences: Codable, Equatable {
         try container.encode(hasCompletedSetup, forKey: .hasCompletedSetup)
         try container.encode(submissionMode, forKey: .submissionMode)
         try container.encode(buttonControlEnabled, forKey: .buttonControlEnabled)
+        try container.encode(voiceConnectionMode, forKey: .voiceConnectionMode)
         try container.encode(selectedPresetID, forKey: .selectedPresetID)
         try container.encodeIfPresent(
             preferredPeripheralIdentifier,
@@ -91,6 +111,7 @@ struct AppPreferences: Codable, Equatable {
         if !buttonControlEnabled {
             arguments.append("--no-buttons")
         }
+        arguments.append(contentsOf: ["--voice-connection-mode", voiceConnectionMode.rawValue])
         arguments.append(contentsOf: ["--preset", selectedPresetID])
         if let preferredPeripheralIdentifier {
             arguments.append(contentsOf: ["--identifier", preferredPeripheralIdentifier.uuidString])
@@ -159,13 +180,14 @@ struct AppPreferencesStore {
         }
         do {
             let data = try Data(contentsOf: fileURL)
-            let preferences = try JSONDecoder().decode(AppPreferences.self, from: data)
+            var preferences = try JSONDecoder().decode(AppPreferences.self, from: data)
             guard preferences.schemaVersion <= AppPreferences.currentSchemaVersion else {
                 return AppPreferencesSnapshot(
                     preferences: .defaults,
                     state: .unsupportedVersion(preferences.schemaVersion)
                 )
             }
+            preferences.schemaVersion = AppPreferences.currentSchemaVersion
             return AppPreferencesSnapshot(preferences: preferences, state: .loaded)
         } catch {
             let quarantineURL = quarantineURL(for: now())
@@ -199,7 +221,9 @@ struct AppPreferencesStore {
         try prepareDirectory()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        var data = try encoder.encode(preferences)
+        var currentPreferences = preferences
+        currentPreferences.schemaVersion = AppPreferences.currentSchemaVersion
+        var data = try encoder.encode(currentPreferences)
         data.append(0x0A)
         try data.write(to: fileURL, options: .atomic)
         try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)

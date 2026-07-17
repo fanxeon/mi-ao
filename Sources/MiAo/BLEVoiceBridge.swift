@@ -38,7 +38,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     private var discoveredIdentifiers = Set<UUID>()
     private var candidatePeripherals: [UUID: CBPeripheral] = [:]
     private var candidateRecords: [UUID: BLEDeviceCandidate] = [:]
-    private var reconnectBackoff = ReconnectBackoff()
+    private var voiceReconnectPolicy: VoiceReconnectPolicy
+    private var voiceReconnectSleeping = false
     private var speechJobs: SpeechJobQueue?
     private var captureRecorder: CaptureRecorder?
     private var shutdownRequested = false
@@ -51,7 +52,20 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     ) {
         self.configuration = configuration
         self.statusHandler = statusHandler
+        voiceReconnectPolicy = VoiceReconnectPolicy(mode: configuration.voiceConnectionMode)
         super.init()
+        if configuration.mode == .run {
+            DistributedNotificationCenter.default().addObserver(
+                self,
+                selector: #selector(voiceConnectionModeChanged),
+                name: MiAoRuntimeNotifications.voiceConnectionModeChanged,
+                object: nil
+            )
+        }
+    }
+
+    deinit {
+        DistributedNotificationCenter.default().removeObserver(self)
     }
 
     func start() throws {
@@ -108,7 +122,12 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
+            voiceReconnectPolicy.reset()
+            voiceReconnectSleeping = false
             log("蓝牙已就绪")
+            if configuration.mode == .run {
+                log("语音连接模式：\(voiceReconnectPolicy.mode.displayName)")
+            }
             publish(.searching)
             if configuration.mode == .run, connectKnownRunPeripheralIfAvailable(reason: "启动") {
                 return
@@ -462,15 +481,23 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         selectionTimer?.invalidate()
         selectionTimer = nil
         reconnectTimer?.invalidate()
-        let delay = reconnectBackoff.nextDelay()
-        let attempt = reconnectBackoff.attempt
-        log("连接暂不可用：\(reason)；\(String(format: "%.0f", delay)) 秒后重试")
-        publish(.reconnecting(attempt: attempt, delaySeconds: Int(ceil(delay))))
-        reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) {
-            [weak self] _ in
-            guard let self, !self.shutdownRequested else { return }
-            self.reconnectTimer = nil
-            self.startScan()
+        reconnectTimer = nil
+
+        switch voiceReconnectPolicy.nextDecision() {
+        case .retry(let attempt, let delay):
+            voiceReconnectSleeping = false
+            log("连接暂不可用：\(reason)；\(String(format: "%.0f", delay)) 秒后自动重试")
+            publish(.reconnecting(attempt: attempt, delaySeconds: Int(ceil(delay))))
+            reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) {
+                [weak self] _ in
+                guard let self, !self.shutdownRequested else { return }
+                self.reconnectTimer = nil
+                self.startScan()
+            }
+        case .sleep:
+            voiceReconnectSleeping = true
+            log("连接暂不可用：\(reason)；已进入智能休眠，等待遥控器按键、蓝牙恢复或手动唤醒")
+            publish(.voiceSleeping)
         }
     }
 
@@ -700,7 +727,8 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
                 stopCapabilityNegotiation()
                 try protocolHandler.acceptCapabilities(capabilities)
                 state = .ready
-                reconnectBackoff.reset()
+                voiceReconnectPolicy.reset()
+                voiceReconnectSleeping = false
                 log(
                     "ATVV v\(capabilities.version)，codec=\(protocolHandler.codec!)，interaction=0x\(String(format: "%02x", capabilities.interactionModel))，frame=\(capabilities.frameSize)B"
                 )
@@ -1046,6 +1074,54 @@ final class BLEVoiceBridge: NSObject, CBCentralManagerDelegate, CBPeripheralDele
         exitStatus = 1
         isFinished = true
         CFRunLoopStop(CFRunLoopGetMain())
+    }
+
+    func requestVoiceRetry(trigger: String) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.requestVoiceRetry(trigger: trigger)
+            }
+            return
+        }
+        guard configuration.mode == .run,
+            !shutdownRequested,
+            central?.state == .poweredOn,
+            voiceReconnectSleeping || reconnectTimer != nil
+        else { return }
+
+        voiceReconnectSleeping = false
+        voiceReconnectPolicy.reset()
+        log("唤醒语音连接：\(trigger)")
+        publish(.searching)
+        startScan()
+    }
+
+    @objc private func voiceConnectionModeChanged(_ notification: Notification) {
+        let snapshot = AppPreferencesStore().load()
+        if case .unsupportedVersion(let version) = snapshot.state {
+            fputs("运行时未更新语音连接模式：schema v\(version) 过新\n", stderr)
+            return
+        }
+        applyVoiceConnectionMode(snapshot.preferences.voiceConnectionMode)
+    }
+
+    private func applyVoiceConnectionMode(_ mode: VoiceConnectionMode) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.applyVoiceConnectionMode(mode)
+            }
+            return
+        }
+        guard configuration.mode == .run, voiceReconnectPolicy.mode != mode else { return }
+
+        voiceReconnectPolicy.updateMode(mode)
+        voiceReconnectSleeping = false
+        log("语音连接模式已更新：\(mode.displayName)")
+
+        if state == .disconnected, peripheral == nil, central?.state == .poweredOn {
+            publish(.searching)
+            startScan()
+        }
     }
 
     func requestShutdown() {

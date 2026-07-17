@@ -10,20 +10,16 @@ enum MiAoMenuBarTone: Equatable {
     case recording
     case processing
     case failure
+}
 
-    var showsHighlightedBackground: Bool {
-        switch self {
-        case .neutral, .ready:
-            return false
-        case .command, .success, .warning, .recording, .processing, .failure:
-            return true
-        }
-    }
+enum MiAoMenuBarIcon: Equatable {
+    case brand
+    case systemSymbol(String)
 }
 
 struct MiAoMenuBarPresentation: Equatable {
     let label: String
-    let systemImageName: String
+    let icon: MiAoMenuBarIcon
     let tone: MiAoMenuBarTone
 
     static func resolved(
@@ -129,7 +125,7 @@ struct MiAoCommandActivity: Equatable {
         MiAoCommandActivity(
             presentation: MiAoMenuBarPresentation(
                 label: label,
-                systemImageName: symbol,
+                icon: .systemSymbol(symbol),
                 tone: .command
             )
         )
@@ -139,7 +135,7 @@ struct MiAoCommandActivity: Equatable {
         MiAoCommandActivity(
             presentation: MiAoMenuBarPresentation(
                 label: label,
-                systemImageName: symbol,
+                icon: .systemSymbol(symbol),
                 tone: .success
             )
         )
@@ -149,7 +145,7 @@ struct MiAoCommandActivity: Equatable {
         MiAoCommandActivity(
             presentation: MiAoMenuBarPresentation(
                 label: label,
-                systemImageName: symbol,
+                icon: .systemSymbol(symbol),
                 tone: .failure
             )
         )
@@ -159,11 +155,11 @@ struct MiAoCommandActivity: Equatable {
 extension MiAoRuntimeStatus {
     var allowsTransientCommandActivity: Bool {
         switch self {
-        case .ready, .sent:
-            return true
-        case .starting, .searching, .connecting, .recording, .processing,
-            .disconnected, .reconnecting, .stopping, .error:
+        case .recording, .stopping:
             return false
+        case .starting, .searching, .connecting, .ready, .processing, .sent,
+            .disconnected, .reconnecting, .voiceSleeping, .error:
+            return true
         }
     }
 
@@ -174,13 +170,13 @@ extension MiAoRuntimeStatus {
         case .recording: tone = .recording
         case .processing: tone = .processing
         case .sent: tone = .success
-        case .disconnected, .reconnecting: tone = .warning
+        case .disconnected, .reconnecting, .voiceSleeping: tone = .warning
         case .error: tone = .failure
         case .starting, .searching, .connecting, .stopping: tone = .neutral
         }
         return MiAoMenuBarPresentation(
             label: label,
-            systemImageName: systemImageName,
+            icon: .brand,
             tone: tone
         )
     }

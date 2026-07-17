@@ -28,25 +28,31 @@ import Testing
     #expect(MiAoRuntimeStatus.sent.label.contains("Codex"))
 }
 
-@Test func menuBarUsesCommandFeedbackOnlyWhenRuntimeCanBeInterrupted() throws {
+@Test func menuBarKeepsCommandFeedbackIndependentFromVoiceReconnects() throws {
     let command = try #require(MiAoCommandActivity.executed(action: .pointerMoveLeft))
 
     #expect(
         MiAoMenuBarPresentation.resolved(status: .ready, activity: command)
             == command.presentation
     )
-    #expect(command.presentation.systemImageName == "arrow.left")
+    #expect(command.presentation.icon == .systemSymbol("arrow.left"))
     #expect(command.presentation.tone == .command)
-    #expect(command.presentation.tone.showsHighlightedBackground)
     #expect(MiAoCommandActivity.displayDuration == 1.2)
 
     for status in [
-        MiAoRuntimeStatus.recording,
-        .processing(1),
+        MiAoRuntimeStatus.processing(1),
         .disconnected,
         .reconnecting(attempt: 2, delaySeconds: 4),
+        .voiceSleeping,
         .error("测试错误"),
     ] {
+        #expect(
+            MiAoMenuBarPresentation.resolved(status: status, activity: command)
+                == command.presentation
+        )
+    }
+
+    for status in [MiAoRuntimeStatus.recording, .stopping] {
         #expect(
             MiAoMenuBarPresentation.resolved(status: status, activity: command)
                 == status.menuBarPresentation
@@ -64,9 +70,9 @@ import Testing
     #expect(success.tone == .success)
     #expect(failure.tone == .failure)
     #expect(MiAoRuntimeStatus.ready.menuBarPresentation.tone == .ready)
-    #expect(!MiAoRuntimeStatus.ready.menuBarPresentation.tone.showsHighlightedBackground)
+    #expect(MiAoRuntimeStatus.ready.menuBarPresentation.icon == .brand)
     #expect(MiAoRuntimeStatus.recording.menuBarPresentation.tone == .recording)
-    #expect(MiAoRuntimeStatus.recording.menuBarPresentation.tone.showsHighlightedBackground)
+    #expect(MiAoRuntimeStatus.recording.menuBarPresentation.icon == .brand)
 }
 
 @Test func menuBarFeedbackUsesAvailableSystemSymbols() throws {
@@ -84,13 +90,27 @@ import Testing
     ]
 
     for presentation in presentations {
+        guard case .systemSymbol(let name) = presentation.icon else {
+            Issue.record("指令反馈必须使用系统符号")
+            continue
+        }
         #expect(
             NSImage(
-                systemSymbolName: presentation.systemImageName,
+                systemSymbolName: name,
                 accessibilityDescription: presentation.label
             ) != nil
         )
     }
+}
+
+@MainActor
+@Test func menuBarBrandAssetIsASeventeenPointTemplateImage() throws {
+    let image = try #require(
+        MiAoMenuBarIconFactory.image(for: .brand, label: "米遥")
+    )
+
+    #expect(image.isTemplate)
+    #expect(image.size == NSSize(width: 17, height: 17))
 }
 
 @MainActor

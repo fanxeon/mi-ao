@@ -1,7 +1,6 @@
 // Copyright (c) 2026 FanXeon@Poemcoder with Codex
 import AppKit
 import Foundation
-import QuartzCore
 
 enum MiAoRuntimeStatus: Equatable {
     case starting
@@ -13,6 +12,7 @@ enum MiAoRuntimeStatus: Equatable {
     case sent
     case disconnected
     case reconnecting(attempt: Int, delaySeconds: Int)
+    case voiceSleeping
     case stopping
     case error(String)
 
@@ -29,6 +29,7 @@ enum MiAoRuntimeStatus: Equatable {
         case .disconnected: return "遥控器已断开 · 正在重连"
         case .reconnecting(let attempt, let delaySeconds):
             return "重连第 \(attempt) 次 · \(delaySeconds) 秒后继续"
+        case .voiceSleeping: return "智能休眠 · 按键即可唤醒"
         case .stopping: return "正在安全退出"
         case .error(let message): return "需要处理：\(message)"
         }
@@ -40,6 +41,7 @@ enum MiAoRuntimeStatus: Equatable {
         case .recording: return "mic.fill"
         case .processing: return "waveform"
         case .sent: return "checkmark.circle.fill"
+        case .voiceSleeping: return "moon.zzz.fill"
         case .error: return "exclamationmark.triangle.fill"
         case .stopping: return "hourglass"
         default: return "dot.radiowaves.left.and.right"
@@ -52,9 +54,56 @@ enum MiAoRuntimeStatus: Equatable {
         case .recording: return .systemRed
         case .processing: return .systemOrange
         case .sent: return .systemGreen
+        case .voiceSleeping: return .systemIndigo
         case .error: return .systemRed
         default: return .secondaryLabelColor
         }
+    }
+}
+
+enum MiAoMenuBarIconFactory {
+    static let opticalSize = NSSize(width: 17, height: 17)
+    static let brandAssetName = "mi-ao-menubar-sun-template.svg"
+
+    static func image(for icon: MiAoMenuBarIcon, label: String) -> NSImage? {
+        let image: NSImage?
+        switch icon {
+        case .brand:
+            image =
+                brandImage()
+                ?? configuredSystemSymbol(named: "sun.max", label: label)
+        case .systemSymbol(let name):
+            image = configuredSystemSymbol(named: name, label: label)
+        }
+        image?.size = opticalSize
+        image?.isTemplate = true
+        return image
+    }
+
+    private static func brandImage() -> NSImage? {
+        let sourceTreeURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent("Resources/Brand", isDirectory: true)
+            .appendingPathComponent(brandAssetName)
+        let bundledURL = Bundle.main.resourceURL?
+            .appendingPathComponent("Brand", isDirectory: true)
+            .appendingPathComponent(brandAssetName)
+        return [bundledURL, sourceTreeURL]
+            .compactMap { $0 }
+            .lazy
+            .compactMap(NSImage.init(contentsOf:))
+            .first
+    }
+
+    private static func configuredSystemSymbol(named name: String, label: String) -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(
+            pointSize: 15,
+            weight: .regular,
+            scale: .medium
+        )
+        return NSImage(
+            systemSymbolName: name,
+            accessibilityDescription: "米遥：\(label)"
+        )?.withSymbolConfiguration(configuration)
     }
 }
 
@@ -63,6 +112,7 @@ private final class MenuBarPanelViewController: NSViewController {
     var onFocusCodex: (() -> Void)?
     var onOpenRecordings: (() -> Void)?
     var onOpenSetup: (() -> Void)?
+    var onRetryVoice: (() -> Void)?
     var onQuit: (() -> Void)?
 
     private let statusIcon = NSImageView()
@@ -70,7 +120,13 @@ private final class MenuBarPanelViewController: NSViewController {
     private let modeLabel = NSTextField(labelWithString: "方向环 · 鼠标指针")
     private let presetLabel = NSTextField(labelWithString: "配置 · 默认 · 鼠标指针")
     private let versionLabel = NSTextField(labelWithString: "")
+    private lazy var retryVoiceButton = makeButton(
+        title: "立即重试语音连接",
+        symbol: "arrow.clockwise",
+        action: #selector(retryVoice)
+    )
     private var activePresetName = ButtonPreset.pointer.name
+    private var runtimeStatus: MiAoRuntimeStatus = .starting
 
     override func loadView() {
         let effectView = NSVisualEffectView()
@@ -127,6 +183,7 @@ private final class MenuBarPanelViewController: NSViewController {
             symbol: "checklist",
             action: #selector(openSetup)
         )
+        retryVoiceButton.isHidden = true
         let quitButton = makeButton(
             title: "安全退出并恢复遥控器",
             symbol: "power",
@@ -134,7 +191,9 @@ private final class MenuBarPanelViewController: NSViewController {
         )
         quitButton.contentTintColor = .systemRed
 
-        let actions = NSStackView(views: [focusButton, recordingsButton, setupButton, quitButton])
+        let actions = NSStackView(
+            views: [focusButton, recordingsButton, setupButton, retryVoiceButton, quitButton]
+        )
         actions.orientation = .vertical
         actions.alignment = .width
         actions.spacing = 8
@@ -158,9 +217,9 @@ private final class MenuBarPanelViewController: NSViewController {
         let fullWidthConstraints = fullWidthViews.map {
             $0.widthAnchor.constraint(equalTo: rootStack.widthAnchor)
         }
-        let actionWidthConstraints = [focusButton, recordingsButton, setupButton, quitButton].map {
-            $0.widthAnchor.constraint(equalTo: actions.widthAnchor)
-        }
+        let actionWidthConstraints = [
+            focusButton, recordingsButton, setupButton, retryVoiceButton, quitButton,
+        ].map { $0.widthAnchor.constraint(equalTo: actions.widthAnchor) }
 
         NSLayoutConstraint.activate(
             [
@@ -173,13 +232,15 @@ private final class MenuBarPanelViewController: NSViewController {
                 focusButton.heightAnchor.constraint(equalToConstant: 34),
                 recordingsButton.heightAnchor.constraint(equalTo: focusButton.heightAnchor),
                 setupButton.heightAnchor.constraint(equalTo: focusButton.heightAnchor),
+                retryVoiceButton.heightAnchor.constraint(equalTo: focusButton.heightAnchor),
                 quitButton.heightAnchor.constraint(equalTo: focusButton.heightAnchor),
             ] + fullWidthConstraints + actionWidthConstraints)
 
-        update(status: .starting)
+        update(status: runtimeStatus)
     }
 
     func update(status: MiAoRuntimeStatus) {
+        runtimeStatus = status
         guard isViewLoaded else { return }
         statusLabel.stringValue = status.label
         statusIcon.image = NSImage(
@@ -187,6 +248,23 @@ private final class MenuBarPanelViewController: NSViewController {
             accessibilityDescription: "米遥：\(status.label)"
         )
         statusIcon.contentTintColor = status.accentColor
+        let voiceRetryIsHidden = {
+            switch status {
+            case .reconnecting:
+                retryVoiceButton.title = "立即重试语音连接"
+                return false
+            case .voiceSleeping:
+                retryVoiceButton.title = "唤醒语音连接"
+                return false
+            default:
+                return true
+            }
+        }()
+        retryVoiceButton.isHidden = voiceRetryIsHidden
+        preferredContentSize = NSSize(
+            width: 330,
+            height: voiceRetryIsHidden ? 354 : 396
+        )
     }
 
     func update(controlMode: RemoteControlMode) {
@@ -215,19 +293,20 @@ private final class MenuBarPanelViewController: NSViewController {
     @objc private func focusCodex() { onFocusCodex?() }
     @objc private func openRecordings() { onOpenRecordings?() }
     @objc private func openSetup() { onOpenSetup?() }
+    @objc private func retryVoice() { onRetryVoice?() }
     @objc private func quitSafely() { onQuit?() }
 }
 
 @MainActor
 final class MenuBarController: NSObject, NSPopoverDelegate {
     var onQuit: (() -> Void)?
+    var onRetryVoice: (() -> Void)?
 
     private let configuration: Configuration
     private let outputDirectory: String
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
     private let panel = MenuBarPanelViewController()
-    private let statusHighlightLayer = CALayer()
     private var setupWindowController: SetupGuideWindowController?
     private var status: MiAoRuntimeStatus = .starting
     private var activity: MiAoCommandActivity?
@@ -258,6 +337,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             self?.closePopover()
             self?.showSetupGuide()
         }
+        panel.onRetryVoice = { [weak self] in
+            self?.onRetryVoice?()
+        }
         panel.onQuit = { [weak self] in
             self?.closePopover()
             self?.quitSafely()
@@ -267,7 +349,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             button.target = self
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp])
-            configureHighlightLayer(for: button)
+            button.imagePosition = .imageOnly
+            button.imageScaling = .scaleProportionallyDown
+            button.alignment = .center
         }
         let catalog = ButtonPresetStore().load().catalog
         let preset = (try? catalog.preset(id: configuration.buttonPresetID)) ?? .pointer
@@ -314,18 +398,15 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             status: status,
             activity: activity
         )
-        let image = NSImage(
-            systemSymbolName: presentation.systemImageName,
-            accessibilityDescription: "米遥：\(presentation.label)"
+        button.image = MiAoMenuBarIconFactory.image(
+            for: presentation.icon,
+            label: presentation.label
         )
-        image?.isTemplate = true
-        button.image = image
         button.title = ""
-        button.contentTintColor = iconColor(for: presentation.tone)
+        button.contentTintColor = nil
         button.toolTip = "米遥 · \(presentation.label)"
         button.setAccessibilityLabel("米遥")
         button.setAccessibilityValue(presentation.label)
-        updateHighlight(tone: presentation.tone)
     }
 
     func update(controlMode: RemoteControlMode) {
@@ -358,50 +439,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.performClose(nil)
     }
 
-    private func configureHighlightLayer(for button: NSStatusBarButton) {
-        button.wantsLayer = true
-        statusHighlightLayer.frame = button.bounds.insetBy(dx: 2, dy: 2)
-        statusHighlightLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-        statusHighlightLayer.cornerRadius = 6
-        statusHighlightLayer.opacity = 0
-        statusHighlightLayer.backgroundColor = NSColor.clear.cgColor
-        button.layer?.insertSublayer(statusHighlightLayer, at: 0)
-    }
-
     private func clearActivity(render: Bool) {
         activityTimer?.invalidate()
         activityTimer = nil
         activity = nil
         if render { renderMenuBarPresentation() }
-    }
-
-    private func iconColor(for tone: MiAoMenuBarTone) -> NSColor {
-        switch tone {
-        case .neutral: return .labelColor
-        case .ready: return .systemBlue
-        case .command: return .systemBlue
-        case .success: return .systemGreen
-        case .warning, .processing: return .systemOrange
-        case .recording, .failure: return .systemRed
-        }
-    }
-
-    private func updateHighlight(tone: MiAoMenuBarTone) {
-        let color: NSColor
-        switch tone {
-        case .neutral, .ready: color = .clear
-        case .command: color = .systemBlue.withAlphaComponent(0.26)
-        case .success: color = .systemGreen.withAlphaComponent(0.26)
-        case .warning: color = .systemOrange.withAlphaComponent(0.22)
-        case .recording: color = .systemRed.withAlphaComponent(0.28)
-        case .processing: color = .systemOrange.withAlphaComponent(0.26)
-        case .failure: color = .systemRed.withAlphaComponent(0.30)
-        }
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.16)
-        statusHighlightLayer.backgroundColor = color.cgColor
-        statusHighlightLayer.opacity = tone.showsHighlightedBackground ? 1 : 0
-        CATransaction.commit()
     }
 
     private func openRecordings() {

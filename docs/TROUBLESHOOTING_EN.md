@@ -44,6 +44,16 @@ If it still does not appear, check the batteries, move it closer to the Mac, and
 
 `start.sh` rejects a second instance and reports the current process. If that state is stale, run `./scripts/stop.sh` to clean up and confirm mapping restoration before starting again.
 
+## The menu keeps reconnecting or reports “Smart Sleep”
+
+The remote is not answering ATVV capability negotiation. Check Settings & Diagnostics → Usage Preferences → Voice Connection first:
+
+- Always Ready is the default. It backs off from one second to a maximum interval of 60 seconds and continues recovering instead of giving up after a few seconds.
+- Smart Sleep makes two quick automatic recovery attempts, then stops background handshakes and reports that a button press can wake voice.
+- The HID path remains independent in both modes. Recognized HID activity interrupts a countdown or wakes Smart Sleep immediately.
+- The menu-bar “Retry/Wake Voice Connection” action and Bluetooth power recovery also reconnect immediately.
+- Do not repeatedly relaunch the app. Confirm the target device, then inspect `~/Library/Application Support/mi-ao/logs/mi-ao.log` for subscription and `GET_CAPS` records.
+
 ## The voice button does nothing
 
 Wait for the ready state first. If it never appears, use menu-bar safe exit or `./scripts/stop.sh`, confirm Bluetooth, run the verification script, and restart in foreground with `--debug`. A working session should log `AUDIO_START` after the button is held.

@@ -76,6 +76,9 @@ do {
         }
     )
     menuBarController?.onQuit = { [weak bridge] in bridge?.requestShutdown() }
+    menuBarController?.onRetryVoice = { [weak bridge] in
+        bridge?.requestVoiceRetry(trigger: "菜单栏手动重试")
+    }
     if configuration.mode == .run {
         signal(SIGTERM, SIG_IGN)
         terminationSignalSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
@@ -96,6 +99,9 @@ do {
                 },
                 activityHandler: { [weak menuBarController] activity in
                     menuBarController?.show(activity: activity)
+                },
+                remoteActivityHandler: { [weak bridge] in
+                    bridge?.requestVoiceRetry(trigger: "遥控器按键活动")
                 }
             )
             try buttonController?.start()

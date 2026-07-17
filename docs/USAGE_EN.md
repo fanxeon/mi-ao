@@ -8,7 +8,7 @@ This guide starts after installation and covers daily startup, hold-to-talk beha
 
 ## Current launch model
 
-MI-AO V2 / 0.2.1 is currently a **source-first beta**. After installation, double-click `~/Applications/米遥.app` in Finder.
+MI-AO V2 / 0.2.2 is currently a **source-first beta**. After installation, double-click `~/Applications/米遥.app` in Finder.
 
 On first use, double-clicking opens the setup guide. It follows the real path of Start → Control Preferences → Permissions & Connection → Start: choose submission and button control first, then resolve only the checks required by those choices. The Button Guide page contains the built-in default mapping image. Launch at Login is always optional. After the first successful start, manual and optional login launches read the same preferences and invoke the same real gate. See [Permissions and optional features](PERMISSIONS_EN.md).
 
@@ -41,7 +41,7 @@ Do not start speaking before the ready message appears.
 
 > **Notched-display boundary:** When too many status items occupy the right side, the MI-AO item can exist outside the visible width or behind the camera housing. If opening the app again reports that MI-AO is already running, the runtime is still active. Free menu-bar space using [Troubleshooting](TROUBLESHOOTING_EN.md) instead of repeatedly starting another instance.
 
-Once ready, D-pad, scrolling, Return/Escape, shortcuts, HOME, mode/preset changes, and Codex actions briefly replace the menu-bar symbol. A blue rounded background reports a command, green reports confirmed success, and red reports a real failure; after about 1.2 seconds the latest runtime state returns. Recording, processing, disconnection, and error states always take priority over ordinary button feedback.
+The menu bar normally shows a 17 pt MI-AO monochrome template, with macOS choosing the black or white foreground. Real D-pad, scrolling, Return/Escape, shortcut, HOME, mode/preset, and Codex actions briefly replace it with matching monochrome symbols for about 1.2 seconds; no blue, green, or red rounded background is drawn. Voice search, disconnect, reconnect, and Smart Sleep do not suppress independent HID command feedback; active recording and safe shutdown keep higher priority. Switch between Always Ready and Smart Sleep under Usage Preferences → Voice Connection; the saved choice applies to the running bridge immediately.
 
 ### 3. Hold, speak, release
 
@@ -288,7 +288,7 @@ Uninstall restores any neutral mapping owned by MI-AO before removing the app or
 
 - End-to-end verified hardware: Xiaomi Bluetooth Remote Control 2 Pro firmware 2671.
 - Voice has completed hardware end-to-end acceptance. All six required pointer buttons are calibrated and all four directions have completed their mouse-action loop; remaining physical actions stay on the [Roadmap](ROADMAP.md).
-- Preferences v1, feature-dependent permission gates, optional login-start integration, the self-contained runtime, menu-bar state, and safe background start/stop are implemented; installed-app login-start acceptance is still pending.
+- Preferences v3 with v1/v2 migration, feature-dependent permission gates, optional login-start integration, the self-contained runtime, menu-bar state, and safe background start/stop are implemented; installed-app login-start acceptance is still pending.
 - Default submission targets only the Codex macOS app with bundle ID `com.openai.codex`.
 - Do not use `--force-submit` as a daily option because it relaxes editor validation.
 

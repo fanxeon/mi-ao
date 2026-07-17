@@ -15,6 +15,7 @@ import Testing
     preferences.hasCompletedSetup = true
     preferences.submissionMode = .transcriptionOnly
     preferences.buttonControlEnabled = false
+    preferences.voiceConnectionMode = .smartSleep
     preferences.selectedPresetID = "personal"
     preferences.preferredPeripheralIdentifier = UUID(
         uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
@@ -28,6 +29,8 @@ import Testing
             "小米蓝牙语音遥控器",
             "--no-submit",
             "--no-buttons",
+            "--voice-connection-mode",
+            "smart_sleep",
             "--preset",
             "personal",
             "--identifier",
@@ -96,7 +99,32 @@ import Testing
     let snapshot = AppPreferencesStore(fileURL: fileURL).load()
     #expect(snapshot.state == .loaded)
     #expect(snapshot.preferences.selectedPresetID == "pointer")
+    #expect(snapshot.preferences.voiceConnectionMode == .alwaysReady)
     #expect(snapshot.preferences.hasCompletedSetup)
+}
+
+@Test func appPreferencesMigrateV2ToAlwaysReadyVoiceConnection() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mi-ao-preferences-v2-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let fileURL = root.appendingPathComponent("preferences.json")
+    try Data(
+        """
+        {"schemaVersion":2,"hasCompletedSetup":true,"submissionMode":"codex","buttonControlEnabled":true,"selectedPresetID":"pointer"}
+        """.utf8
+    ).write(to: fileURL)
+
+    let snapshot = AppPreferencesStore(fileURL: fileURL).load()
+    #expect(snapshot.state == .loaded)
+    #expect(snapshot.preferences.voiceConnectionMode == .alwaysReady)
+
+    var migrated = snapshot.preferences
+    migrated.voiceConnectionMode = .smartSleep
+    try AppPreferencesStore(fileURL: fileURL).save(migrated)
+    let reloaded = AppPreferencesStore(fileURL: fileURL).load()
+    #expect(reloaded.preferences.schemaVersion == AppPreferences.currentSchemaVersion)
+    #expect(reloaded.preferences.voiceConnectionMode == .smartSleep)
 }
 
 private func permissions(at url: URL) throws -> Int {

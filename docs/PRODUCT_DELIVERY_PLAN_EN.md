@@ -28,7 +28,7 @@ Already implemented:
 - A first-run setup guide, real menu-bar state, self-contained app runtime, and a launch gate that leaves mappings untouched on failure.
 - The official 06 “Center Connection” logo, AppIcon, macOS monochrome template, and archived source concepts.
 
-V2 now implements visual device selection and persisted identity, the custom-shortcut editor, real HID highlighting, one-shot tests, validated import/export, runtime hot reload, reconnect feedback, atomic install rollback, and model integrity verification. Still not to be marketed as complete: Developer ID signing/notarization, source-independent automatic updates, relogin acceptance, or support for a second remote class without real evidence.
+V2 now implements visual device selection and persisted identity, the custom-shortcut editor, real HID highlighting, one-shot tests, validated import/export, runtime hot reload, selectable Always Ready / Smart Sleep voice recovery with event/manual wake-up, atomic install rollback, and model integrity verification. Still not to be marketed as complete: Developer ID signing/notarization, source-independent automatic updates, relogin acceptance, or support for a second remote class without real evidence.
 
 ## Stable architecture boundary
 
@@ -102,11 +102,11 @@ KeyboardShortcutSpec
 - [x] Brand assets copied into the app bundle and verified by build tests.
 - [ ] Install the rebuilt icon in a planned batch update so the current Accessibility authorization is not disrupted mid-work.
 
-### P1 · Preferences v2 and daily startup
+### P1 · Preferences v3 and daily startup
 
-- [x] Add schema-versioned `AppPreferences` with atomic save, private permissions, corrupted-state quarantine, and future-schema preservation.
+- [x] Add schema-versioned `AppPreferences` with atomic save, private permissions, corrupted-state quarantine, v1/v2 migration, and future-schema preservation.
 - [x] Add a real `SMAppService.mainApp` Launch at Login toggle with enabled, requires-approval, disabled, and unavailable states.
-- [x] Persist automatic Codex submission versus transcription-only mode and the remote-button-control switch.
+- [x] Persist automatic Codex submission versus transcription-only mode, the remote-button-control switch, and an immediately applied Always Ready / Smart Sleep voice policy.
 - [ ] Complete installed-app enable, relogin launch, disable, and ad-hoc update re-registration acceptance.
 
 ### P2 · Custom-action core (V2 complete)
@@ -127,7 +127,7 @@ KeyboardShortcutSpec
 ### P4 · Device management and resilient connection
 
 - [x] Show real scan results, explicit target-device selection, and persisted identity.
-- [x] Add reconnect backoff with visible attempt and next-delay state.
+- [x] Add selectable Always Ready and Smart Sleep policies: the default keeps recovering with a 60-second ceiling, while Smart Sleep pauses handshakes after two quick attempts; HID activity, Bluetooth recovery, and the menu-bar action wake either policy immediately.
 - [x] Prefer an explicitly saved target; otherwise arbitrate deterministically after a bounded multi-device discovery window.
 - [ ] Complete multi-display, simultaneous Mac-keyboard, long-press, and eight-hour soak tests.
 

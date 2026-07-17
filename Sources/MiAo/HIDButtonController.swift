@@ -29,6 +29,7 @@ final class HIDButtonController {
     private let configuration: Configuration
     private let map: CalibratedButtonMap
     private let executor: ButtonActionExecutor
+    private let remoteActivityHandler: (() -> Void)?
     private var manager: IOHIDManager?
     private var matchedDevice: IOHIDDevice?
     private var eventReducer = HIDButtonEventReducer()
@@ -41,10 +42,12 @@ final class HIDButtonController {
         catalog: ButtonPresetCatalog,
         controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
         presetChangeHandler: ((ButtonPreset) -> Void)? = nil,
-        activityHandler: ((MiAoCommandActivity) -> Void)? = nil
+        activityHandler: ((MiAoCommandActivity) -> Void)? = nil,
+        remoteActivityHandler: (() -> Void)? = nil
     ) {
         self.configuration = configuration
         self.map = map
+        self.remoteActivityHandler = remoteActivityHandler
         executor = ButtonActionExecutor(
             preset: preset,
             catalog: catalog,
@@ -141,6 +144,7 @@ final class HIDButtonController {
         for event in events {
             switch event {
             case .buttonDown(let button):
+                remoteActivityHandler?()
                 MiAoRuntimeNotifications.postButtonActivity(button: button, isPressed: true)
                 if configuration.debug {
                     print(
@@ -268,7 +272,8 @@ enum ButtonRuntimeFactory {
         configuration: Configuration,
         controlModeHandler: ((RemoteControlMode) -> Void)? = nil,
         presetChangeHandler: ((ButtonPreset) -> Void)? = nil,
-        activityHandler: ((MiAoCommandActivity) -> Void)? = nil
+        activityHandler: ((MiAoCommandActivity) -> Void)? = nil,
+        remoteActivityHandler: (() -> Void)? = nil
     ) throws -> HIDButtonController? {
         guard configuration.buttonsEnabled else {
             print("实体按键动作：已通过 --no-buttons 禁用")
@@ -307,7 +312,8 @@ enum ButtonRuntimeFactory {
                 }
                 fputs("当前配置没有写入：偏好文件来自更新版本\n", stderr)
             },
-            activityHandler: activityHandler
+            activityHandler: activityHandler,
+            remoteActivityHandler: remoteActivityHandler
         )
     }
 }

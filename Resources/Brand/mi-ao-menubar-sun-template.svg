@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Lucide "sun", adapted as the MI-AO macOS menu bar template asset.
+  Copyright (c) 2026 Lucide Icons and Contributors. ISC License.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000000"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">米遥菜单栏图标</title>
+  <desc id="description">适配 16 到 18 点菜单栏尺寸的中心圆环与八向连接线。</desc>
+  <circle cx="12" cy="12" r="4"/>
+  <path d="M12 2v2"/>
+  <path d="M12 20v2"/>
+  <path d="m4.93 4.93 1.41 1.41"/>
+  <path d="m17.66 17.66 1.41 1.41"/>
+  <path d="M2 12h2"/>
+  <path d="M20 12h2"/>
+  <path d="m6.34 17.66-1.41 1.41"/>
+  <path d="m19.07 4.93-1.41 1.41"/>
+</svg>

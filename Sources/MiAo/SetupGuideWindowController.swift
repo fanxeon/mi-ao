@@ -215,6 +215,47 @@ private final class SetupToggleRowView: SetupSurfaceView {
     required init?(coder: NSCoder) { nil }
 }
 
+private final class SetupSegmentedRowView: SetupSurfaceView {
+    init(title: String, detail: String, control: NSSegmentedControl) {
+        super.init(radius: 18)
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.font = .systemFont(ofSize: 11)
+        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.maximumNumberOfLines = 2
+
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.controlSize = .regular
+        control.setAccessibilityLabel(title)
+
+        addSubview(titleLabel)
+        addSubview(detailLabel)
+        addSubview(control)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 104),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 15),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
+            detailLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            detailLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            detailLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            control.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            control.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            control.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 10),
+            control.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -14),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+}
+
 private final class SetupCheckRowView: SetupSurfaceView {
     private let iconPlate = NSView()
     private let iconView = NSImageView()
@@ -665,6 +706,12 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
     private let loginItemStateLabel = NSTextField(wrappingLabelWithString: "")
     private let automaticSubmitCheckbox = NSSwitch()
     private let buttonControlCheckbox = NSSwitch()
+    private let voiceConnectionModeControl = NSSegmentedControl(
+        labels: VoiceConnectionMode.allCases.map(\.displayName),
+        trackingMode: .selectOne,
+        target: nil,
+        action: nil
+    )
     private let loginAtStartupCheckbox = NSSwitch()
     private let devicePicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let scanDevicesButton = NSButton(title: "扫描遥控器", target: nil, action: nil)
@@ -1167,6 +1214,8 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         automaticSubmitCheckbox.action = #selector(preferencesChanged)
         buttonControlCheckbox.target = self
         buttonControlCheckbox.action = #selector(preferencesChanged)
+        voiceConnectionModeControl.target = self
+        voiceConnectionModeControl.action = #selector(preferencesChanged)
         loginAtStartupCheckbox.target = self
         loginAtStartupCheckbox.action = #selector(loginItemChanged)
 
@@ -1191,6 +1240,11 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
             detail: "用方向、音量和常用键操作 Codex 与指针。",
             toggle: buttonControlCheckbox
         )
+        let voiceConnectionModeRow = SetupSegmentedRowView(
+            title: "语音连接",
+            detail: "“随时就绪”会持续低频恢复；“智能休眠”在连续失败后等待按键唤醒。",
+            control: voiceConnectionModeControl
+        )
         let loginRow = SetupToggleRowView(
             title: "登录后自动启动",
             detail: "可选。不启用也可随时从“应用程序”打开米遥。",
@@ -1209,6 +1263,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
             sectionHeader,
             automaticSubmitRow,
             buttonControlRow,
+            voiceConnectionModeRow,
             loginRow,
             loginStateRow,
             preferenceStateLabel,
@@ -2019,6 +2074,8 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         automaticSubmitCheckbox.state =
             preferences.submissionMode == .codex ? .on : .off
         buttonControlCheckbox.state = preferences.buttonControlEnabled ? .on : .off
+        voiceConnectionModeControl.selectedSegment =
+            preferences.voiceConnectionMode == .alwaysReady ? 0 : 1
         let preferencesAreWritable: Bool
         if case .unsupportedVersion = preferencesLoadState {
             preferencesAreWritable = false
@@ -2027,6 +2084,7 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         }
         automaticSubmitCheckbox.isEnabled = preferencesAreWritable
         buttonControlCheckbox.isEnabled = preferencesAreWritable
+        voiceConnectionModeControl.isEnabled = preferencesAreWritable
 
         let loginState = loginItemController.state
         switch loginState {
@@ -2219,9 +2277,14 @@ final class SetupGuideWindowController: NSWindowController, NSWindowDelegate, NS
         preferences.submissionMode =
             automaticSubmitCheckbox.state == .on ? .codex : .transcriptionOnly
         preferences.buttonControlEnabled = buttonControlCheckbox.state == .on
+        preferences.voiceConnectionMode =
+            voiceConnectionModeControl.selectedSegment == 1 ? .smartSleep : .alwaysReady
         do {
             try preferencesStore.save(preferences)
             preferencesLoadState = .loaded
+            if preferences.voiceConnectionMode != previous.voiceConnectionMode {
+                MiAoRuntimeNotifications.postVoiceConnectionModeChanged()
+            }
         } catch {
             preferences = previous
             showError(title: "偏好设置没有保存", message: error.localizedDescription)

@@ -102,6 +102,39 @@ import Testing
     #expect(backoff.nextDelay() == 1)
 }
 
+@Test func alwaysReadyReconnectsIndefinitelyAtItsLowFrequencyCeiling() {
+    var policy = VoiceReconnectPolicy(mode: .alwaysReady)
+
+    let decisions = (1...10).map { _ in policy.nextDecision() }
+
+    #expect(
+        decisions == [
+            .retry(attempt: 1, delay: 1),
+            .retry(attempt: 2, delay: 2),
+            .retry(attempt: 3, delay: 4),
+            .retry(attempt: 4, delay: 8),
+            .retry(attempt: 5, delay: 16),
+            .retry(attempt: 6, delay: 32),
+            .retry(attempt: 7, delay: 60),
+            .retry(attempt: 8, delay: 60),
+            .retry(attempt: 9, delay: 60),
+            .retry(attempt: 10, delay: 60),
+        ]
+    )
+}
+
+@Test func smartSleepPausesAfterTwoAttemptsAndModeChangesResetTheBudget() {
+    var policy = VoiceReconnectPolicy(mode: .smartSleep)
+
+    #expect(policy.nextDecision() == .retry(attempt: 1, delay: 1))
+    #expect(policy.nextDecision() == .retry(attempt: 2, delay: 2))
+    #expect(policy.nextDecision() == .sleep)
+    #expect(policy.nextDecision() == .sleep)
+
+    policy.updateMode(.alwaysReady)
+    #expect(policy.nextDecision() == .retry(attempt: 1, delay: 1))
+}
+
 @Test func capabilityNegotiationRetriesBeforeRequestingReconnect() {
     let policy = CapabilityNegotiationPolicy(retryDelay: 2, maximumRequests: 3)
 

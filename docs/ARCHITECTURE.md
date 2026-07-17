@@ -27,7 +27,7 @@ flowchart LR
     CAL --> PRESET["ButtonPresetCatalog<br/>RemoteButton → Binding"]
     PRESET --> STORE["button-presets.json<br/>0700 / 0600 / 原子写入"]
     PRESET --> EXECUTOR["ButtonActionExecutor<br/>鼠标 / 快捷键 / Codex / TV 跳转"]
-    EXECUTOR --> FEEDBACK["MenuBarPresentation<br/>真实动作结果 → 图标 / 高亮"]
+    EXECUTOR --> FEEDBACK["MenuBarPresentation<br/>真实动作结果 → 短暂图标"]
 ```
 
 硬件档案与动作预设是两个独立合同。`ButtonProfileStore` 只合并人工确认且与设备 Vendor/Product 一致的物理映射；`ButtonPresetCatalog` 决定当前动作。默认 `pointer` 缺少方向四键、确认或返回中任一必需项，或发现两个按钮共用同一 Usage 时，运行时拒绝启动实体按键动作，语音桥接不受影响。用户方案存于 `button-presets.json`；默认方案只读，用户方案通过 `ButtonBinding` 表达内置动作、标准键盘快捷键或 TV 到另一方案的显式跳转。
@@ -43,12 +43,12 @@ flowchart LR
 - `SpeechJobQueue.swift`：最多两条任务的串行后台队列、唯一文件名、私有文件权限，以及有序转写/提交。
 - `CodexSubmitter.swift`：Codex 进程识别、Accessibility 唯一编辑器发现与聚焦、带兼容参数的启动、非阻塞粘贴/发送和剪贴板并发变化保护。
 - `SetupEnvironment.swift` / `SetupGuideWindowController.swift`：首次设置与日常管理的双语境、六项真实环境检查、系统授权入口、设备选择、按键编辑/高亮/测试/导入导出，以及通过既有启动门禁开始运行；不伪造授权、配对、连接或动作成功。
-- `MenuBarPresentation.swift` / `MenuBarController.swift`：把基础运行态和 1.2 秒短暂指令态合成一个菜单栏呈现；动作图标、成功/失败色与圆角底色来自执行器的真实结果，录音、处理、断连和错误优先；popover 提供聚焦 Codex、打开记录、设置诊断和安全退出入口。运行态须在 `NSApplication` 完成启动后创建状态项，并由进程级强引用持有控制器。状态项的存在与屏幕上是否可见必须分开判断：刘海屏且右侧常驻项过多时，macOS 可用宽度可以遮挡一个仍然有效的状态项。
+- `MenuBarPresentation.swift` / `MenuBarController.swift`：常态使用 17 pt 的米遥 Lucide Sun 单色模板，前景色交给 macOS 深浅菜单栏自动处理；真实动作在 1.2 秒内临时替换为对应系统图标，不绘制常驻彩色底。语音连接状态只更新 popover，不阻断实体按键反馈；popover 还提供聚焦 Codex、打开记录、语音手动重试、设置诊断和安全退出入口。运行态须在 `NSApplication` 完成启动后创建状态项，并由进程级强引用持有控制器。状态项的存在与屏幕上是否可见必须分开判断：刘海屏且右侧常驻项过多时，macOS 可用宽度可以遮挡一个仍然有效的状态项。
 - `ButtonLearner.swift` / `ButtonProfile.swift`：HID 学习、人工确认和脱敏物理按键档案。
 - `ButtonPreset.swift` / `ButtonPresetStore.swift`：与硬件无关的映射套装、`KeyboardShortcutSpec`、TV 跳转规则和私有方案库；导入限制大小并校验整份 catalog，导出使用私有权限，保存通知运行时热重载。
 - `ButtonProfileStore.swift`：合并确认档案、检查六键完整性和 Usage 冲突。
 - `HIDButtonController.swift` / `HIDButtonEventReducer.swift`：将 HID 按下、重复和松开收敛为成对按钮事件，分发真实高亮通知，响应配置变更并热重载 catalog。
-- `DeviceConnectionPolicy.swift` / `RemoteDeviceDiscovery.swift`：真实设备目录、已连接设备合并、固定设备优先、多设备确定性仲裁、ATVV 能力协商重试策略与重连退避。
+- `DeviceConnectionPolicy.swift` / `RemoteDeviceDiscovery.swift`：真实设备目录、已连接设备合并、固定设备优先、多设备确定性仲裁、ATVV 能力协商重试策略，以及“随时就绪 / 智能休眠”双模式恢复状态机。
 - `RuntimeNotifications.swift`：跨进程的按键配置变更和 HID 活动通知；通知只携带按键标识与阶段，不携带键盘输入内容。
 - `RuntimeApplicationDelegate.swift`：运行态 AppKit delegate；macOS 再次打开已经运行的米遥时复用现有进程并显示设置与诊断，而不是创建冲突实例。
 - `ProcessEnvironment.swift` / `scripts/lib/environment.sh`：调用 Codex、启动脚本或其他外部进程时删除所有 `MI_AO_*` 内部状态，而不维护会漂移的变量名白名单。
@@ -76,7 +76,7 @@ disconnected -> discovering -> ready -> opening -> streaming -> ready
 
 `capture` 与 `run` 使用同一套 CoreBluetooth 回调，但行为边界不同：`capture` 可以连接未知协议、读取可读特征并订阅全部 notify/indicate，却不会向未知 characteristic 写入数据；只有识别到标准 ATVV UUID 后才复用已知能力协商。
 
-`run` 在两个 ATVV 通知特征都确认订阅后发送 `GET_CAPS`。单次通知丢失不会让运行态永久停在“连接中”：每 1.5 秒重试一次、最多 3 次；仍无响应时明确显示协商超时，主动断开并进入统一的 `1 → 2 → 4 → 8 → 16` 秒重连链路。每次重连先尝试已保存 UUID，再合并 macOS 仍保持连接的 ATVV 设备，最后才等待广播扫描，因此不会遗漏停止广播的 HID 遥控器。能力尚未协商完成时到达的语音事件会被忽略，不使用未初始化 codec。
+`run` 在两个 ATVV 通知特征都确认订阅后发送 `GET_CAPS`。单次通知丢失不会让运行态永久停在“连接中”：每 1.5 秒重试一次、最多 3 次；仍无响应时主动断开。默认“随时就绪”按 `1 → 2 → 4 → 8 → 16 → 32 → 60` 秒退避，之后保持 60 秒低频恢复；“智能休眠”只进行 `1 → 2` 秒两次快速恢复，再次失败后停止后台握手。每次恢复均先尝试已保存 UUID，再合并 macOS 保持连接的 ATVV 设备，最后才等待广播扫描。遥控器 HID 按键活动、蓝牙从关闭恢复或菜单栏操作都会打断倒计或唤醒休眠；Preferences v3 的模式变更通过分布式通知立即更新运行时策略。能力尚未协商完成时到达的语音事件会被忽略，不使用未初始化 codec；实体按键控制与菜单栏指令反馈不依赖语音链路就绪。
 
 ## 扩展新协议
 

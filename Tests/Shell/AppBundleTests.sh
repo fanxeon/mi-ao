@@ -37,6 +37,8 @@ BUILT_RUNTIME="$BUILD_APP/Contents/Resources/Runtime"
 [[ -s "$BUILT_BRAND/mi-ao-symbol-gradient-1024.png" ]]
 [[ -s "$BUILT_BRAND/mi-ao-symbol-template.svg" ]]
 [[ -s "$BUILT_BRAND/mi-ao-symbol-template-1024.png" ]]
+[[ -s "$BUILT_BRAND/mi-ao-menubar-sun-template.svg" ]]
+[[ -s "$BUILT_BRAND/LUCIDE_LICENSE.txt" ]]
 [[ -s "$BUILT_BRAND/mi-ao-button-map.png" ]]
 [[ -x "$BUILT_RUNTIME/scripts/start.sh" ]]
 [[ -x "$BUILT_RUNTIME/scripts/stop.sh" ]]
@@ -61,6 +63,10 @@ cmp "$ROOT/Resources/Brand/mi-ao-symbol-gradient.svg" "$BUILT_BRAND/mi-ao-symbol
 cmp "$ROOT/Resources/Brand/mi-ao-symbol-gradient-1024.png" "$BUILT_BRAND/mi-ao-symbol-gradient-1024.png"
 cmp "$ROOT/docs/assets/mi-ao-button-map.png" "$BUILT_BRAND/mi-ao-button-map.png"
 cmp "$ROOT/Resources/Brand/mi-ao-symbol-template.svg" "$BUILT_BRAND/mi-ao-symbol-template.svg"
+cmp \
+  "$ROOT/Resources/Brand/mi-ao-menubar-sun-template.svg" \
+  "$BUILT_BRAND/mi-ao-menubar-sun-template.svg"
+cmp "$ROOT/Resources/Brand/LUCIDE_LICENSE.txt" "$BUILT_BRAND/LUCIDE_LICENSE.txt"
 cmp \
   "$ROOT/Resources/Brand/mi-ao-symbol-template-1024.png" \
   "$BUILT_BRAND/mi-ao-symbol-template-1024.png"

@@ -68,6 +68,48 @@ struct ReconnectBackoff: Equatable {
     }
 }
 
+enum VoiceReconnectDecision: Equatable {
+    case retry(attempt: Int, delay: TimeInterval)
+    case sleep
+}
+
+struct VoiceReconnectPolicy: Equatable {
+    private(set) var mode: VoiceConnectionMode
+    let maximumSmartSleepAttempts: Int
+    private var backoff: ReconnectBackoff
+
+    init(
+        mode: VoiceConnectionMode,
+        maximumSmartSleepAttempts: Int = 2,
+        initialDelay: TimeInterval = 1,
+        maximumDelay: TimeInterval = 60
+    ) {
+        self.mode = mode
+        self.maximumSmartSleepAttempts = max(0, maximumSmartSleepAttempts)
+        backoff = ReconnectBackoff(
+            initialDelay: initialDelay,
+            maximumDelay: maximumDelay
+        )
+    }
+
+    mutating func nextDecision() -> VoiceReconnectDecision {
+        if mode == .smartSleep, backoff.attempt >= maximumSmartSleepAttempts {
+            return .sleep
+        }
+        let delay = backoff.nextDelay()
+        return .retry(attempt: backoff.attempt, delay: delay)
+    }
+
+    mutating func updateMode(_ mode: VoiceConnectionMode) {
+        self.mode = mode
+        reset()
+    }
+
+    mutating func reset() {
+        backoff.reset()
+    }
+}
+
 enum CapabilityNegotiationDecision: Equatable {
     case retry
     case reconnect

@@ -255,11 +255,12 @@ import Testing
 @Test func parsesPointerRuntimeConfiguration() throws {
     let configuration = try Configuration.parse([
         "mi-ao", "run", "--preset", "pointer", "--button-profile", "~/confirmed.json",
-        "--no-buttons",
+        "--no-buttons", "--voice-connection-mode", "smart_sleep",
     ])
     #expect(configuration.buttonPresetID == "pointer")
     #expect(configuration.buttonProfilePath?.hasSuffix("/confirmed.json") == true)
     #expect(configuration.buttonsEnabled == false)
+    #expect(configuration.voiceConnectionMode == .smartSleep)
 
     let check = try Configuration.parse(["mi-ao", "check-buttons", "--preset", "pointer"])
     #expect(check.mode == .checkButtons)

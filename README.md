@@ -42,6 +42,41 @@
 
 完整逐项证据、自动门禁和仍属于 1.0 的边界见 [V2 交付收口审计](docs/V2_COMPLETION_AUDIT.md)。
 
+## 米遥现在长什么样
+
+米遥已经不是只能在终端里运行的协议实验。安装后的原生 App 把日常管理、真实设备与权限检查、连接策略和按键配置收在同一个窗口里；设置会分项保存，运行中的连接策略与按键配置可以立即更新。
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-settings-overview.png"><img src="docs/assets/screenshots/mi-ao-settings-overview.png" alt="米遥设置与诊断的日常管理总览"></a><br>
+      <strong>日常管理</strong><br>
+      再次打开米遥直接进入管理界面，不必重走首次设置；异常状态会给出下一步。
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-permissions-connection.png"><img src="docs/assets/screenshots/mi-ao-permissions-connection.png" alt="米遥设备选择、系统权限和本地语音引擎检查"></a><br>
+      <strong>权限与连接</strong><br>
+      扫描或固定真实遥控器，并核对 macOS、本地 Whisper、辅助功能、蓝牙、Codex 与启动组件。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-usage-preferences.png"><img src="docs/assets/screenshots/mi-ao-usage-preferences.png" alt="米遥自动发送、遥控器控制和语音连接策略设置"></a><br>
+      <strong>使用偏好</strong><br>
+      自动发送与实体按键控制可以独立关闭；语音连接可选默认“随时就绪”或“智能休眠”。
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-button-configuration.png"><img src="docs/assets/screenshots/mi-ao-button-configuration.png" alt="米遥默认按键配置与自定义配置入口"></a><br>
+      <strong>按键配置</strong><br>
+      官方默认方案保持只读；自定义方案支持逐键动作、测试、安全导入导出和运行时热更新。
+    </td>
+  </tr>
+</table>
+
+> 截图来自 `0.2.2` 在当前开发 Mac 上的真实安装状态。绿色检查结果取决于每台 Mac 的系统、权限、模型与 Codex 状态，不代表首次打开会自动通过。
+
+想直接开始可阅读 [3 分钟快速开始](docs/QUICKSTART.md)；想先了解系统授权边界可查看 [权限与可选功能](docs/PERMISSIONS.md)，按键的完整行为见 [按键预设](docs/BUTTON_PRESETS.md)。
+
 ## 运行环境与项目内容
 
 | 项目 | 当前要求 / 已实现内容 |

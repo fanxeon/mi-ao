@@ -42,6 +42,41 @@ MI-AO is a macOS voice-input system that connects the Xiaomi Bluetooth Remote Co
 
 See the [V2 delivery audit](docs/V2_COMPLETION_AUDIT.md) for requirement-level evidence, automated gates, and the remaining 1.0 boundaries.
 
+## What MI-AO looks like today
+
+MI-AO is no longer a protocol experiment that can only be operated from a terminal. The installed native app brings daily management, real device and permission checks, connection policy, and button configuration into one window. Preferences are saved independently, and the running voice policy and button preset can update without an app restart.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-settings-overview.png"><img src="docs/assets/screenshots/mi-ao-settings-overview.png" alt="MI-AO Settings and Diagnostics daily-management overview"></a><br>
+      <strong>Daily management</strong><br>
+      Reopening MI-AO goes straight to management instead of replaying onboarding, while problem states provide a concrete next step.
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-permissions-connection.png"><img src="docs/assets/screenshots/mi-ao-permissions-connection.png" alt="MI-AO device selection, system permission, and local speech-engine checks"></a><br>
+      <strong>Permissions and connection</strong><br>
+      Scan or pin a real remote, then verify macOS, local Whisper, Accessibility, Bluetooth, Codex, and the bundled runtime.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-usage-preferences.png"><img src="docs/assets/screenshots/mi-ao-usage-preferences.png" alt="MI-AO submission, remote-control, and voice-connection preferences"></a><br>
+      <strong>Usage preferences</strong><br>
+      Automatic submission and physical-button control are independent. Voice recovery can stay Always Ready or enter Smart Sleep.
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/mi-ao-button-configuration.png"><img src="docs/assets/screenshots/mi-ao-button-configuration.png" alt="MI-AO default button preset and custom configuration entry points"></a><br>
+      <strong>Button configurations</strong><br>
+      The official preset stays read-only; custom presets support per-button actions, one-shot tests, validated JSON transfer, and runtime hot reload.
+    </td>
+  </tr>
+</table>
+
+> These screenshots show a real `0.2.2` installation on the current development Mac. Green checks depend on each Mac's system, permissions, local model, and Codex state; they are not a promise that first launch passes automatically. The current product UI shown here is in Chinese.
+
+Start with the [3-minute quick start](docs/QUICKSTART_EN.md), review the [permission boundaries](docs/PERMISSIONS_EN.md), or inspect the complete [button preset contract](docs/BUTTON_PRESETS_EN.md).
+
 ## Runtime environment and included capabilities
 
 | Area | Current requirement / included capability |

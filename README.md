@@ -14,6 +14,8 @@
 
 由 **FanXeon@Poemcoder with Codex** 创建、真机验证并持续维护。“是的我只手写了这一行代码，出现任何bug我宣布有codex负责”
 
+> **第一次认识米遥？** 先看 [米遥产品介绍官网](https://poemcoder.com/mi-ao)：真实的 macOS 界面、三步语音工作流和完整按键指南，会让你在安装前看清它如何把小米蓝牙遥控器 2 Pro 变成一支随手可用的 Codex 语音遥控器。源码、安装方法、兼容性证据与安全边界仍以本仓库文档为准。
+
 [中文](README.md) · [English](README_EN.md) · [V2 交付审计](docs/V2_COMPLETION_AUDIT.md) · [开发进度](docs/DEVELOPMENT_STATUS.md) · [权限与可选项](docs/PERMISSIONS.md) · [配对与连接](docs/PAIRING.md) · [3 分钟快速开始](docs/QUICKSTART.md) · [按键预设](docs/BUTTON_PRESETS.md) · [使用说明](docs/USAGE.md) · [兼容设备](docs/COMPATIBILITY.md) · [参与贡献](CONTRIBUTING.md)
 
 [![CI](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml/badge.svg)](https://github.com/fanxeon/mi-ao/actions/workflows/ci.yml)
